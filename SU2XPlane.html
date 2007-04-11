@@ -20,8 +20,8 @@ h5 { font-family: Arial,Helvetica,sans-serif; }
 <table style="width: 100%;" border="0" cellpadding="2">
   <tbody>
     <tr>
-      <td class="banner">Marginal &raquo; <a href="http://marginal.org.uk/x-planescenery/">X-Plane
-Scenery</a> &raquo; <a href="http://marginal.org.uk/x-planescenery/tools.html">Tools</a> &raquo; SketchUp2XPlane</td>
+      <td class="banner">Marginal &rarr; <a href="http://marginal.org.uk/x-planescenery/">X-Plane
+Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">Tools</a> &rarr; SketchUp2XPlane</td>
     </tr>
   </tbody>
 </table>
@@ -76,9 +76,16 @@ into your SketchUp <code>Plugins</code> folder:</p>
 <p>(Re)start SketchUp.</p>
 <p>You can now delete the <code>.zip</code> file that you downloaded.
 This help file can be viewed by choosing
-<samp>Help&nbsp;&raquo;&nbsp;X-Plane</samp> in SketchUp.</p>
+<samp>Help&nbsp;&rarr;&nbsp;X-Plane</samp> in SketchUp.</p>
 
 <h3>Creating X-Plane scenery objects</h3>
+<p>Before you start, you can use Google Earth to get a photo of the
+area that you're about to model:
+<ul>
+  <li>In Google Earth zoom in to the area.</li>
+  <li>In SketchUp choose
+<samp>Tools&nbsp;&rarr;&nbsp;Google&nbsp;Earth&nbsp;&rarr;&nbsp;Get&nbsp;Current&nbsp;View</samp>.</li>
+</ul></p>
 <p>Create your model in SketchUp out of Rectangles and Circles (any Arcs
 will be ignored). Save the SketchUp <code>.skp</code> file in the
 aircraft or scenery folder where you want the X-Plane <code>.obj</code>
@@ -88,27 +95,27 @@ file to end up.</p>
 of all of the textures that you need in your model. 
 The height and width of the texture file must be powers of two
 (<i>eg</i> 128, 256, 512, 1024) but it doesn't have to be square.
-See ...<code>/Custom&nbsp;Scenery/KSBD&nbsp;Demo&nbsp;Area/KSBD_example.png</code> for a basic example.</p>
+See <code>&#8230;/Custom&nbsp;Scenery/KSBD&nbsp;Demo&nbsp;Area/KSBD_example.png</code> for a basic example.</p>
 <p>Save the texture file in 24bit or 32bit PNG format
 (<i>ie</i> with or without an "Alpha" channel) in the
 aircraft or scenery folder where you want the X-Plane <code>.obj</code>
 file to end up.</p>
 <p>Use the <samp>Paint Bucket</samp> tool to apply your one texture
 file to every face in your model.
-Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Texture&nbsp;&raquo;&nbsp;Position</samp>
+Use <samp>Context&nbsp;menu&nbsp;&rarr;&nbsp;Texture&nbsp;&rarr;&nbsp;Position</samp>
 to map the correct portion of this texture file to each face (see
 <a href="http://download.sketchup.com/GSU/tutorials/Textures_UsingPhotos/Textures_UsingPhotos.html" target="_blank">here</a> for a tutorial).</p>
 <p>To position a texture on a curved surface you first have to enable
-<samp>View&nbsp;&raquo;&nbsp;Hidden&nbsp;Geometry</samp>.
+<samp>View&nbsp;&rarr;&nbsp;Hidden&nbsp;Geometry</samp>.
 Then select one face of the surface at a time and position the texture
 on each face.</p>
 <p>If you want both sides of a face to be displayed in X-Plane
 then apply the <samp>Paint Bucket</samp> tool twice; once on each side of the
 face.
-You can use the <samp>Window&nbsp;&raquo;&nbsp;Entity&nbsp;Info</samp> panel
+You can use the <samp>Window&nbsp;&rarr;&nbsp;Entity&nbsp;Info</samp> panel
 to see which texture(s) are currently assigned to the two sides of the
 currently selected face.</p>
-<p>You can use <samp>Tools&nbsp;&raquo;&nbsp;Highlight&nbsp;Untextured</samp>
+<p>You can use <samp>Tools&nbsp;&rarr;&nbsp;Highlight&nbsp;Untextured</samp>
 to help you with texturing. This doesn't change how your model will appear
 in X-Plane, but it does highlight in SketchUp any problems with your texturing:</p>
 <ol>
@@ -116,7 +123,7 @@ in X-Plane, but it does highlight in SketchUp any problems with your texturing:<
 faces.</li>
   <li>For faces that are textured on just one side, the other side is hidden
 (by setting the opacity to 0). This helps you see if you've textured
-the wrong side of any faces. Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Reverse&nbsp;Faces</samp> on the face if you have.</li>
+the wrong side of any faces. Use <samp>Context&nbsp;menu&nbsp;&rarr;&nbsp;Reverse&nbsp;Faces</samp> on the face if you have.</li>
 </ol>
 <h4>Attributes</h4>
 <p>This plugin adds three entries to the context menu. These can be
@@ -128,37 +135,54 @@ in X-Plane. Making faces "hard" is expensive so use this sparingly.
 Vertical "hard" faces don't work as you might expect; if you want to
 make a building collidable just use this button on the roof,
 not on the sides.<br>
-<small>(Note that only simple rectangular faces can be "hard" in v7 objects,
-and X-Plane versions prior to 8.20 have a bug where <code>.obj</code>
+<small>(Note that only faces that Sketchup considers to be simple
+rectangles can be "hard" in v7 objects.<br>
+X-Plane versions prior to 8.20 have a bug where <code>.obj</code>
 files that contain hard faces must be placed in WorldMaker with an
-"object heading" of 0).</small></dd>
+"object heading" of 0 - if you need to rotate the object then rotate it
+in SketchUp and not in WorldMaker).</small></dd>
   <dt>&nbsp;</dt>
   <dt><samp>Ground</samp></dt>
   <dd>Controls whether the face is rendered with "polygon offsetting"
 in X-Plane.<br>
 Use this on faces that lie flat on the ground to prevent
 Z-buffer thrashing in X-Plane.
-Don't press this button for other faces.</dd>
+Don't press this button for other faces.</br>
+<small>(Note that this setting may not have the desired effect in some
+X-Plane versions prior to 8.20).</small></dd>
   <dt>&nbsp;</dt>
   <dt><samp>Alpha</samp></dt>
   <dd>This is a hint to X-Plane that the face is textured with a
 partially or wholly transparent or translucent texture.<br>
-Use this on transparent or translucent faces so that in X-Plane
-you will see other faces in the model through these faces.
+Use this on any transparent or translucent faces through which
+you want to see other faces from the same model.
 Don't press this button for opaque (normal) faces.</dd>
 </dl>
-<h3>Exporting to X-Plane</h3>    
+
+<h3>Exporting to X-Plane</h3>
 <p>If you have not already done so, choose
-<samp>File &raquo; Save As...</samp> and save the <code>.skp</code> file in
+<samp>File &rarr; Save As&#8230;</samp> and save the <code>.skp</code> file in
 the aircraft or scenery folder where you want the X-Plane <code>.obj</code>
 file to end up.</p>
+<p>If you have loaded a terrain photo from Google Earth then you need to
+hide it before exporting:
+<ul>
+  <li>Choose <samp>Window&nbsp;&rarr;&nbsp;Layers</samp>.</li>
+  <li>In the <samp>Layers</samp> panel ensure that "Google Earth Terrain"
+and "Google Earth Snapshot" are both unchecked.</li>
+  <li>If you loaded the terrain photo before you started modelling then
+you can read the co-ordinates where your model should be placed in
+X-Plane from the <samp>Window&nbsp;&rarr;&nbsp;Model&nbsp;Info</samp> panel;
+select <samp>Location</samp> and press the
+<samp>Custom&nbsp;location&#8230;</samp> button.</li>
+</ul></p>
 <p>Then choose one of:</p>
 <dl>
-  <dt><samp>File &raquo; Export X-Plane v7 Object</samp></dt>
+  <dt><samp>File &rarr; Export X-Plane v7 Object</samp></dt>
   <dd>v7 objects can be used in X-Plane v7 or v8.<br>
 Curved surfaces will appear "steppy" in X-Plane.</dd>
   <dt>&nbsp;</dt>
-  <dt><samp>File &raquo; Export X-Plane v8 Object</samp></dt>
+  <dt><samp>File &rarr; Export X-Plane v8 Object</samp></dt>
   <dd>v8 objects can only be used in X-Plane v8.16 and later.<br>
 X-Plane will display curved surfaces correctly.</dd>
 </dl>
@@ -207,7 +231,7 @@ no obligation.</p>
 <table style="width: 100%;" border="0" cellpadding="2">
   <tbody>
     <tr>
-      <td class="banner">Version 1.20 &copy; 2006
+      <td class="banner">Version 1.30 &copy; 2006
       <a href="mailto:x-plane@marginal.org.uk">Jonathan
 Harris</a> <a rel="license" href="http://creativecommons.org/licenses/by-sa/2.5/"><img style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" alt="Creative Commons License" src="http://creativecommons.org/images/public/somerights20.png"></a></td>
     </tr>

@@ -1,7 +1,7 @@
-#------------------------------------------------------------------------
+#
 # X-Plane exporter for SketchUp
 #
-# Copyright (c) 2006 Jonathan Harris
+# Copyright (c) 2006,2007 Jonathan Harris
 # 
 # Mail: <x-plane@marginal.org.uk>
 # Web:  http://marginal.org.uk/x-planescenery/
@@ -45,21 +45,25 @@
 #    prioritisation of faces with alpha.
 #
 # 2007-01-18 v1.20
-#  - Moved attributes to context menu - toolbar not updated on Mac
+#  - Moved attributes to context menu - toolbar not updated on Mac.
+#
+# 2007-04-11 v1.30
+#  - Fix for exporting v7 objects.
+#  - Don't export hidden entities, or entities on hidden layers.
 #
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.20"
+$XPlaneExportVersion="1.30"
 
 $tw = Sketchup.create_texture_writer
 
 # X-Plane attributes
 $ATTR_DICT="X-Plane"
 $ATTR_HARD=1
-$ATTR_HARD_NAME="poly"
+$ATTR_HARD_NAME="poly"	# incorrect dictionary key not fixed for compatibility
 $ATTR_POLY=2
-$ATTR_POLY_NAME="hard"
+$ATTR_POLY_NAME="hard"	# ditto
 $ATTR_ALPHA=4
 $ATTR_ALPHA_NAME="alpha"
 $ATTR_SEQ=[$ATTR_POLY,$ATTR_POLY|$ATTR_HARD,$ATTR_POLY|$ATTR_ALPHA,$ATTR_POLY|$ATTR_HARD|$ATTR_ALPHA,
@@ -69,11 +73,15 @@ $ATTR_SEQ=[$ATTR_POLY,$ATTR_POLY|$ATTR_HARD,$ATTR_POLY|$ATTR_ALPHA,$ATTR_POLY|$A
 # Accumulate vertices and indices into vt and idx
 def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 
-  # Vertices and Indices added at this level- to detect dupes
+  # Vertices and Indices added at this level (but not below) - to detect dupes
   myvt=[]
   myidx=Array.new($ATTR_SEQ.length) {[]}
 
   entities.each do |ent|
+
+    if ent.hidden? or not ent.layer.visible?
+      next
+    end
 
     case ent.typename
 
@@ -143,9 +151,9 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 	      attrs|=$ATTR_HARD
 	    end
 	    if front
-	      idx[attrs] << (Array.new(4) {|i| myvt.length+3-i})
+	      myidx[attrs] << (Array.new(4) {|i| myvt.length+3-i})
 	    else
-	      idx[attrs] << (Array.new(4) {|i| myvt.length+i})
+	      myidx[attrs] << (Array.new(4) {|i| myvt.length+i})
 	    end
 	    ent.outer_loop.vertices.each do |vertex|
 	      if tex
@@ -201,10 +209,12 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 		thistri.push(thisidx)
 	      end
 	    end
-	    if xpver==7
-	      idx[attrs] << thistri
-	    else
-	      myidx[attrs].concat(thistri)
+	    if not thistri.empty?
+	      if xpver==7
+		myidx[attrs] << thistri
+	      else
+		myidx[attrs].concat(thistri)
+	      end
 	    end
 	  end
 
@@ -215,12 +225,18 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 
   end
 
-  # Add new vertices and indices
+  # Add new vertices and fix up and add new indices
   base=vt.length
   vt.concat(myvt)
-  for i in (0...myidx.length)
-    myidx[i].collect!{|j| j+base}
-    idx[i].concat(myidx[i])
+  for attrs in (0...myidx.length)
+    if xpver==7
+      for tri in (0...myidx[attrs].length)
+	myidx[attrs][tri].collect!{|j| j+base}
+      end
+    else
+      myidx[attrs].collect!{|j| j+base}
+    end
+    idx[attrs].concat(myidx[attrs])
   end
 
 end
@@ -241,7 +257,7 @@ def XPlaneExport(xpver)
   idx=Array.new($ATTR_SEQ.length) {[]} # v8: flat arrays of indices. v7: arrays of 3 or 4 length arrays
   notex=[0,0]	# num not textured, num surfaces
   XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), xpver, vt, idx, notex)	# coords always returned in inches!
-  if idx.length==0
+  if idx.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
   end
@@ -354,7 +370,7 @@ def XPlaneExport(xpver)
     current_attrs=0
     current_base=0
     $ATTR_SEQ.each do |attrs|
-      if idx[attrs].length==0
+      if idx[attrs].empty?
 	next
       end
       if current_attrs&$ATTR_POLY==0 and attrs&$ATTR_POLY!=0
