@@ -31,10 +31,14 @@
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.03"
+$XPlaneExportVersion="1.04"
 
 
 def XPlaneAccumPolys(entities, trans, vt, idx)
+
+  # Vertices and Indices added at this level- to detect dupes
+  myvt=[]
+  myidx=[]
 
   entities.each do |ent|
 
@@ -79,7 +83,7 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
 	    tex=nil
 	  end
 	    
-	  base=vt.length
+	  thisvt=[]	# Vertices in this face
 	  for i in (1..mesh.count_points)
 	    v=trans * mesh.point_at(i)
 	    u=mesh.uv_at(i, front)
@@ -87,16 +91,23 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
 	    if not front
 	      n=n.reverse
 	    end
-	    vt << (([tex] + v.to_a + n.to_a) << u.x << u.y)
+	    thisvt << (([tex] + v.to_a + n.to_a) << u.x << u.y)
 	  end
 	    
 	  for i in (1..mesh.count_polygons)
-	    thistri=[]
+	    thistri=[]	# indices in this face
 	    mesh.polygon_at(i).each do |index|
 	      if index>0
-		thisidx=base+index-1
+		v=thisvt[index-1]
 	      else
-		thisidx=base-index-1
+		v=thisvt[-index-1]
+	      end
+	      # Look for duplicate vertex
+	      thisidx=myvt.index(v)
+	      if not thisidx
+		# Didn't find a duplicate vertex
+		thisidx=myvt.length
+		myvt << v
 	      end
 	      if front
 		thistri.unshift(thisidx)
@@ -104,7 +115,7 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
 		thistri.push(thisidx)
 	      end
 	    end
-	    idx.concat(thistri)
+	    myidx.concat(thistri)
 	  end
 
 	end
@@ -113,6 +124,13 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
     end
 
   end
+
+  # Add new vertices and indices
+  base=vt.length
+  myidx.collect!{|i| i+base}
+  vt.concat(myvt)
+  idx.concat(myidx)
+
 end
 
 #-----------------------------------------------------------------------------
