@@ -40,12 +40,12 @@
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.05"
+$XPlaneExportVersion="1.06"
 
 $tw = Sketchup.create_texture_writer
 
 
-def XPlaneAccumPolys(entities, trans, ver, vt, idx)
+def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 
   # Vertices and Indices added at this level- to detect dupes
   myvt=[]
@@ -56,10 +56,10 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx)
     case ent.typename
 
     when "ComponentInstance"
-      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, ver, vt, idx)
+      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, ver, vt, idx, notex)
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, trans*ent.transformation, ver, vt, idx)
+      XPlaneAccumPolys(ent.entities, trans*ent.transformation, ver, vt, idx, notex)
 
     when "Face"
       # if neither side has material then output both sides,
@@ -83,6 +83,10 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx)
 	meshopts+=2
       end
       mesh=ent.mesh(meshopts)
+      if meshopts&3==0
+	notex[0]+=1	# Only count once per surface (but still cylinders=24)
+      end
+      notex[1]+=1
 
       [true,false].each do |front|
 	if front
@@ -193,9 +197,10 @@ def XPlaneExport(ver)
     outpath=Sketchup.active_model.path[0...-3]+'obj'
   end
 
-  vt=[]
-  idx=[]
-  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), ver, vt, idx)	# coords always returned in inches!
+  vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
+  idx=[]	# v8: flat array of indices. v7: array of 3 or 4 length arrays
+  notex=[0,0]	# num not textured, num surfaces
+  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), ver, vt, idx, notex)	# coords always returned in inches!
   if idx.length==0
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
@@ -203,7 +208,6 @@ def XPlaneExport(ver)
   
   # examine textures
   tex=nil
-  notex=0
   badtex=false
   idx.each do |i|
     if ver==7
@@ -213,8 +217,6 @@ def XPlaneExport(ver)
 	elsif tex!=vt[i[0]][0]
 	  badtex=true
 	end
-      else
-	notex+=1
       end
     elsif ver==8
       if vt[i][0]
@@ -223,20 +225,19 @@ def XPlaneExport(ver)
 	elsif tex!=vt[i][0]
 	  badtex=true
 	end
-      else
-	notex+=1
       end
     end
   end
-  if notex==0
-    notex=false
-  elsif notex==idx.length
-    notex="All"
-  elsif ver==8
-    notex=notex/3
-  end
   if tex
     tex=tex.split(/[\/\\:]+/)[-1]	# basename
+  end
+
+  if notex[0]==0
+    notex=false
+  elsif notex[0]==notex[1]
+    notex="All"
+  else
+    notex=notex[0]
   end
 
   if ver==7
@@ -300,19 +301,16 @@ def XPlaneExport(ver)
 
   if ver==7
     msg="Wrote #{idx.length} polygons to #{outpath}.\n"
-    if notex
-      msg+="\nWarning: #{notex} of those polygons are untextured."
-    end
   elsif ver==8
     msg="Wrote #{idx.length/3} triangles to #{outpath}.\n"
-    if notex
-      msg+="\nWarning: #{notex} of those triangles are untextured."
-    end
+  end
+  if notex
+    msg+="\nWarning: #{notex} surfaces are untextured."
   end
   if badtex
     msg+="\nWarning: You used multiple texture files. Using file #{tex}."
   end
-  if notex and not badtex
+  if notex and not badtex and not Sketchup.active_model.materials["XPUntextured"]
     yesno=UI.messagebox msg+"\nDo you want to highlight the untexured surfaces?", MB_YESNO,"X-Plane export"
     if yesno==6
       XPlaneHighlight()
@@ -326,9 +324,8 @@ end
 
 def XPlaneHighlight()
 
-  materials=Sketchup.active_model.materials
-
   model=Sketchup.active_model
+  materials=model.materials
   model.start_operation("Highlight Untextured")
   begin
     untextured=materials["XPUntextured"]
@@ -350,7 +347,7 @@ def XPlaneHighlight()
     count=XPlaneHighlightFaces(model.entities, untextured, reverse)
     model.commit_operation
     if count==0
-      UI.messagebox "No untextured surfaces", MB_OK,"X-Plane export"
+      UI.messagebox "All surfaces are textured", MB_OK,"X-Plane export"
     end
   rescue
     model.abort_operation
