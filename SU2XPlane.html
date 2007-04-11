@@ -80,10 +80,22 @@ file to every surface in your model.
 Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Texture&nbsp;&raquo;&nbsp;Position</samp>
 to map the correct portion of this texture file to each surface (see
 <a href="http://download.sketchup.com/GSU/tutorials/Textures_UsingPhotos/Textures_UsingPhotos.html" target="_blank">here</a> for a tutorial).</p>
-<p>If you want both sides of a surface to be displayed in X-Plane then apply
-the <samp>Paint Bucket</samp> tool twice; once on each side of the surface.
-You can use the <samp>Window&nbsp;&raquo;&nbsp;Entity&nbsp;Info</samp> panel to
-see which texture(s) are currently assigned to the front and back of the selected surface.</p>
+<p>If you want both sides ("faces") of a surface to be displayed in X-Plane
+then apply the <samp>Paint Bucket</samp> tool twice; once on each face of the
+surface.
+You can use the <samp>Window&nbsp;&raquo;&nbsp;Entity&nbsp;Info</samp> panel
+to see which texture(s) are currently assigned to the two faces of the
+currently selected surface.</p>
+<p>You can use <samp>Tools&nbsp;&raquo;&nbsp;Highlight&nbsp;Untextured</samp>
+to help you with texturing. This doesn't change how your model will appear
+in X-Plane, but it does highlight any problems with your texturing in SketchUp:</p>
+<ol>
+  <li>Untextured surfaces are coloured red. This helps you to identify these
+surfaces.</li>
+  <li>For surfaces that are textured on just one face, the other face is hidden
+(by setting the opacity to 0). This helps you to see if you've textured
+the wrong face of any surfaces. Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Reverse&nbsp;Faces</samp> on the surface if you have.</li>
+</ol>
 <h3>Exporting to X-Plane</h3>    
 <p>If you have not already done so, choose
 <samp>File &raquo; Save As...</samp> and save the <code>.skp</code> file in
@@ -144,7 +156,7 @@ no obligation.</p>
 <table style="width: 100%;" border="0" cellpadding="2">
   <tbody>
     <tr>
-      <td class="banner">Version 1.02 &copy; 2006
+      <td class="banner">Version 1.03 &copy; 2006
       <a href="mailto:x-plane@marginal.org.uk">Jonathan
 Harris</a> <a rel="license" href="http://creativecommons.org/licenses/by-sa/2.5/"><img style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" alt="Creative Commons License" src="http://creativecommons.org/images/public/somerights20.png"></a></td>
     </tr>

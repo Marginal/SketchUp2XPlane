@@ -31,7 +31,7 @@
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.02"
+$XPlaneExportVersion="1.03"
 
 
 def XPlaneAccumPolys(entities, trans, vt, idx)
@@ -222,7 +222,86 @@ def XPlaneExport(ver)
   if badtex
     msg+="\nWarning: You used multiple texture files. Using file #{tex}."
   end
-  UI.messagebox msg, MB_OK,"X-Plane export"
+  if notex and not badtex
+    yesno=UI.messagebox msg+"\nDo you want to highlight the untexured surfaces?", MB_YESNO,"X-Plane export"
+    if yesno==6
+      XPlaneHighlight()
+    end
+  else
+    UI.messagebox msg, MB_OK,"X-Plane export"
+  end
+end
+
+#-----------------------------------------------------------------------------
+
+def XPlaneHighlight()
+
+  materials=Sketchup.active_model.materials
+
+  model=Sketchup.active_model
+  model.start_operation("Highlight Untextured")
+  begin
+    untextured=materials["XPUntextured"]
+    if (not untextured) or (untextured.texture and untextured.texture.filename)
+      untextured=materials.add("XPUntextured")
+      untextured.color="Red"
+    end
+    untextured.alpha=1.0
+    untextured.texture=nil
+    
+    reverse=materials["XPReverse"]
+    if (not reverse) or (reverse.texture and reverse.texture.filename)
+      reverse=materials.add("XPReverse")
+      reverse.color="Magenta"
+    end
+    reverse.alpha=0
+    reverse.texture=nil
+
+    count=XPlaneHighlightFaces(model.entities, untextured, reverse)
+    model.commit_operation
+    if count==0
+      UI.messagebox "No untextured surfaces", MB_OK,"X-Plane export"
+    end
+  rescue
+    model.abort_operation
+  end
+
+end
+
+#-----------------------------------------------------------------------------
+
+def XPlaneHighlightFaces(entities, untextured, reverse)
+
+  count=0
+
+  entities.each do |ent|
+
+    case ent.typename
+
+    when "ComponentInstance"
+      count+=XPlaneHighlightFaces(ent.definition.entities, untextured, reverse)
+
+    when "Group"
+      count+=XPlaneHighlightFaces(ent.entities, untextured, reverse)
+
+    when "Face"
+      if not (ent.material and ent.material.texture and ent.material.texture.filename) and not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
+	ent.material=untextured
+	ent.back_material=reverse
+	count+=1
+      else
+	if not (ent.material and ent.material.texture and ent.material.texture.filename)
+	  ent.material=reverse
+	end
+	if not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
+	  ent.back_material=reverse
+	end
+      end
+
+    end
+  end
+
+  return count
 
 end
 
@@ -232,6 +311,7 @@ end
 if( not file_loaded?("SU2XPlane.rb") )
   UI.menu("File").add_item("Export X-Plane v7 Object") { XPlaneExport(7) }
   UI.menu("File").add_item("Export X-Plane v8 Object") { XPlaneExport(8) }
+  UI.menu("Tools").add_item("Highlight Untextured") { XPlaneHighlight() }
   help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
   if help
     UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help) }
