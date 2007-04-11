@@ -34,7 +34,7 @@ Scenery</a> &raquo; <a href="http://marginal.org.uk/x-planescenery/tools.html">T
 <code>.obj</code> format.</p>
 <h3>Installation</h3>
 <p>Copy the two files <code>SU2Xplane.html</code> and
-<code>SU2Xplane.rb</code> into:</p>
+<code>SU2Xplane.rb</code> into your SketchUp <code>Plugins</code> folder:</p>
 <table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">
   <tbody>
     <tr>
@@ -42,12 +42,16 @@ Scenery</a> &raquo; <a href="http://marginal.org.uk/x-planescenery/tools.html">T
       <td><code>C:\Program&nbsp;Files\Google\Google&nbsp;SketchUp\Plugins</code></td>
     </tr>
     <tr>
+      <td>Google SketchUp on MacOS:</td>
+      <td><code>/Library/Application&nbsp;Support/Google&nbsp;SketchUp/Plugins</code></td>
+    </tr>
+    <tr>
       <td>SketchUp Pro 5 on Windows:</td>
       <td><code>C:\Program&nbsp;Files\@Last&nbsp;Software\SketchUp&nbsp;5\Plugins</code></td>
     </tr>
     <tr>
-      <td>Mac OS X:</td>
-      <td><code>~/Library/Application&nbsp;Support/SketchUp/Plugins</code></td>
+      <td>SketchUp Pro 5 on MacOS:</td>
+      <td><code>/Users/<i>you</i>/Library/Application&nbsp;Support/SketchUp&nbsp;5/Plugins</code></td>
     </tr>
   </tbody>
 </table>
@@ -57,19 +61,29 @@ This help file can be viewed by choosing
 <samp>Help&nbsp;&raquo;&nbsp;X-Plane</samp> in SketchUp.</p>
 
 <h3>Creating X-Plane scenery objects</h3>
-<p>Create your model in SketchUp out of Rectangles and Circles. (Any Arcs
-will be ignored).</p>
-<p>In an image editor application create a <u>single</u> texture file
-that contains <u>all</u> of the textures that you need in your model.</p>
-<p>Save the SketchUp <code>.skp</code> file and the texture file in the
+<p>Create your model in SketchUp out of Rectangles and Circles (any Arcs
+will be ignored). Save the SketchUp <code>.skp</code> file in the
 aircraft or scenery folder where you want the X-Plane <code>.obj</code>
 file to end up.</p>
-<p>Use the <samp>Paint Bucket</samp> tool to apply the same texture
+<p>In an image editor application create one texture file that is like a
+"<a href="http://en.wikipedia.org/wiki/Collage" target="_blank">collage</a>"
+of all of the textures that you need in your model. 
+The height and width of the texture file must be powers of two
+(<i>eg</i> 128, 256, 512, 1024) but it doesn't have to be square.
+See ...<code>/Custom&nbsp;Scenery/KSBD&nbsp;Demo&nbsp;Area/KSBD_example.png</code> for a basic example.</p>
+<p>Save the texture file in 24bit or 32bit PNG format
+(<i>ie</i> with or without an "Alpha" channel) in the
+aircraft or scenery folder where you want the X-Plane <code>.obj</code>
+file to end up.</p>
+<p>Use the <samp>Paint Bucket</samp> tool to apply your one texture
 file to every surface in your model.
 Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Texture&nbsp;&raquo;&nbsp;Position</samp>
-to map the correct portion of this texture file to each surface.
-If you want both sides of a surface to be displayed in X-Plane then apply
-the <samp>Paint Bucket</samp> tool twice; once on each side of the surface.</p>
+to map the correct portion of this texture file to each surface (see
+<a href="http://download.sketchup.com/GSU/tutorials/Textures_UsingPhotos/Textures_UsingPhotos.html" target="_blank">here</a> for a tutorial).</p>
+<p>If you want both sides of a surface to be displayed in X-Plane then apply
+the <samp>Paint Bucket</samp> tool twice; once on each side of the surface.
+You can use the <samp>Window&nbsp;&raquo;&nbsp;Entity&nbsp;Info</samp> panel to
+see which texture(s) are currently assigned to the front and back of the selected surface.</p>
 <h3>Exporting to X-Plane</h3>    
 <p>If you have not already done so, choose
 <samp>File &raquo; Save As...</samp> and save the <code>.skp</code> file in
@@ -78,33 +92,40 @@ file to end up.</p>
 <p>Then choose one of:</p>
 <dl>
   <dt><samp>File &raquo; Export X-Plane v7 Object</samp></dt>
-  <dd>v7 objects can be used in X-Plane v7 or v8. However curved surfaces in
-SketchUp will appear "steppy" in X-Plane.</dd>
+  <dd>v7 objects can be used in X-Plane v7 or v8.<br>
+Curved surfaces will appear "steppy" in X-Plane.</dd>
+  <dt>&nbsp;</dt>
   <dt><samp>File &raquo; Export X-Plane v8 Object</samp></dt>
-  <dd>v8 objects can only be used in X-Plane v8.20 and later. Curved surfaces will be displayed correctly.</dd>
+  <dd>v8 objects can only be used in X-Plane v8.16 and later.<br>
+X-Plane will display curved surfaces correctly.</dd>
 </dl>
 <p>The object is created in the same folder and with the same name
 as the current SketchUp file, but with a <code>.obj</code> extension.</p>
 <p>You may see the following warnings:</p>
 <dl>
   <dt>Warning: You used multiple texture files. Using file <i>name</i>.</dt>
-  <dd>You used more than one texture file to texture the surfaces in your model.
+  <dd>You used more than one texture file to texture the surfaces in your model.<br>
 X-Plane requires that you use only one texture file for all of your surfaces.</dd>
+  <dt>&nbsp;</dt>
   <dt>Warning: <i>n</i> of those triangles are untextured.</dt>
-  <dd>Some of the surfaces in your SketchUp model didn't have a texture
-applied to them.
-X-Plane requires that all of your surfaces are textured.</dd>
+  <dd>You have not applied a texture to all of the surfaces in your SketchUp
+model.<br>
+X-Plane will colour the untextured surfaces with the bottom left pixel from
+your texture file (or grey if you have not applied a texture to any of the
+surfaces).</dd>
 </dl>
 <p>If you see either warning then X-Plane probably won't display your model
-correctly.</p>
+as you intended.</p>
 
 <h3>Limitations</h3>
-<p>Construct your SketchUp model out of Rectangles, Circles, Components and Groups only - any other SketchUp types (including Arcs) are not exported.</p>
+<p>Construct your SketchUp model out of Rectangles, Circles, Components and
+Groups only - any other SketchUp types (including Arcs) are not exported.</p>
 <p>This plugin does not allow you to create advanced X-Plane scenery
 primitives, including:</p>
 <ul>
   <li>Animation</li>
   <li>Attributes: <i>eg</i> hard surfaces, poly_os, cockpit, materials etc</li>
+  <li>Level Of Detail</li>
   <li>Lights</li>
   <li>Lines</li>
   <li>Smoke</li>
@@ -123,7 +144,7 @@ no obligation.</p>
 <table style="width: 100%;" border="0" cellpadding="2">
   <tbody>
     <tr>
-      <td class="banner">Version 1.01 &copy; 2006
+      <td class="banner">Version 1.02 &copy; 2006
       <a href="mailto:x-plane@marginal.org.uk">Jonathan
 Harris</a> <a rel="license" href="http://creativecommons.org/licenses/by-sa/2.5/"><img style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" alt="Creative Commons License" src="http://creativecommons.org/images/public/somerights20.png"></a></td>
     </tr>

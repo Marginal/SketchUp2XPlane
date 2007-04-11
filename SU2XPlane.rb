@@ -31,7 +31,7 @@
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.01"
+$XPlaneExportVersion="1.02"
 
 
 def XPlaneAccumPolys(entities, trans, vt, idx)
@@ -120,7 +120,7 @@ end
 def XPlaneExport(ver)
 
   if Sketchup.active_model.path==""
-    UI.messagebox "I don't know where to create the X-Plane object file because\nyou have never saved this SketchUp model.\n\nSave this SketchUp model first!", MB_OK, "X-Plane export"
+    UI.messagebox "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file because\nyou have never saved this SketchUp model.", MB_OK, "X-Plane export"
     return
   end
 
@@ -173,7 +173,7 @@ def XPlaneExport(ver)
       outfile.write("none\t\t// Texture\n\n")
     end
 
-    # every 3 indices makes a triangle
+    # every 3 indices make a triangle
     for i in (0...idx.length/3)
       outfile.write("tri\t\t// \n")
       for j in (i*3..i*3+2)
@@ -199,19 +199,15 @@ def XPlaneExport(ver)
     outfile.write("POINT_COUNTS\t#{vt.length} 0 0 #{idx.length}\n\n")
 
     vt.each do |v|
-      outfile.printf("VT\t%9.4f %9.4f %9.4f\t%6.3f %6.3f %7.4f\t%7.4f %7.4f\n",
+      outfile.printf("VT\t%9.4f %9.4f %9.4f\t%6.3f %6.3f %6.3f\t%7.4f %7.4f\n",
 		     v[1], v[3], -v[2], v[4], v[6], -v[5], v[7], v[8])
     end
     outfile.write("\n")
     for i in (0...idx.length/10)
-      outfile.write("IDX10\t")
-      for j in (i*10...i*10+9)
-	outfile.write("#{idx[j]} ")
-      end
-      outfile.write("#{idx[i*10+9]}\n")
+      outfile.write("IDX10\t#{idx[i*10..i*10+9].join(' ')}\n")
     end
-    for j in (idx.length-(idx.length%10)...idx.length)
-      outfile.write("IDX\t#{idx[j]}\n")
+    for i in (idx.length-(idx.length%10)...idx.length)
+      outfile.write("IDX\t#{idx[i]}\n")
     end
 
     outfile.write("\nTRIS\t0 #{idx.length}\n")
