@@ -40,29 +40,45 @@
 # 2006-11-03 v1.07
 #  - Fix for weirdly scaled UVs (typically made with "Fixed Pins" unchecked).
 #
+# 2007-01-10 v1.10
+#  - Added support for "hard" and "poly_os" attributes, and
+#    prioritisation of faces with alpha.
+#
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.07"
+$XPlaneExportVersion="1.10"
 
 $tw = Sketchup.create_texture_writer
 
+# X-Plane attributes
+$ATTR_DICT="X-Plane"
+$ATTR_HARD=1
+$ATTR_HARD_NAME="poly"
+$ATTR_POLY=2
+$ATTR_POLY_NAME="hard"
+$ATTR_ALPHA=4
+$ATTR_ALPHA_NAME="alpha"
+$ATTR_SEQ=[$ATTR_POLY,$ATTR_POLY|$ATTR_HARD,$ATTR_POLY|$ATTR_ALPHA,$ATTR_POLY|$ATTR_HARD|$ATTR_ALPHA,
+  0,$ATTR_HARD,$ATTR_ALPHA,$ATTR_ALPHA+$ATTR_HARD]
 
-def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
+
+# Accumulate vertices and indices into vt and idx
+def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 
   # Vertices and Indices added at this level- to detect dupes
   myvt=[]
-  myidx=[]
+  myidx=Array.new($ATTR_SEQ.length) {[]}
 
   entities.each do |ent|
 
     case ent.typename
 
     when "ComponentInstance"
-      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, ver, vt, idx, notex)
+      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, xpver, vt, idx, notex)
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, trans*ent.transformation, ver, vt, idx, notex)
+      XPlaneAccumPolys(ent.entities, trans*ent.transformation, xpver, vt, idx, notex)
 
     when "Face"
       # if neither side has material then output both sides,
@@ -75,13 +91,20 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
       notex[1]+=1
 
       uvHelp = ent.get_UVHelper(true, true, $tw)
+      attrs=0
+      if ent.get_attribute($ATTR_DICT, $ATTR_POLY_NAME, 0)!=0
+	attrs|=$ATTR_POLY
+      end
+      if ent.get_attribute($ATTR_DICT, $ATTR_ALPHA_NAME, 0)!=0
+	attrs|=$ATTR_ALPHA
+      end
 
       # Create transformation w/out translation for normals
       narray=trans.to_a
       narray[12..16]=[0,0,0,1]
       ntrans = Geom::Transformation.new(narray)
 
-      mesh=ent.mesh(7)	# vertex, uvs & normal 
+      mesh=ent.mesh(7)	# vertex, uvs & normal
       [true,false].each do |front|
 	if front
 	  material=ent.material
@@ -111,12 +134,15 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 	    minu=minv=0
 	  end
 
-	  if ver==7 and ent.loops.length==1 and ent.outer_loop.vertices.length==4
+	  if xpver==7 and ent.loops.length==1 and ent.outer_loop.vertices.length==4
 	    # simple quad
+	    if ent.get_attribute($ATTR_DICT, $ATTR_HARD_NAME, 0)!=0
+	      attrs|=$ATTR_HARD
+	    end
 	    if front
-	      idx << (Array.new(4) {|i| vt.length+3-i})
+	      idx[attrs] << (Array.new(4) {|i| myvt.length+3-i})
 	    else
-	      idx << (Array.new(4) {|i| vt.length+i})
+	      idx[attrs] << (Array.new(4) {|i| myvt.length+i})
 	    end
 	    ent.outer_loop.vertices.each do |vertex|
 	      if tex
@@ -128,11 +154,14 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 	      else
 		u=[0,0,1]
 	      end
-	      vt << ([tex] + (trans*vertex.position).to_a + [0, 0, 0, u.x/u.z-minu, u.y/u.z-minv])
+	      myvt << ([tex] + (trans*vertex.position).to_a + [0, 0, 0, u.x/u.z-minu, u.y/u.z-minv])
 	    end
 	    next
 	  end
 
+	  if ent.get_attribute($ATTR_DICT, $ATTR_HARD_NAME, 0)!=0
+	    attrs|=$ATTR_HARD
+	  end
 	  thisvt=[]	# Vertices in this face
 	  for i in (1..mesh.count_points)
 	    v=trans * mesh.point_at(i)
@@ -156,17 +185,12 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 	      else
 		v=thisvt[-index-1]
 	      end
-	      if ver==7
-		thisidx=vt.length
-		vt << v
-	      else
-		# Look for duplicate vertex
-		thisidx=myvt.rindex(v)
-		if not thisidx
-		  # Didn't find a duplicate vertex
-		  thisidx=myvt.length
-		  myvt << v
-		end
+	      # Look for duplicate vertex
+	      thisidx=myvt.rindex(v)
+	      if not thisidx
+		# Didn't find a duplicate vertex
+		thisidx=myvt.length
+		myvt << v
 	      end
 	      if front
 		thistri.unshift(thisidx)
@@ -174,10 +198,10 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 		thistri.push(thisidx)
 	      end
 	    end
-	    if ver==7
-	      idx << thistri
+	    if xpver==7
+	      idx[attrs] << thistri
 	    else
-	      myidx.concat(thistri)
+	      myidx[attrs].concat(thistri)
 	    end
 	  end
 
@@ -189,18 +213,18 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
   end
 
   # Add new vertices and indices
-  if ver==8
-    base=vt.length
-    myidx.collect!{|i| i+base}
-    vt.concat(myvt)
-    idx.concat(myidx)
+  base=vt.length
+  vt.concat(myvt)
+  for i in (0...myidx.length)
+    myidx[i].collect!{|j| j+base}
+    idx[i].concat(myidx[i])
   end
 
 end
 
 #-----------------------------------------------------------------------------
 
-def XPlaneExport(ver)
+def XPlaneExport(xpver)
 
   if Sketchup.active_model.path==""
     UI.messagebox "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file because\nyou have never saved this SketchUp model.", MB_OK, "X-Plane export"
@@ -211,19 +235,24 @@ def XPlaneExport(ver)
   end
 
   vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
-  idx=[]	# v8: flat array of indices. v7: array of 3 or 4 length arrays
+  idx=Array.new($ATTR_SEQ.length) {[]} # v8: flat arrays of indices. v7: arrays of 3 or 4 length arrays
   notex=[0,0]	# num not textured, num surfaces
-  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), ver, vt, idx, notex)	# coords always returned in inches!
+  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), xpver, vt, idx, notex)	# coords always returned in inches!
   if idx.length==0
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
   end
   
+  allidx=[]
+  $ATTR_SEQ.each do |attrs|
+    allidx.concat(idx[attrs])
+  end
+
   # examine textures
   tex=nil
   badtex=false
-  idx.each do |i|
-    if ver==7
+  allidx.each do |i|
+    if xpver==7
       if vt[i[0]][0]
 	if not tex
 	  tex=vt[i[0]][0]
@@ -231,7 +260,7 @@ def XPlaneExport(ver)
 	  badtex=true
 	end
       end
-    elsif ver==8
+    elsif xpver==8
       if vt[i][0]
 	if not tex
 	  tex=vt[i][0]
@@ -253,7 +282,7 @@ def XPlaneExport(ver)
     notex=notex[0]
   end
 
-  if ver==7
+  if xpver==7
     outfile=File.new(outpath, "w")
     outfile.write("I\n700\t// \nOBJ\t// \n\n")
     if tex
@@ -262,22 +291,33 @@ def XPlaneExport(ver)
       outfile.write("none\t\t// Texture\n\n")
     end
 
-    [3,4].each do |sides|
-      idx.each do |poly|
-	if poly.length!=sides
-	  next
+    current_attrs=0
+    $ATTR_SEQ.each do |attrs|
+      [3,4].each do |sides|
+	idx[attrs].each do |poly|
+	  if poly.length!=sides
+	    next
+	  end
+	  if current_attrs&$ATTR_POLY==0 and attrs&$ATTR_POLY!=0
+	    outfile.write("ATTR_poly_os 2\t// \n\n")
+	  elsif current_attrs&$ATTR_POLY!=0 and attrs&$ATTR_POLY==0
+	    outfile.write("ATTR_poly_os 0\t// \n\n")
+	  end
+	  current_attrs=attrs
+	  if sides==3
+	    outfile.write("tri\t\t// \n")
+	  elsif attrs&$ATTR_HARD!=0
+	    outfile.write("quad_hard\t// \n")
+	  else
+	    outfile.write("quad\t\t// \n")
+	  end
+	  poly.each do |i|
+	    v=vt[i]
+	    outfile.printf("%9.4f %9.4f %9.4f\t%7.4f %7.4f\n",
+			   v[1], v[3], -v[2], v[7], v[8])
+	  end
+	  outfile.write("\n")
 	end
-	if sides==4
-	  outfile.write("quad\t\t// \n")
-	else
-	  outfile.write("tri\t\t// \n")
-	end
-	poly.each do |i|
-	  v=vt[i]
-	  outfile.printf("%9.4f %9.4f %9.4f\t%7.4f %7.4f\n",
-			 v[1], v[3], -v[2], v[7], v[8])
-	end
-	outfile.write("\n")
       end
     end
 
@@ -285,7 +325,7 @@ def XPlaneExport(ver)
     outfile.write("\n// Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{$XPlaneExportVersion}.\n")
     outfile.close
 
-  elsif ver==8
+  elsif xpver==8
     outfile=File.new(outpath, "w")
     outfile.write("I\n800\nOBJ\n\n")
     if tex
@@ -293,29 +333,49 @@ def XPlaneExport(ver)
     else
       outfile.write("TEXTURE\t\n")	# X-Plane requires a TEXTURE statement
     end
-    outfile.write("POINT_COUNTS\t#{vt.length} 0 0 #{idx.length}\n\n")
+    outfile.write("POINT_COUNTS\t#{vt.length} 0 0 #{allidx.length}\n\n")
 
     vt.each do |v|
       outfile.printf("VT\t%9.4f %9.4f %9.4f\t%6.3f %6.3f %6.3f\t%7.4f %7.4f\n",
 		     v[1], v[3], -v[2], v[4], v[6], -v[5], v[7], v[8])
     end
     outfile.write("\n")
-    for i in (0...idx.length/10)
-      outfile.write("IDX10\t#{idx[i*10..i*10+9].join(' ')}\n")
+    for i in (0...allidx.length/10)
+      outfile.write("IDX10\t#{allidx[i*10..i*10+9].join(' ')}\n")
     end
-    for i in (idx.length-(idx.length%10)...idx.length)
-      outfile.write("IDX\t#{idx[i]}\n")
+    for i in (allidx.length-(allidx.length%10)...allidx.length)
+      outfile.write("IDX\t#{allidx[i]}\n")
     end
+    outfile.write("\n")
 
-    outfile.write("\nTRIS\t0 #{idx.length}\n")
-    outfile.write("\n# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{$XPlaneExportVersion}.\n")
+    current_attrs=0
+    current_base=0
+    $ATTR_SEQ.each do |attrs|
+      if idx[attrs].length==0
+	next
+      end
+      if current_attrs&$ATTR_POLY==0 and attrs&$ATTR_POLY!=0
+	outfile.write("ATTR_poly_os\t2\n")
+      elsif current_attrs&$ATTR_POLY!=0 and attrs&$ATTR_POLY==0
+	outfile.write("ATTR_poly_os\t0\n")
+      end
+      if current_attrs&$ATTR_HARD==0 and attrs&$ATTR_HARD!=0
+	outfile.write("ATTR_hard\n")
+      elsif current_attrs&$ATTR_HARD!=0 and attrs&$ATTR_HARD==0
+	outfile.write("ATTR_no_hard\n")
+      end
+      outfile.write("TRIS\t#{current_base} #{idx[attrs].length}\n\n")
+      current_attrs=attrs
+      current_base+=idx[attrs].length
+    end
+    outfile.write("# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{$XPlaneExportVersion}.\n")
     outfile.close
   end
 
-  if ver==7
-    msg="Wrote #{idx.length} polygons to #{outpath}.\n"
-  elsif ver==8
-    msg="Wrote #{idx.length/3} triangles to #{outpath}.\n"
+  if xpver==7
+    msg="Wrote #{allidx.length} polygons to #{outpath}.\n"
+  elsif xpver==8
+    msg="Wrote #{allidx.length/3} triangles to #{outpath}.\n"
   end
   if notex
     msg+="\nWarning: #{notex} surfaces are untextured."
@@ -368,8 +428,6 @@ def XPlaneHighlight()
 
 end
 
-#-----------------------------------------------------------------------------
-
 def XPlaneHighlightFaces(entities, untextured, reverse)
 
   count=0
@@ -407,11 +465,69 @@ end
 
 #-----------------------------------------------------------------------------
 
+def XPlaneToggleAttr(attr)
+  ss = Sketchup.active_model.selection
+  if ss.count>=1
+    newval=1-ss.first.get_attribute($ATTR_DICT, attr, 0)
+    ss.each do |ent|
+      if ent.typename=="Face"
+	ent.set_attribute($ATTR_DICT, attr, newval)
+      end
+    end
+  end
+end
+
+def XPlaneValidateAttr(attr)
+  ss = Sketchup.active_model.selection
+  if ss.count==0 or ss.first.typename!="Face"
+    return MF_GRAYED
+  end
+  val=ss.first.get_attribute($ATTR_DICT, attr, 0)
+  # Gray out if multiple selected with different values
+  ss.each do |ent|
+    if ent.typename!="Face" #or ent.get_attribute($ATTR_DICT, attr, 0)!=val
+      return MF_GRAYED
+    end
+  end
+  if val!=0
+    return MF_CHECKED
+  else
+    return MF_UNCHECKED
+  end
+end
+
+#-----------------------------------------------------------------------------
+
 # Add some menu items to access this
 if( not file_loaded?("SU2XPlane.rb") )
   UI.menu("File").add_item("Export X-Plane v7 Object") { XPlaneExport(7) }
   UI.menu("File").add_item("Export X-Plane v8 Object") { XPlaneExport(8) }
   UI.menu("Tools").add_item("Highlight Untextured") { XPlaneHighlight() }
+
+  toolbar=UI::Toolbar.new "X-Plane"
+  hard = UI::Command.new("Hard") { XPlaneToggleAttr($ATTR_HARD_NAME) }
+  hard.set_validation_proc { XPlaneValidateAttr($ATTR_HARD_NAME) }
+  hard.status_bar_text="Make the surfaces(s) collidable in X-Plane"
+  hard.tooltip="Hard"
+  hard.small_icon = "hard_small.png"
+  hard.large_icon = "hard_large.png"
+  toolbar.add_item hard
+  poly = UI::Command.new("Ground") { XPlaneToggleAttr($ATTR_POLY_NAME) }
+  poly.set_validation_proc { XPlaneValidateAttr($ATTR_POLY_NAME) }
+  poly.status_bar_text="Tell X-Plane that the surface(s) lie flat on the ground"
+  poly.tooltip="Ground"
+  poly.small_icon = "poly_small.png"
+  poly.large_icon = "poly_large.png"
+  toolbar.add_item poly
+  alpha = UI::Command.new("Alpha") { XPlaneToggleAttr($ATTR_ALPHA_NAME) }
+  alpha.set_validation_proc { XPlaneValidateAttr($ATTR_ALPHA_NAME) }
+  alpha.status_bar_text="Tell X-Plane that the surface(s) use transparent or translucent textures"
+  alpha.tooltip="Alpha"
+  alpha.small_icon = "alpha_small.png"
+  alpha.large_icon = "alpha_large.png"
+  toolbar.add_item alpha
+  toolbar.show
+
   help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
   if help
     UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help) }

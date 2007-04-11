@@ -33,8 +33,7 @@ Scenery</a> &raquo; <a href="http://marginal.org.uk/x-planescenery/tools.html">T
 <p>This SketchUp plugin exports models to X-Plane v7 or v8
 <code>.obj</code> format.</p>
 <h3>Installation</h3>
-<p>Copy the two files <code>SU2Xplane.html</code> and
-<code>SU2Xplane.rb</code> into your SketchUp <code>Plugins</code> folder:</p>
+<p>Copy all the files into your SketchUp <code>Plugins</code> folder:</p>
 <table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">
   <tbody>
     <tr>
@@ -92,7 +91,7 @@ to see which texture(s) are currently assigned to the two faces of the
 currently selected surface.</p>
 <p>You can use <samp>Tools&nbsp;&raquo;&nbsp;Highlight&nbsp;Untextured</samp>
 to help you with texturing. This doesn't change how your model will appear
-in X-Plane, but it does highlight any problems with your texturing in SketchUp:</p>
+in X-Plane, but it does highlight in SketchUp any problems with your texturing:</p>
 <ol>
   <li>Untextured surfaces are coloured red. This helps you to identify these
 surfaces.</li>
@@ -100,6 +99,37 @@ surfaces.</li>
 (by setting the opacity to 0). This helps you to see if you've textured
 the wrong face of any surfaces. Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Reverse&nbsp;Faces</samp> on the surface if you have.</li>
 </ol>
+<h4>Attributes</h4>
+<p>Choose <samp>View&nbsp;&raquo;&nbsp;Toolbars&nbsp;&raquo;&nbsp;X-Plane</samp>
+if the X-Plane toolbar is not visible.
+There are three buttons on the X-Plane toolbar which
+can be pressed when you have a surface selected:</p>
+<dl>
+  <dt><img style="border: 0px solid ; width: 24px; height: 24px; vertical-align: text-bottom;" alt="Hard" src="hard_large.png"> <samp>Hard</samp></dt>
+  <dd>Controls whether aircraft can land on and/or collide with this surface
+in X-Plane. Making surfaces "hard" is expensive so use this sparingly.
+Vertical "hard" surfaces don't work as you might expect; if you want to
+make a building collidable just use this button on the roof,
+not on the sides.<br>
+<small>(Note that only simple rectangular surfaces can be "hard" in v7 objects,
+and X-Plane versions prior to 8.20 have a bug where <code>.obj</code>
+files that contain hard surfaces must be placed in WorldMaker with an
+"object heading" of 0).</small></dd>
+  <dt>&nbsp;</dt>
+  <dt><img style="border: 0px solid ; width: 24px; height: 24px; vertical-align: text-bottom;" alt="Ground" src="poly_large.png"> <samp>Ground</samp></dt>
+  <dd>Controls whether the surface is rendered with "polygon offsetting"
+in X-Plane.<br>
+Use this on surfaces that lie flat on the ground to prevent
+Z-buffer thrashing in X-Plane.
+Don't press this button for other surfaces.</dd>
+  <dt>&nbsp;</dt>
+  <dt><img style="border: 0px solid ; width: 24px; height: 24px; vertical-align: text-bottom;" alt="Alpha" src="alpha_large.png"> <samp>Alpha</samp></dt>
+  <dd>This is a hint to X-Plane that the surface is textured with a
+partially or wholly transparent or translucent texture.<br>
+Use this on transparent or translucent surfaces so that in X-Plane
+you will see other surfaces in the model through these surfaces.
+Don't press this button for opaque (normal) surfaces.</dd>
+</dl>
 <h3>Exporting to X-Plane</h3>    
 <p>If you have not already done so, choose
 <samp>File &raquo; Save As...</samp> and save the <code>.skp</code> file in
@@ -139,8 +169,8 @@ Groups only - any other SketchUp types (including Arcs) are not exported.</p>
 <p>This plugin does not allow you to create advanced X-Plane scenery
 primitives, including:</p>
 <ul>
-  <li>Animation</li>
-  <li>Attributes: <i>eg</i> hard surfaces, poly_os, cockpit, materials etc</li>
+  <li>Animations</li>
+  <li>Attributes: <i>eg</i> cockpit, materials etc</li>
   <li>Level Of Detail</li>
   <li>Lights</li>
   <li>Lines</li>
@@ -160,7 +190,7 @@ no obligation.</p>
 <table style="width: 100%;" border="0" cellpadding="2">
   <tbody>
     <tr>
-      <td class="banner">Version 1.07 &copy; 2006
+      <td class="banner">Version 1.10 &copy; 2006
       <a href="mailto:x-plane@marginal.org.uk">Jonathan
 Harris</a> <a rel="license" href="http://creativecommons.org/licenses/by-sa/2.5/"><img style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" alt="Creative Commons License" src="http://creativecommons.org/images/public/somerights20.png"></a></td>
     </tr>
