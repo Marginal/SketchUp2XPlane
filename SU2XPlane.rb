@@ -31,7 +31,7 @@
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.00"
+$XPlaneExportVersion="1.01"
 
 
 def XPlaneAccumPolys(entities, trans, vt, idx)
@@ -51,12 +51,19 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
       # otherwise outout the side(s) with materials
       nomats = (not ent.material and not ent.back_material)
 
-      # Create rotation-only transformation for normals
+      # Create transformation w/out translation for normals
       narray=trans.to_a
       narray[12..16]=[0,0,0,1]
       ntrans = Geom::Transformation.new(narray)
       
-      mesh=ent.mesh(7)
+      meshopts=4
+      if ent.material and ent.material.texture and ent.material.texture.filename
+	meshopts+=1
+      end
+      if ent.back_material and ent.back_material.texture and ent.back_material.texture.filename
+	meshopts+=2
+      end
+      mesh=ent.mesh(meshopts)
 
       [true,false].each do |front|
 	if front
@@ -75,11 +82,7 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
 	  base=vt.length
 	  for i in (1..mesh.count_points)
 	    v=trans * mesh.point_at(i)
-	    if material and material.texture
-	      u=mesh.uv_at(i, front)
-	    else
-	      u=Geom::Point3d.new
-	    end
+	    u=mesh.uv_at(i, front)
 	    n=(ntrans * mesh.normal_at(i)).normalize
 	    if not front
 	      n=n.reverse
@@ -143,6 +146,13 @@ def XPlaneExport(ver)
     else
       notex+=1
     end
+  end
+  if notex==0
+    notex=false
+  elsif notex==idx.length
+    notex="All"
+  else
+    notex=notex/3
   end
   if tex
     tex=tex.split(/[\/\\:]+/)[-1]	# basename
@@ -210,8 +220,8 @@ def XPlaneExport(ver)
   end
 
   msg="Wrote #{idx.length/3} triangles to #{outpath}.\n"
-  if notex>0
-    msg+="\nWarning: #{notex/3} of those triangles are untextured."
+  if notex
+    msg+="\nWarning: #{notex} of those triangles are untextured."
   end
   if badtex
     msg+="\nWarning: You used multiple texture files. Using file #{tex}."
