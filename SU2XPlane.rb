@@ -35,12 +35,15 @@
 #  - Remove duplicate vertices in OBJv8.
 #
 # 2006-11-30 v1.05
-#  - Create triangles in OBJv7.
+#  - Create quads in OBJv7.
+#
+# 2006-11-03 v1.07
+#  - Fix for weirdly scaled UVs (typically made with "Fixed Pins" unchecked).
 #
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.06"
+$XPlaneExportVersion="1.07"
 
 $tw = Sketchup.create_texture_writer
 
@@ -66,28 +69,19 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
       # otherwise outout the side(s) with materials
       nomats = (not ent.material and not ent.back_material)
 
-      if ver==7
-	uvHelp = ent.get_UVHelper(true, true, $tw)
+      if not (ent.material and ent.material.texture and ent.material.texture.filename) and not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
+	notex[0]+=1	# Only count once per surface (but still cylinders=24)
       end
+      notex[1]+=1
+
+      uvHelp = ent.get_UVHelper(true, true, $tw)
 
       # Create transformation w/out translation for normals
       narray=trans.to_a
       narray[12..16]=[0,0,0,1]
       ntrans = Geom::Transformation.new(narray)
-      
-      meshopts=4
-      if ent.material and ent.material.texture and ent.material.texture.filename
-	meshopts+=1
-      end
-      if ent.back_material and ent.back_material.texture and ent.back_material.texture.filename
-	meshopts+=2
-      end
-      mesh=ent.mesh(meshopts)
-      if meshopts&3==0
-	notex[0]+=1	# Only count once per surface (but still cylinders=24)
-      end
-      notex[1]+=1
 
+      mesh=ent.mesh(7)	# vertex, uvs & normal 
       [true,false].each do |front|
 	if front
 	  material=ent.material
@@ -98,8 +92,23 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 	if nomats or (material and material.alpha>0.0)
 	  if material and material.texture
 	    tex=material.texture.filename
+	    # Get minimum uv co-oords
+	    us=[]
+	    vs=[]
+	    ent.outer_loop.vertices.each do |vertex|
+	      if front
+		u=uvHelp.get_front_UVQ(vertex.position).to_a
+	      else
+		u=uvHelp.get_back_UVQ(vertex.position).to_a
+	      end
+	      us << (u.x/u.z).floor
+	      vs << (u.y/u.z).floor
+	    end
+	    minu=us.min
+	    minv=vs.min
 	  else
 	    tex=nil
+	    minu=minv=0
 	  end
 
 	  if ver==7 and ent.loops.length==1 and ent.outer_loop.vertices.length==4
@@ -110,29 +119,33 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 	      idx << (Array.new(4) {|i| vt.length+i})
 	    end
 	    ent.outer_loop.vertices.each do |vertex|
-	      if material and material.texture and material.texture.filename
+	      if tex
 		if front
-		  uv=uvHelp.get_front_UVQ(vertex.position).to_a
+		  u=uvHelp.get_front_UVQ(vertex.position).to_a
 		else
-		  uv=uvHelp.get_back_UVQ(vertex.position).to_a
+		  u=uvHelp.get_back_UVQ(vertex.position).to_a
 		end
 	      else
-		uv=[0,0,0]
+		u=[0,0,1]
 	      end
-	      vt << ([tex] + (trans*vertex.position).to_a + [0, 0, 0, uv[0], uv[1]])
+	      vt << ([tex] + (trans*vertex.position).to_a + [0, 0, 0, u.x/u.z-minu, u.y/u.z-minv])
 	    end
 	    next
 	  end
-	    
+
 	  thisvt=[]	# Vertices in this face
 	  for i in (1..mesh.count_points)
 	    v=trans * mesh.point_at(i)
-	    u=mesh.uv_at(i, front)
+	    if tex
+	      u=mesh.uv_at(i, front)
+	    else
+	      u=[0,0,1]
+	    end
 	    n=(ntrans * mesh.normal_at(i)).normalize
 	    if not front
 	      n=n.reverse
 	    end
-	    thisvt << (([tex] + v.to_a + n.to_a) << u.x << u.y)
+	    thisvt << (([tex] + v.to_a + n.to_a) << u.x/u.z-minu << u.y/u.z-minv)
 	  end
 	    
 	  for i in (1..mesh.count_polygons)
@@ -148,7 +161,7 @@ def XPlaneAccumPolys(entities, trans, ver, vt, idx, notex)
 		vt << v
 	      else
 		# Look for duplicate vertex
-		thisidx=myvt.index(v)
+		thisidx=myvt.rindex(v)
 		if not thisidx
 		  # Didn't find a duplicate vertex
 		  thisidx=myvt.length
