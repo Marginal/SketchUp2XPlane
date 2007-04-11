@@ -28,13 +28,24 @@
 # 2006-11-27 v1.00
 #  - First public version.
 #
+# 2006-11-30 v1.03
+#  - Add Tools->Highlight Untextured.
+#
+# 2006-11-30 v1.04
+#  - Remove duplicate vertices in OBJv8.
+#
+# 2006-11-30 v1.05
+#  - Create triangles in OBJv7.
+#
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.04"
+$XPlaneExportVersion="1.05"
+
+$tw = Sketchup.create_texture_writer
 
 
-def XPlaneAccumPolys(entities, trans, vt, idx)
+def XPlaneAccumPolys(entities, trans, ver, vt, idx)
 
   # Vertices and Indices added at this level- to detect dupes
   myvt=[]
@@ -45,15 +56,19 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
     case ent.typename
 
     when "ComponentInstance"
-      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, vt, idx)
+      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, ver, vt, idx)
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, trans*ent.transformation, vt, idx)
+      XPlaneAccumPolys(ent.entities, trans*ent.transformation, ver, vt, idx)
 
     when "Face"
       # if neither side has material then output both sides,
       # otherwise outout the side(s) with materials
       nomats = (not ent.material and not ent.back_material)
+
+      if ver==7
+	uvHelp = ent.get_UVHelper(true, true, $tw)
+      end
 
       # Create transformation w/out translation for normals
       narray=trans.to_a
@@ -82,6 +97,28 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
 	  else
 	    tex=nil
 	  end
+
+	  if ver==7 and ent.loops.length==1 and ent.outer_loop.vertices.length==4
+	    # simple quad
+	    if front
+	      idx << (Array.new(4) {|i| vt.length+3-i})
+	    else
+	      idx << (Array.new(4) {|i| vt.length+i})
+	    end
+	    ent.outer_loop.vertices.each do |vertex|
+	      if material and material.texture and material.texture.filename
+		if front
+		  uv=uvHelp.get_front_UVQ(vertex.position).to_a
+		else
+		  uv=uvHelp.get_back_UVQ(vertex.position).to_a
+		end
+	      else
+		uv=[0,0,0]
+	      end
+	      vt << ([tex] + (trans*vertex.position).to_a + [0, 0, 0, uv[0], uv[1]])
+	    end
+	    next
+	  end
 	    
 	  thisvt=[]	# Vertices in this face
 	  for i in (1..mesh.count_points)
@@ -102,12 +139,17 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
 	      else
 		v=thisvt[-index-1]
 	      end
-	      # Look for duplicate vertex
-	      thisidx=myvt.index(v)
-	      if not thisidx
-		# Didn't find a duplicate vertex
-		thisidx=myvt.length
-		myvt << v
+	      if ver==7
+		thisidx=vt.length
+		vt << v
+	      else
+		# Look for duplicate vertex
+		thisidx=myvt.index(v)
+		if not thisidx
+		  # Didn't find a duplicate vertex
+		  thisidx=myvt.length
+		  myvt << v
+		end
 	      end
 	      if front
 		thistri.unshift(thisidx)
@@ -115,7 +157,11 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
 		thistri.push(thisidx)
 	      end
 	    end
-	    myidx.concat(thistri)
+	    if ver==7
+	      idx << thistri
+	    else
+	      myidx.concat(thistri)
+	    end
 	  end
 
 	end
@@ -126,10 +172,12 @@ def XPlaneAccumPolys(entities, trans, vt, idx)
   end
 
   # Add new vertices and indices
-  base=vt.length
-  myidx.collect!{|i| i+base}
-  vt.concat(myvt)
-  idx.concat(myidx)
+  if ver==8
+    base=vt.length
+    myidx.collect!{|i| i+base}
+    vt.concat(myvt)
+    idx.concat(myidx)
+  end
 
 end
 
@@ -139,12 +187,15 @@ def XPlaneExport(ver)
 
   if Sketchup.active_model.path==""
     UI.messagebox "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file because\nyou have never saved this SketchUp model.", MB_OK, "X-Plane export"
+    outpath="Untitled.obj"
     return
+  else
+    outpath=Sketchup.active_model.path[0...-3]+'obj'
   end
 
   vt=[]
   idx=[]
-  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), vt, idx)	# coords always returned in inches!
+  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), ver, vt, idx)	# coords always returned in inches!
   if idx.length==0
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
@@ -155,31 +206,37 @@ def XPlaneExport(ver)
   notex=0
   badtex=false
   idx.each do |i|
-    if vt[i][0]
-      if not tex
-	tex=vt[i][0]
-      elsif tex!=vt[i][0]
-	badtex=true
+    if ver==7
+      if vt[i[0]][0]
+	if not tex
+	  tex=vt[i[0]][0]
+	elsif tex!=vt[i[0]][0]
+	  badtex=true
+	end
+      else
+	notex+=1
       end
-    else
-      notex+=1
+    elsif ver==8
+      if vt[i][0]
+	if not tex
+	  tex=vt[i][0]
+	elsif tex!=vt[i][0]
+	  badtex=true
+	end
+      else
+	notex+=1
+      end
     end
   end
   if notex==0
     notex=false
   elsif notex==idx.length
     notex="All"
-  else
+  elsif ver==8
     notex=notex/3
   end
   if tex
     tex=tex.split(/[\/\\:]+/)[-1]	# basename
-  end
-
-  if Sketchup.active_model.path==""
-    outpath="Untitled.obj"
-  else
-    outpath=Sketchup.active_model.path[0...-3]+'obj'
   end
 
   if ver==7
@@ -191,15 +248,23 @@ def XPlaneExport(ver)
       outfile.write("none\t\t// Texture\n\n")
     end
 
-    # every 3 indices make a triangle
-    for i in (0...idx.length/3)
-      outfile.write("tri\t\t// \n")
-      for j in (i*3..i*3+2)
-	v=vt[idx[j]]
-	outfile.printf("%9.4f %9.4f %9.4f\t%7.4f %7.4f\n",
-		       v[1], v[3], -v[2], v[7], v[8])
+    [3,4].each do |sides|
+      idx.each do |poly|
+	if poly.length!=sides
+	  next
+	end
+	if sides==4
+	  outfile.write("quad\t\t// \n")
+	else
+	  outfile.write("tri\t\t// \n")
+	end
+	poly.each do |i|
+	  v=vt[i]
+	  outfile.printf("%9.4f %9.4f %9.4f\t%7.4f %7.4f\n",
+			 v[1], v[3], -v[2], v[7], v[8])
+	end
+	outfile.write("\n")
       end
-      outfile.write("\n")
     end
 
     outfile.write("end\t\t// \n")
@@ -233,9 +298,16 @@ def XPlaneExport(ver)
     outfile.close
   end
 
-  msg="Wrote #{idx.length/3} triangles to #{outpath}.\n"
-  if notex
-    msg+="\nWarning: #{notex} of those triangles are untextured."
+  if ver==7
+    msg="Wrote #{idx.length} polygons to #{outpath}.\n"
+    if notex
+      msg+="\nWarning: #{notex} of those polygons are untextured."
+    end
+  elsif ver==8
+    msg="Wrote #{idx.length/3} triangles to #{outpath}.\n"
+    if notex
+      msg+="\nWarning: #{notex} of those triangles are untextured."
+    end
   end
   if badtex
     msg+="\nWarning: You used multiple texture files. Using file #{tex}."
