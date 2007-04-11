@@ -33,27 +33,46 @@ Scenery</a> &raquo; <a href="http://marginal.org.uk/x-planescenery/tools.html">T
 <p>This SketchUp plugin exports models to X-Plane v7 or v8
 <code>.obj</code> format.</p>
 <h3>Installation</h3>
-<p>Copy all the files into your SketchUp <code>Plugins</code> folder:</p>
-<table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">
-  <tbody>
-    <tr>
-      <td>Google SketchUp on Windows:</td>
-      <td><code>C:\Program&nbsp;Files\Google\Google&nbsp;SketchUp\Plugins</code></td>
-    </tr>
-    <tr>
-      <td>Google SketchUp on MacOS:</td>
-      <td><code>/Library/Application&nbsp;Support/Google&nbsp;SketchUp/Plugins</code></td>
-    </tr>
-    <tr>
-      <td>SketchUp Pro 5 on Windows:</td>
-      <td><code>C:\Program&nbsp;Files\@Last&nbsp;Software\SketchUp&nbsp;5\Plugins</code></td>
-    </tr>
-    <tr>
-      <td>SketchUp Pro 5 on MacOS:</td>
-      <td><code>/Users/<i>you</i>/Library/Application&nbsp;Support/SketchUp&nbsp;5/Plugins</code></td>
-    </tr>
-  </tbody>
-</table>
+<p>Copy the files <code>SU2XPlane.html</code> and <code>SU2XPlane.rb</code>
+into your SketchUp <code>Plugins</code> folder:</p>
+<ul>
+  <li>Windows:
+    <table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">
+      <tbody>
+        <tr>
+          <td>SketchUp &amp; Pro 6:</td>
+          <td><code>C:\Program&nbsp;Files\Google\Google&nbsp;SketchUp 6\Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp 5:</td>
+          <td><code>C:\Program&nbsp;Files\Google\Google&nbsp;SketchUp\Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp Pro 5:</td>
+          <td><code>C:\Program&nbsp;Files\@Last&nbsp;Software\SketchUp&nbsp;5\Plugins</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>Mac OS:
+    <table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">
+      <tbody>
+        <tr>
+          <td>Sketchup &amp; Pro 6:</td>
+          <td><code>/Library/Application&nbsp;Support/Google&nbsp;SketchUp&nbsp;6/SketchUp/Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp 5:</td>
+          <td><code>/Library/Application&nbsp;Support/Google&nbsp;SketchUp/Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp Pro 5:</td>
+          <td><code>/Users/<i>you</i>/Library/Application&nbsp;Support/SketchUp&nbsp;5/Plugins</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
 <p>(Re)start SketchUp.</p>
 <p>You can now delete the <code>.zip</code> file that you downloaded.
 This help file can be viewed by choosing
@@ -75,60 +94,58 @@ See ...<code>/Custom&nbsp;Scenery/KSBD&nbsp;Demo&nbsp;Area/KSBD_example.png</cod
 aircraft or scenery folder where you want the X-Plane <code>.obj</code>
 file to end up.</p>
 <p>Use the <samp>Paint Bucket</samp> tool to apply your one texture
-file to every surface in your model.
+file to every face in your model.
 Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Texture&nbsp;&raquo;&nbsp;Position</samp>
-to map the correct portion of this texture file to each surface (see
+to map the correct portion of this texture file to each face (see
 <a href="http://download.sketchup.com/GSU/tutorials/Textures_UsingPhotos/Textures_UsingPhotos.html" target="_blank">here</a> for a tutorial).</p>
 <p>To position a texture on a curved surface you first have to enable
 <samp>View&nbsp;&raquo;&nbsp;Hidden&nbsp;Geometry</samp>.
-Then select one facet of the surface at a time and position the texture
-on each facet.</p>
-<p>If you want both sides ("faces") of a surface to be displayed in X-Plane
-then apply the <samp>Paint Bucket</samp> tool twice; once on each face of the
-surface.
+Then select one face of the surface at a time and position the texture
+on each face.</p>
+<p>If you want both sides of a face to be displayed in X-Plane
+then apply the <samp>Paint Bucket</samp> tool twice; once on each side of the
+face.
 You can use the <samp>Window&nbsp;&raquo;&nbsp;Entity&nbsp;Info</samp> panel
-to see which texture(s) are currently assigned to the two faces of the
-currently selected surface.</p>
+to see which texture(s) are currently assigned to the two sides of the
+currently selected face.</p>
 <p>You can use <samp>Tools&nbsp;&raquo;&nbsp;Highlight&nbsp;Untextured</samp>
 to help you with texturing. This doesn't change how your model will appear
 in X-Plane, but it does highlight in SketchUp any problems with your texturing:</p>
 <ol>
-  <li>Untextured surfaces are coloured red. This helps you to identify these
-surfaces.</li>
-  <li>For surfaces that are textured on just one face, the other face is hidden
-(by setting the opacity to 0). This helps you to see if you've textured
-the wrong face of any surfaces. Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Reverse&nbsp;Faces</samp> on the surface if you have.</li>
+  <li>Untextured faces are coloured red. This helps you to identify these
+faces.</li>
+  <li>For faces that are textured on just one side, the other side is hidden
+(by setting the opacity to 0). This helps you see if you've textured
+the wrong side of any faces. Use <samp>Context&nbsp;menu&nbsp;&raquo;&nbsp;Reverse&nbsp;Faces</samp> on the face if you have.</li>
 </ol>
 <h4>Attributes</h4>
-<p>Choose <samp>View&nbsp;&raquo;&nbsp;Toolbars&nbsp;&raquo;&nbsp;X-Plane</samp>
-if the X-Plane toolbar is not visible.
-There are three buttons on the X-Plane toolbar which
-can be pressed when you have a surface selected:</p>
+<p>This plugin adds three entries to the context menu. These can be
+used when you have a face selected:</p>
 <dl>
-  <dt><img style="border: 0px solid ; width: 24px; height: 24px; vertical-align: text-bottom;" alt="Hard" src="hard_large.png"> <samp>Hard</samp></dt>
-  <dd>Controls whether aircraft can land on and/or collide with this surface
-in X-Plane. Making surfaces "hard" is expensive so use this sparingly.
-Vertical "hard" surfaces don't work as you might expect; if you want to
+  <dt><samp>Hard</samp></dt>
+  <dd>Controls whether aircraft can land on and/or collide with this face
+in X-Plane. Making faces "hard" is expensive so use this sparingly.
+Vertical "hard" faces don't work as you might expect; if you want to
 make a building collidable just use this button on the roof,
 not on the sides.<br>
-<small>(Note that only simple rectangular surfaces can be "hard" in v7 objects,
+<small>(Note that only simple rectangular faces can be "hard" in v7 objects,
 and X-Plane versions prior to 8.20 have a bug where <code>.obj</code>
-files that contain hard surfaces must be placed in WorldMaker with an
+files that contain hard faces must be placed in WorldMaker with an
 "object heading" of 0).</small></dd>
   <dt>&nbsp;</dt>
-  <dt><img style="border: 0px solid ; width: 24px; height: 24px; vertical-align: text-bottom;" alt="Ground" src="poly_large.png"> <samp>Ground</samp></dt>
-  <dd>Controls whether the surface is rendered with "polygon offsetting"
+  <dt><samp>Ground</samp></dt>
+  <dd>Controls whether the face is rendered with "polygon offsetting"
 in X-Plane.<br>
-Use this on surfaces that lie flat on the ground to prevent
+Use this on faces that lie flat on the ground to prevent
 Z-buffer thrashing in X-Plane.
-Don't press this button for other surfaces.</dd>
+Don't press this button for other faces.</dd>
   <dt>&nbsp;</dt>
-  <dt><img style="border: 0px solid ; width: 24px; height: 24px; vertical-align: text-bottom;" alt="Alpha" src="alpha_large.png"> <samp>Alpha</samp></dt>
-  <dd>This is a hint to X-Plane that the surface is textured with a
+  <dt><samp>Alpha</samp></dt>
+  <dd>This is a hint to X-Plane that the face is textured with a
 partially or wholly transparent or translucent texture.<br>
-Use this on transparent or translucent surfaces so that in X-Plane
-you will see other surfaces in the model through these surfaces.
-Don't press this button for opaque (normal) surfaces.</dd>
+Use this on transparent or translucent faces so that in X-Plane
+you will see other faces in the model through these faces.
+Don't press this button for opaque (normal) faces.</dd>
 </dl>
 <h3>Exporting to X-Plane</h3>    
 <p>If you have not already done so, choose
@@ -150,15 +167,15 @@ as the current SketchUp file, but with a <code>.obj</code> extension.</p>
 <p>You may see the following warnings:</p>
 <dl>
   <dt>Warning: You used multiple texture files. Using file <i>name</i>.</dt>
-  <dd>You used more than one texture file to texture the surfaces in your model.<br>
-X-Plane requires that you use only one texture file for all of your surfaces.</dd>
+  <dd>You used more than one texture file to texture the faces in your model.<br>
+X-Plane requires that you use only one texture file for all of your faces.</dd>
   <dt>&nbsp;</dt>
-  <dt>Warning: <i>n</i> surfaces are untextured.</dt>
-  <dd>You have not applied a texture to all of the surfaces in your SketchUp
+  <dt>Warning: <i>n</i> faces are untextured.</dt>
+  <dd>You have not applied a texture to all of the faces in your SketchUp
 model.<br>
-X-Plane will colour the untextured surfaces with the bottom left pixel from
+X-Plane will colour the untextured faces with the bottom left pixel from
 your texture file (or grey if you have not applied a texture to any of the
-surfaces).</dd>
+faces).</dd>
 </dl>
 <p>If you see either warning then X-Plane probably won't display your model
 as you intended.</p>
@@ -190,7 +207,7 @@ no obligation.</p>
 <table style="width: 100%;" border="0" cellpadding="2">
   <tbody>
     <tr>
-      <td class="banner">Version 1.10 &copy; 2006
+      <td class="banner">Version 1.20 &copy; 2006
       <a href="mailto:x-plane@marginal.org.uk">Jonathan
 Harris</a> <a rel="license" href="http://creativecommons.org/licenses/by-sa/2.5/"><img style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" alt="Creative Commons License" src="http://creativecommons.org/images/public/somerights20.png"></a></td>
     </tr>

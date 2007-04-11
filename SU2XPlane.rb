@@ -44,10 +44,13 @@
 #  - Added support for "hard" and "poly_os" attributes, and
 #    prioritisation of faces with alpha.
 #
+# 2007-01-18 v1.20
+#  - Moved attributes to context menu - toolbar not updated on Mac
+#
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.10"
+$XPlaneExportVersion="1.20"
 
 $tw = Sketchup.create_texture_writer
 
@@ -227,7 +230,7 @@ end
 def XPlaneExport(xpver)
 
   if Sketchup.active_model.path==""
-    UI.messagebox "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file because\nyou have never saved this SketchUp model.", MB_OK, "X-Plane export"
+    UI.messagebox "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.", MB_OK, "X-Plane export"
     outpath="Untitled.obj"
     return
   else
@@ -378,13 +381,13 @@ def XPlaneExport(xpver)
     msg="Wrote #{allidx.length/3} triangles to #{outpath}.\n"
   end
   if notex
-    msg+="\nWarning: #{notex} surfaces are untextured."
+    msg+="\nWarning: #{notex} faces are untextured."
   end
   if badtex
     msg+="\nWarning: You used multiple texture files. Using file #{tex}."
   end
   if notex and not badtex and not Sketchup.active_model.materials["XPUntextured"]
-    yesno=UI.messagebox msg+"\nDo you want to highlight the untexured surfaces?", MB_YESNO,"X-Plane export"
+    yesno=UI.messagebox msg+"\nDo you want to highlight the untexured faces?", MB_YESNO,"X-Plane export"
     if yesno==6
       XPlaneHighlight()
     end
@@ -420,7 +423,7 @@ def XPlaneHighlight()
     count=XPlaneHighlightFaces(model.entities, untextured, reverse)
     model.commit_operation
     if count==0
-      UI.messagebox "All surfaces are textured", MB_OK,"X-Plane export"
+      UI.messagebox "All faces are textured", MB_OK,"X-Plane export"
     end
   rescue
     model.abort_operation
@@ -485,8 +488,11 @@ def XPlaneValidateAttr(attr)
   val=ss.first.get_attribute($ATTR_DICT, attr, 0)
   # Gray out if multiple selected with different values
   ss.each do |ent|
-    if ent.typename!="Face" #or ent.get_attribute($ATTR_DICT, attr, 0)!=val
+    if ent.typename!="Face"
       return MF_GRAYED
+    end
+    if ent.get_attribute($ATTR_DICT, attr, 0)!=val
+      return MF_CHECKED|MF_GRAYED
     end
   end
   if val!=0
@@ -499,34 +505,21 @@ end
 #-----------------------------------------------------------------------------
 
 # Add some menu items to access this
-if( not file_loaded?("SU2XPlane.rb") )
+if !file_loaded?("SU2XPlane.rb")
   UI.menu("File").add_item("Export X-Plane v7 Object") { XPlaneExport(7) }
   UI.menu("File").add_item("Export X-Plane v8 Object") { XPlaneExport(8) }
   UI.menu("Tools").add_item("Highlight Untextured") { XPlaneHighlight() }
 
-  toolbar=UI::Toolbar.new "X-Plane"
-  hard = UI::Command.new("Hard") { XPlaneToggleAttr($ATTR_HARD_NAME) }
-  hard.set_validation_proc { XPlaneValidateAttr($ATTR_HARD_NAME) }
-  hard.status_bar_text="Make the surfaces(s) collidable in X-Plane"
-  hard.tooltip="Hard"
-  hard.small_icon = "hard_small.png"
-  hard.large_icon = "hard_large.png"
-  toolbar.add_item hard
-  poly = UI::Command.new("Ground") { XPlaneToggleAttr($ATTR_POLY_NAME) }
-  poly.set_validation_proc { XPlaneValidateAttr($ATTR_POLY_NAME) }
-  poly.status_bar_text="Tell X-Plane that the surface(s) lie flat on the ground"
-  poly.tooltip="Ground"
-  poly.small_icon = "poly_small.png"
-  poly.large_icon = "poly_large.png"
-  toolbar.add_item poly
-  alpha = UI::Command.new("Alpha") { XPlaneToggleAttr($ATTR_ALPHA_NAME) }
-  alpha.set_validation_proc { XPlaneValidateAttr($ATTR_ALPHA_NAME) }
-  alpha.status_bar_text="Tell X-Plane that the surface(s) use transparent or translucent textures"
-  alpha.tooltip="Alpha"
-  alpha.small_icon = "alpha_small.png"
-  alpha.large_icon = "alpha_large.png"
-  toolbar.add_item alpha
-  toolbar.show
+  UI.add_context_menu_handler do |menu|
+    #submenu = menu.add_submenu "X-Plane"
+    menu.add_separator
+    hard=menu.add_item("Hard")      { XPlaneToggleAttr  ($ATTR_HARD_NAME) }
+    menu.set_validation_proc(hard)  { XPlaneValidateAttr($ATTR_HARD_NAME) }
+    poly=menu.add_item("Ground")    { XPlaneToggleAttr  ($ATTR_POLY_NAME) }
+    menu.set_validation_proc(poly)  { XPlaneValidateAttr($ATTR_POLY_NAME) }
+    alpha=menu.add_item("Alpha")    { XPlaneToggleAttr  ($ATTR_ALPHA_NAME) }
+    menu.set_validation_proc(alpha) { XPlaneValidateAttr($ATTR_ALPHA_NAME) }
+  end
 
   help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
   if help
