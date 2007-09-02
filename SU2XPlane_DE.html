@@ -1,0 +1,173 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <meta name="description" content="X-Plane plugin for SketchUp">
+  <meta name="keywords" content="X-Plane, simulator, scenery, SketchUp">
+  <title>SketchUp2XPlane</title>
+  <meta name="author" content="Jonathan Harris">
+  <style type="text/css">
+.banner { font-family: Arial,Helvetica,sans-serif; background-color: lightskyblue; text-align: left; height: 32px; }
+.dnl { font-family: Arial,Helvetica,sans-serif; font-size: small; background-color: lightskyblue; }
+samp { font-family: Arial,Helvetica,sans-serif; }
+h2 { font-family: Arial,Helvetica,sans-serif; }
+h3 { font-family: Arial,Helvetica,sans-serif; }
+h4 { font-family: Arial,Helvetica,sans-serif; }
+h5 { font-family: Arial,Helvetica,sans-serif; }
+  </style>
+</head>
+<body>
+<table style="width: 100%;" border="0" cellpadding="2">
+  <tbody>
+    <tr>
+      <td class="banner">Marginal &rarr; <a href="http://marginal.org.uk/x-planescenery/">X-Plane
+Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">Tools</a> &rarr; SketchUp2XPlane</td>
+    </tr>
+  </tbody>
+</table>
+<hr>
+<h2>X-Plane Plugin f&uuml;r SketchUp</h2>
+<h3>&Uuml;bersicht</h3>
+<p><a href="http://www.sketchup.com/">SketchUp</a> ist ein freier (kostenfreier) 3D Objekt Editor f&uuml;r Windows und MacOS.</p>
+<p>Dieses SketchUp Plugin exportiert Modelle im X-Plane v7 or v8 <code>.obj</code> Format.</p>
+<h3>Installation</h3>
+<p>Kopiere die Dateien <code>SU2XPlane.html</code>, <code>SU2XPlane_DE.html</code> und <code>SU2XPlane.rb</code> in deinen SketchUp <code>Plugins</code> Ordner:</p>
+<ul>
+  <li>Windows:
+    <table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">
+      <tbody>
+        <tr>
+          <td>SketchUp &amp; Pro 6:</td>
+          <td><code>C:\Program&nbsp;Files\Google\Google&nbsp;SketchUp 6\Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp 5:</td>
+          <td><code>C:\Program&nbsp;Files\Google\Google&nbsp;SketchUp\Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp Pro 5:</td>
+          <td><code>C:\Program&nbsp;Files\@Last&nbsp;Software\SketchUp&nbsp;5\Plugins</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+  <li>Mac OS:
+    <table style="text-align: left; width: 100%;" border="0" cellpadding="2" cellspacing="2">
+      <tbody>
+        <tr>
+          <td>Sketchup &amp; Pro 6:</td>
+          <td><code>/Library/Application&nbsp;Support/Google&nbsp;SketchUp&nbsp;6/SketchUp/Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp 5:</td>
+          <td><code>/Library/Application&nbsp;Support/Google&nbsp;SketchUp/Plugins</code></td>
+        </tr>
+        <tr>
+          <td>SketchUp Pro 5:</td>
+          <td><code>/Users/<i>you</i>/Library/Application&nbsp;Support/SketchUp&nbsp;5/Plugins</code></td>
+        </tr>
+      </tbody>
+    </table>
+  </li>
+</ul>
+<p>SketchUp staren oder neu starten.</p>
+<p>Du kannst nun die <code>.zip</code> Datei, die du herunter geladen hast, l&ouml;schen. Die Hilfe-Datei, die du mit herunter geladen hast, kannst du unter <samp>Help&nbsp;&rarr;&nbsp;X-Plane</samp> in SketchUp aufrufen.</p>
+
+<h3>X-Plane-Szenerie-Objekte herstellen</h3>
+<p>Bevor du anf&auml;ngst, kannst du Google Earth benutzen, um ein Satellitenfoto von der Gegend zu bekommen, an  an der du arbeiten willst:<ul>
+  <li>In Google Earth auf deine Gegend zoomen.</li>
+  <li>In SketchUp w&auml;hle <samp>Tools&nbsp;&rarr;&nbsp;Google&nbsp;Earth&nbsp;&rarr;&nbsp;Get&nbsp;Current&nbsp;View</samp>.</li>
+</ul></p>
+<p>Stelle dein Modell in SketchUp aus Rechtecken und Kreisen her (jede Art vom B&ouml;gen - Arcs - wird ignoriert). Sichere die SketchUp <code>.skp</code> Datei in dem Aircraft- oder Scenery-Ordner, den du f&uuml;r X-Plane <code>.obj</code> Dateien vorgesehn hast.</p>
+<p>In einem Bildbearbeitungsprogramm musst du eine einzige Textur-Datei wie eine &quot;<a href="http://en.wikipedia.org/wiki/Collage" target="_blank">collage</a>&quot; von allen Texturen herstellen, die du in deinem Modell brauchst. H&ouml;he und Breite deiner Textur Datei m&uuml;ssen eine Zweier-Potenz haben (<i>z.B</i> 128, 256, 512, 1024), aber sie muss kein Quadrat sein. Siehe <code>&#8230;/Custom&nbsp;Scenery/KSBD&nbsp;Demo&nbsp;Area/KSBD_example.png</code> als Basisbeispiel.</p>
+<p>Sichere die Textur-Datei im 24bit oder 32bit PNG Format (<i>d.h</i> mit oder ohne &quot;Alpha&quot;-Kanal) in dem Aircraft- oder Scenery-Ordner, den du f&uuml;r deine X-Plane <code>.obj</code> Datei vorgesehen hast.</p>
+<p>Benutze das  <samp>Paint Bucket</samp> Tool, deine Textur-Datei auf jede Fl&auml;che deines Modells zu &uuml;bertragen. Benutze <samp>Context&nbsp;menu&nbsp;&rarr;&nbsp;Texture&nbsp;&rarr;&nbsp;Position,</samp> um den korrekten Ausschnitt aus deiner Textur-Datei auf jeder Fl&auml;che zu positionieren (Klicke <a href="http://download.sketchup.com/GSU/tutorials/Textures_UsingPhotos/Textures_UsingPhotos.html" target="_blank">hier</a> um ein Tutorial  zu sehen).</p>
+<p>Wenn du Textur auf einer gekr&uuml;mmten Oberfl&auml;che positionieren willst, musst du zuerst <samp>View&nbsp;&rarr;&nbsp;Hidden&nbsp;Geometry</samp> ausw&auml;hlen. Dann selektiere eine einzelne Fl&auml;che auf dieser Oberfl&auml;che und positioniere nacheinander Textur auf jede Einzelfl&auml;che.</p>
+<p>Wenn du m&ouml;chtest, dass beide Seiten einer Fl&auml;che in X-Plane dargestellt werden, dann benutze das  <samp>Paint Bucket</samp> Tool zweimal; je einmal  f&uuml;r jede Seite der Fl&auml;che. Du kannst <samp>Window&nbsp;&rarr;&nbsp;Entity&nbsp;Info</samp> benutzen, um zu sehen, welche Textur(en) gerade den zwei Seiten der ausgew&auml;hlten Fl&auml;che zugewiesen sind.</p>
+<p>Benutze <samp>Tools&nbsp;&rarr;&nbsp;Highlight&nbsp;Untextured</samp> als Hilfe beim Texturieren. Das &auml;ndert nichts daran, wie dein Modell in X-Plane erscheinen wird, aber es macht irgendwelche Probleme beim Texturieren deutlich:</p>
+		<ol>
+  <li>Fl&auml;chen ohne Textur sind rot gef&auml;rbt. Das hilft dir, diese Fl&auml;chen zu erkennen.</li>
+  <li>Bei Fl&auml;chen, die nur auf einer Seite texturiert sind, ist die andere Seite unsichtbar (Durchsichtigkeit auf 0 gesetzt). Das hilft dir, wenn du die falsche Seite einer Fl&auml;che texturiert hast. Benutze <samp>Context&nbsp;menu&nbsp;&rarr;&nbsp;Reverse&nbsp;Faces</samp> auf der Fl&auml;che, wenn das geschehen ist</li>
+</ol>
+		<h4>Attribute</h4>
+		<p>Dieses Plugin erweitert das Context-Men&uuml; um drei Eintr&auml;ge. Diese k&ouml;nnen benutzt werden, wenn du eine Fl&auml;che aktiviert hast:</p>
+		<dl>
+  <dt><samp>Hard</samp></dt>
+  <dd>Bestimmt, ob ein Flugzeug landet auf/oder zerschellt an dieser Fl&auml;che in X-Plane. Fl&auml;chen &quot;hard&quot; zu machen ist &quot;teuer&quot; (framerate), also benutze es sparsam. Vertikale &quot;hard&quot; Fl&auml;chen wirken sich nicht so aus, wie du es erwarten w&uuml;rdest; wenn du ein Geb&auml;ude f&uuml;r Kollisionen geeignet machen willst, benutze &quot;hard&quot; f&uuml;r das Dach, nicht f&uuml;r die Seitenfl&auml;chen.<br>
+				<small>(Bedenke, dass nur Fl&auml;chen, die in Sketchup einfache Vierecke sind, in V7 Objekten &quot;hard&quot; sein k&ouml;nnen.<br>
+					X-Plane Versionen vor 8.20 haben einen Fehler: <code>.obj</code> Dateien mit &quot;harten&quot; Fl&auml;chen m&uuml;ssen in WorldMaker  &quot;object heading&quot;  0 haben. Wenn du solche Objekte drehen willst, mach das in SketchUp und nicht in WorldMaker).</small></dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>Ground</samp></dt>
+  <dd>Bestimmt, ob eine Fl&auml;che mit &quot;polygon offsetting&quot; in X-Plane gerendert wird.<br>Benutze dies f&uuml;r Fl&auml;chen, die flach auf dem Grund liegen, um Z-buffer thrashing in X-Plane zu verhindern. Benutze diesen Befehl nicht f&uuml;r andere Fl&auml;chen..</br>
+<small>(Ber&uuml;cksichtige, dass diese Einstellung nicht den gew&uuml;nschten Effekt in einigen X-Plane Versionen vor 8.20 bringt).</small></dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>Alpha</samp></dt>
+  <dd>Dies ist ein Hinweis f&uuml;r X-Plane, dass diese Fl&auml;che mit einer teilweisen oder ganz transparenten oder durchscheinenden Textur versehen ist.<br>Benutze dies auf transparenten oder durchscheinenden Fl&auml;chen, durch die du auf andere Fl&auml;chen im selben Modell sehen willst. Dr&uuml;cke diesen Knopf nicht f&uuml;r opaque (normale) Fl&auml;chen.</dd>
+</dl>
+
+<h3>Export nach X-Plane</h3>
+<p>Wenn du es nicht schon getan hast, w&auml;hle <samp>File &rarr; Save As&#8230;</samp> und sichere die <code>.skp</code> Datei in dem Aircraft- oder Scenery-Ordner, den du f&uuml;r deine X-Plane <code>.obj</code> Datei vorgesehen hast</p>
+<p>Wenn du ein Terrain-Foto von Google Earth geladen hattest, musst du es vor dem Export ausblenden:<ul>
+  <li>W&auml;hle <samp>Window&nbsp;&rarr;&nbsp;Layers</samp>.</li>
+  <li>Im <samp>Layers</samp> Panel vergewissere dich, dass &quot;Google Earth Terrain&quot; und &quot;Google Earth Snapshot&quot; beide abgew&auml;hlt sind.</li>
+  <li>Wenn du das Terrain-Foto vor Beginn des Modellierens geladen hast, dann kannst du die Koordinaten, wo dein Modell in X-Plane platziert werden soll, in <samp>Window&nbsp;&rarr;&nbsp;Model&nbsp;Info</samp> Panel ablesen; w&auml;hle <samp>Location</samp> und dr&uuml;cke den <samp>Custom&nbsp;location&#8230;</samp> Knopf.</li>
+</ul></p>
+<p>Dann w&auml;hle entweder:</p>
+<dl>
+  <dt><samp>File &rarr; Export X-Plane v7 Object</samp></dt>
+  <dd>v7 Objekte k&ouml;nnen benutzt werden in X-Plane v7 oder v8.<br>Gekr&uuml;mmte Oberfl&auml;chen werden &quot;stufig&quot; in X-Plane erscheinen.</dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>File &rarr; Export X-Plane v8 Object</samp></dt>
+  <dd>v8 Objekte k&ouml;nnen nur in X-Plane v8.16 und sp&auml;ter benutzt werden.<br>X-Plane wird gekr&uuml;mmte Oberfl&auml;chen korrekt darstellen.</dd>
+</dl>
+<p>Das Objekt wird im selben Ordner und mit demselben Namen wie die SketchUp Datei erzeugt, aber mit einer <code>.obj</code> Erweiterung.</p>
+<p>Du k&ouml;ntest folgende Warnhinweise sehen:</p>
+<dl>
+  <dt>Warning: You used multiple texture files. Using file <i>name</i>.</dt>
+  <dd>Du hast mehr als eine Textur-Datei benutzt, um die Fl&auml;chen in seinem Modell zu texturieren.<br>X-Plane fordert, nur eine einzige Textur-Datei f&uuml;r alle deine Fl&auml;chen zu benutzen.</dd>
+  <dt>&nbsp;</dt>
+  <dt>Warning: <i>n</i> faces are untextured.</dt>
+  <dd>Du hast in deinem SketchUp Modell nicht auf alle Fl&auml;chen Textur aufgetragen.<br>
+				X-Plane wird untexturierte Fl&auml;chen mit dem unteren linken Pixel deiner Textur-Datei f&auml;rben (oder grau, wenn du keine Textur auf irgendeiner deiner Fl&auml;chen platziert hast).</dd>
+</dl>
+<p>Wenn du eine der Warnungen siehst, wird X-Plane wahrscheinlich dein Modell nicht so darstellen, wie du es erwartet hast.</p>
+
+<h3>Einschr&auml;nkungen</h3>
+<p>Konstruiere dein Sketchup Modell nur aus Rechtecken, Kreisen, Komponenten und Gruppierungen - alle anderen Sketchup Typen (einschlie&szlig;lich B&ouml;gen) werden nicht exportiert.</p>
+<p>Dieses Plugin eignet sich nicht dazu, fortschrittliche X-Plane scenery primitives herzustellen. Das schlie&szlig;t ein:</p>
+<ul>
+  <li>Animationen</li>
+  <li>Attribute: <i>z,B.</i> Cockpit, Materialien etc</li>
+  <li>Level Of Detail</li>
+  <li>Lichter</li>
+  <li>Linien</li>
+  <li>Rauch</li>
+</ul>
+    
+<h3>Licenz</h3>
+<p>Diese Tools sind lizensiert unter Creative Commons <a rel="license" href="http://creativecommons.org/licenses/by-sa/2.5/">Attribution-ShareAlike</a> Lizenz.</p>
+<p>Der Gebrauch dieser Tool verpflichet dich nicht, deine Arbeit unter Creative Commons zu lizensieren. Um Zweifel auszur&auml;umen: Das bedeutet, dass du jede Szenerie oder jedes Flugger&auml;t, die du unter Benutzung dieser Tools zu kommerziellen Zwecken herstellst, lizensieren kannst.</p>
+<p>Der Autor w&uuml;rde die Freundlichkeit zu sch&auml;tzen wissen, wenn du ihm eine Kopie jeder kommerziellen Szenerie oder jedes kommerziellen Flugger&auml;t, die mit diesen Tool hergestellt sind, zusenden w&uuml;rdest - das ist  aber nicht Bedinngung.</p>
+<hr>
+<table style="width: 100%;" border="0" cellpadding="2">
+  <tbody>
+    <tr>
+      <td class="banner">Version 1.31 &copy; 2006,2007
+      <a href="mailto:x-plane@marginal.org.uk">Jonathan Harris</a>
+<a rel="license" href="http://creativecommons.org/licenses/by-sa/2.5/"><img style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" alt="Creative Commons License" src="http://creativecommons.org/images/public/somerights20.png"></a></td>
+    </tr>
+    <tr>
+      <td>Deutsche übersetzung &copy; 2007 Dieter Rosenkranz</td>
+    </tr>
+  </tbody>
+</table>
+<!--/Creative Commons License-->
+<!-- <rdf:RDF xmlns="http://web.resource.org/cc/" xmlns:dc="http://purl.org/dc/elements/1.1/" xmlns:rdf="http://www.w3.org/1999/02/22-rdf-syntax-ns#">
+<Work rdf:about="">
+<license rdf:resource="http://creativecommons.org/licenses/by-sa/2.5/" />
+<dc:type rdf:resource="http://purl.org/dc/dcmitype/InteractiveResource" />
+</Work>
+<License rdf:about="http://creativecommons.org/licenses/by-sa/2.5/"><permits rdf:resource="http://web.resource.org/cc/Reproduction"/><permits rdf:resource="http://web.resource.org/cc/Distribution"/><requires rdf:resource="http://web.resource.org/cc/Notice"/><requires rdf:resource="http://web.resource.org/cc/Attribution"/><permits rdf:resource="http://web.resource.org/cc/DerivativeWorks"/><requires rdf:resource="http://web.resource.org/cc/ShareAlike"/></License></rdf:RDF>
+-->
+</body>
+</html>

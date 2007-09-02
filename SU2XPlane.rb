@@ -51,10 +51,13 @@
 #  - Fix for exporting v7 objects.
 #  - Don't export hidden entities, or entities on hidden layers.
 #
+# 2007-09-02 v1.31
+#  - Add German language help.
+#
 
 require 'sketchup.rb'
 
-$XPlaneExportVersion="1.30"
+$XPlaneExportVersion="1.31"
 
 $tw = Sketchup.create_texture_writer
 
@@ -537,7 +540,11 @@ if !file_loaded?("SU2XPlane.rb")
     menu.set_validation_proc(alpha) { XPlaneValidateAttr($ATTR_ALPHA_NAME) }
   end
 
-  help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
+  help=Sketchup.find_support_file("SU2XPlane_"+Sketchup.get_locale+".html", "Plugins")
+  if not help
+    help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
+  end
+  print help
   if help
     UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help) }
   end
