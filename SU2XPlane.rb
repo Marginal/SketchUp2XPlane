@@ -69,8 +69,11 @@ $ATTR_POLY=2
 $ATTR_POLY_NAME="hard"	# ditto
 $ATTR_ALPHA=4
 $ATTR_ALPHA_NAME="alpha"
-$ATTR_SEQ=[$ATTR_POLY,$ATTR_POLY|$ATTR_HARD,$ATTR_POLY|$ATTR_ALPHA,$ATTR_POLY|$ATTR_HARD|$ATTR_ALPHA,
-  0,$ATTR_HARD,$ATTR_ALPHA,$ATTR_ALPHA+$ATTR_HARD]
+$ATTR_SEQ=[
+  $ATTR_POLY, $ATTR_POLY|$ATTR_HARD,
+  $ATTR_POLY|$ATTR_ALPHA, $ATTR_POLY|$ATTR_ALPHA|$ATTR_HARD,
+  0, $ATTR_HARD,
+  $ATTR_ALPHA, $ATTR_ALPHA|$ATTR_HARD]
 
 
 # Accumulate vertices and indices into vt and idx
@@ -223,10 +226,11 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 
 	end
 
-      end
-    end
+      end	# [true,false].each do |front|
 
-  end
+    end		# case ent.typename
+
+  end		# entities.each do |ent|
 
   # Add new vertices and fix up and add new indices
   base=vt.length
@@ -544,7 +548,6 @@ if !file_loaded?("SU2XPlane.rb")
   if not help
     help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
   end
-  print help
   if help
     UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help) }
   end
