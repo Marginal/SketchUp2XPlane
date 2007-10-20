@@ -1,63 +1,20 @@
 #
-# X-Plane exporter for SketchUp
+# X-Plane importer/exporter for SketchUp
 #
 # Copyright (c) 2006,2007 Jonathan Harris
 # 
 # Mail: <x-plane@marginal.org.uk>
 # Web:  http://marginal.org.uk/x-planescenery/
 #
-# This software is licensed under a Creative Commons License
-#   Attribution-ShareAlike 2.5:
-#
-#   You are free:
-#     * to copy, distribute, display, and perform the work
-#     * to make derivative works
-#     * to make commercial use of the work
-#   Under the following conditions:
-#     * Attribution: You must give the original author credit.
-#     * Share Alike: If you alter, transform, or build upon this work, you
-#       may distribute the resulting work only under a license identical to
-#       this one.
-#   For any reuse or distribution, you must make clear to others the license
-#   terms of this work.
-#
-# This is a human-readable summary of the Legal Code (the full license):
-#   http://creativecommons.org/licenses/by-sa/2.5/legalcode
-#
-#
-# 2006-11-27 v1.00
-#  - First public version.
-#
-# 2006-11-30 v1.03
-#  - Add Tools->Highlight Untextured.
-#
-# 2006-11-30 v1.04
-#  - Remove duplicate vertices in OBJv8.
-#
-# 2006-11-30 v1.05
-#  - Create quads in OBJv7.
-#
-# 2006-11-03 v1.07
-#  - Fix for weirdly scaled UVs (typically made with "Fixed Pins" unchecked).
-#
-# 2007-01-10 v1.10
-#  - Added support for "hard" and "poly_os" attributes, and
-#    prioritisation of faces with alpha.
-#
-# 2007-01-18 v1.20
-#  - Moved attributes to context menu - toolbar not updated on Mac.
-#
-# 2007-04-11 v1.30
-#  - Fix for exporting v7 objects.
-#  - Don't export hidden entities, or entities on hidden layers.
-#
-# 2007-09-02 v1.31
-#  - Add German language help.
+# This software is licensed under a Creative Commons
+#   Attribution-Noncommercial-ShareAlike license:
+#   http://creativecommons.org/licenses/by-nc-sa/3.0/
 #
 
 require 'sketchup.rb'
+require 'extensions.rb'
 
-$XPlaneExportVersion="1.31"
+$XPlaneExportVersion="1.40"
 
 $tw = Sketchup.create_texture_writer
 
@@ -75,6 +32,12 @@ $ATTR_SEQ=[
   0, $ATTR_HARD,
   $ATTR_ALPHA, $ATTR_ALPHA|$ATTR_HARD]
 
+# SketchUp units are inches!
+$i2m=0.0254
+$m2i=1/$i2m
+$pibytwo=Math::PI/2
+$smoothlo=Math::PI/180	# 1 degree
+$smoothhi=Math::PI-$smoothlo
 
 # Accumulate vertices and indices into vt and idx
 def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
@@ -85,9 +48,7 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 
   entities.each do |ent|
 
-    if ent.hidden? or not ent.layer.visible?
-      next
-    end
+    next if ent.hidden? or not ent.layer.visible?
 
     case ent.typename
 
@@ -109,12 +70,8 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 
       uvHelp = ent.get_UVHelper(true, true, $tw)
       attrs=0
-      if ent.get_attribute($ATTR_DICT, $ATTR_POLY_NAME, 0)!=0
-	attrs|=$ATTR_POLY
-      end
-      if ent.get_attribute($ATTR_DICT, $ATTR_ALPHA_NAME, 0)!=0
-	attrs|=$ATTR_ALPHA
-      end
+      attrs|=$ATTR_POLY if ent.get_attribute($ATTR_DICT, $ATTR_POLY_NAME, 0)!=0
+      attrs|=$ATTR_ALPHA if ent.get_attribute($ATTR_DICT, $ATTR_ALPHA_NAME, 0)!=0
 
       # Create transformation w/out translation for normals
       narray=trans.to_a
@@ -176,9 +133,7 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 	    next
 	  end
 
-	  if ent.get_attribute($ATTR_DICT, $ATTR_HARD_NAME, 0)!=0
-	    attrs|=$ATTR_HARD
-	  end
+	  attrs|=$ATTR_HARD if ent.get_attribute($ATTR_DICT, $ATTR_HARD_NAME, 0)!=0
 	  thisvt=[]	# Vertices in this face
 	  for i in (1..mesh.count_points)
 	    v=trans * mesh.point_at(i)
@@ -188,9 +143,7 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 	      u=[0,0,1]
 	    end
 	    n=(ntrans * mesh.normal_at(i)).normalize
-	    if not front
-	      n=n.reverse
-	    end
+	    n=n.reverse if not front
 	    thisvt << (([tex] + v.to_a + n.to_a) << u.x/u.z-minu << u.y/u.z-minv)
 	  end
 	    
@@ -263,7 +216,7 @@ def XPlaneExport(xpver)
   vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
   idx=Array.new($ATTR_SEQ.length) {[]} # v8: flat arrays of indices. v7: arrays of 3 or 4 length arrays
   notex=[0,0]	# num not textured, num surfaces
-  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), xpver, vt, idx, notex)	# coords always returned in inches!
+  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new($i2m), xpver, vt, idx, notex)	# coords always returned in inches!
   if idx.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
@@ -296,9 +249,7 @@ def XPlaneExport(xpver)
       end
     end
   end
-  if tex
-    tex=tex.split(/[\/\\:]+/)[-1]	# basename
-  end
+  tex=tex.split(/[\/\\:]+/)[-1] if tex	# basename
 
   if notex[0]==0
     notex=false
@@ -377,9 +328,7 @@ def XPlaneExport(xpver)
     current_attrs=0
     current_base=0
     $ATTR_SEQ.each do |attrs|
-      if idx[attrs].empty?
-	next
-      end
+      next if idx[attrs].empty?
       if current_attrs&$ATTR_POLY==0 and attrs&$ATTR_POLY!=0
 	outfile.write("ATTR_poly_os\t2\n")
       elsif current_attrs&$ATTR_POLY!=0 and attrs&$ATTR_POLY==0
@@ -403,17 +352,11 @@ def XPlaneExport(xpver)
   elsif xpver==8
     msg="Wrote #{allidx.length/3} triangles to #{outpath}.\n"
   end
-  if notex
-    msg+="\nWarning: #{notex} faces are untextured."
-  end
-  if badtex
-    msg+="\nWarning: You used multiple texture files. Using file #{tex}."
-  end
+  msg+="\nWarning: #{notex} faces are untextured." if notex
+  msg+="\nWarning: You used multiple texture files. Using file #{tex}." if badtex
   if notex and not badtex and not Sketchup.active_model.materials["XPUntextured"]
     yesno=UI.messagebox msg+"\nDo you want to highlight the untexured faces?", MB_YESNO,"X-Plane export"
-    if yesno==6
-      XPlaneHighlight()
-    end
+    XPlaneHighlight() if yesno==6
   else
     UI.messagebox msg, MB_OK,"X-Plane export"
   end
@@ -445,9 +388,7 @@ def XPlaneHighlight()
 
     count=XPlaneHighlightFaces(model.entities, untextured, reverse)
     model.commit_operation
-    if count==0
-      UI.messagebox "All faces are textured", MB_OK,"X-Plane export"
-    end
+    UI.messagebox "All faces are textured", MB_OK,"X-Plane export" if count==0
   rescue
     model.abort_operation
   end
@@ -474,12 +415,8 @@ def XPlaneHighlightFaces(entities, untextured, reverse)
 	ent.back_material=reverse
 	count+=1
       else
-	if not (ent.material and ent.material.texture and ent.material.texture.filename)
-	  ent.material=reverse
-	end
-	if not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
-	  ent.back_material=reverse
-	end
+	ent.material=reverse if not (ent.material and ent.material.texture and ent.material.texture.filename)
+	ent.back_material=reverse if not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
       end
 
     end
@@ -496,27 +433,19 @@ def XPlaneToggleAttr(attr)
   if ss.count>=1
     newval=1-ss.first.get_attribute($ATTR_DICT, attr, 0)
     ss.each do |ent|
-      if ent.typename=="Face"
-	ent.set_attribute($ATTR_DICT, attr, newval)
-      end
+      ent.set_attribute($ATTR_DICT, attr, newval) if ent.typename=="Face"
     end
   end
 end
 
 def XPlaneValidateAttr(attr)
   ss = Sketchup.active_model.selection
-  if ss.count==0 or ss.first.typename!="Face"
-    return MF_GRAYED
-  end
+  return MF_GRAYED if ss.count==0 or ss.first.typename!="Face"
   val=ss.first.get_attribute($ATTR_DICT, attr, 0)
   # Gray out if multiple selected with different values
   ss.each do |ent|
-    if ent.typename!="Face"
-      return MF_GRAYED
-    end
-    if ent.get_attribute($ATTR_DICT, attr, 0)!=val
-      return MF_CHECKED|MF_GRAYED
-    end
+    return MF_GRAYED if ent.typename!="Face"
+    return MF_GRAYED|MF_CHECKED if ent.get_attribute($ATTR_DICT, attr, 0)!=val
   end
   if val!=0
     return MF_CHECKED
@@ -527,8 +456,224 @@ end
 
 #-----------------------------------------------------------------------------
 
+def XPlaneImport(xpver)
+  name=UI.openpanel 'Import X-Plane v8 Object', '', '*.obj'
+  return if not name
+  begin
+    file=File.new(name, 'r')
+    line=file.readline.split(/\/\/|#/)[0].strip()
+    if line.include? ?\r
+      # Old Mac \r line endings
+      linesep="\r"
+      file.rewind
+      line=file.readline(linesep).split(/\/\/|#/)[0].strip()
+    else
+      linesep="\n"
+    end
+    raise 'This is not a valid X-Plane file' if not ['A','I'].include?(line)
+    line=file.readline(linesep).split(/\/\/|#/)[0].strip()
+    if line.split()[0]=='2'
+      raise "Can't read X-Plane version 6 files"
+    elsif line!='800'
+      raise "Can't read X-Plane version #{line.to_i/100} files"
+    elsif not file.readline(linesep).split(/\/\/|#/)[0].strip()=='OBJ'
+      raise 'This is not a valid X-Plane file'
+    end
+
+    model=Sketchup.active_model
+    model.start_operation('Import X-Plane v8 Object')
+    begin
+      entities=model.active_entities	# Open component, else top level
+      material=nil
+      reverse=model.materials["XPReverse"]
+      if (not reverse) or (reverse.texture and reverse.texture.filename)
+	reverse=model.materials.add("XPReverse")
+	reverse.color="Magenta"
+      end
+      reverse.alpha=0
+      reverse.texture=nil
+      tw = Sketchup.create_texture_writer
+      cull=true
+      hard=false
+      poly=false
+      vt=[]
+      nm=[]
+      uv=[]
+      idx=[]
+      msg=''
+      llerr=false
+      skiperr=false
+
+      while true
+	line=file.gets(linesep)
+	break if not line
+	line=line.split(/\/\/|#/)[0].strip()
+	next if line.empty?
+	c=line.split()
+	cmd=c.shift
+	case cmd
+	when 'TEXTURE'
+	  texture=line[7..-1].strip()
+	  if not texture.empty?
+	    texture=texture.tr(':\\','/')
+	    texdir=name.split(/\/|\\/)[0...-1]
+	    material=model.materials.add texture.split(/\/|\\/)[-1].split('.')[0]
+	    material.texture=texdir.join('/')+'/'+texture
+	    if not material.texture
+	      i=texdir.collect{|s| s.downcase}.index('custom objects')
+	      material.texture=texdir[0...i].join('/')+'/custom object textures/'+texture if i
+	      if not material.texture
+		material=nil
+		msg+="Can't read texture file #{texture}.\n"
+	      end
+	    end
+	  end
+	  material.texture.size=10*$m2i if material	# arbitrary
+	when 'VT'
+	  vt << Geom::Point3d.new(c[0].to_f*$m2i, -c[2].to_f*$m2i, c[1].to_f*$m2i)
+	  nm << Geom::Vector3d.new(c[3].to_f, -c[5].to_f, c[4].to_f)
+	  uv << Geom::Point3d.new(c[6].to_f, c[7].to_f, 1.0)
+	when 'IDX'
+	  idx << c[0].to_i
+	when 'IDX10'
+	  idx.concat(c.collect {|s| s.to_i})
+	when 'TRIS'
+	  start=c[0].to_i
+	  count=c[1].to_i
+	  i=start
+	  while i<start+count
+	    thisvt=[vt[idx[i+2]],vt[idx[i+1]],vt[idx[i]]]
+	    begin
+	      face=entities.add_face thisvt
+	    rescue
+	      skiperr=true if not (thisvt[0]==thisvt[1] or thisvt[0]==thisvt[2] or thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
+	      i+=3	# next tri
+	      next
+	    end
+	    thisnm=[nm[idx[i+2]],nm[idx[i+1]],nm[idx[i]]]
+	    smooth=(thisnm[0]!=thisnm[1] or thisnm[0]!=thisnm[2] or thisnm[1]!=thisnm[2])
+	    if material and uv[idx[i+2]]!=[0.0,0.0,1.0] or uv[idx[i+1]]!=[0.0,0.0,1.0] or uv[idx[i]]!=[0.0,0.0,1.0]
+	      # SketchUp doesn't like colocated UVs
+	      thisuv=[uv[idx[i+2]]]
+	      thisuv << ((uv[idx[i+1]]!=uv[idx[i+2]]) ? uv[idx[i+1]] : uv[idx[i+1]]+Geom::Vector3d.new(1.0/2048,0,0))
+	      thisuv << ((uv[idx[i  ]]!=uv[idx[i+2]]) ? uv[idx[i  ]] : uv[idx[i  ]]+Geom::Vector3d.new(0,1.0/2048,0))
+	      pts=[thisvt[0],thisuv[0],thisvt[1],thisuv[1],thisvt[2],thisuv[2]]
+	      begin
+		if face.material
+		  # Face is back-to-back with existing face
+		  face.position_material material, pts, false
+		else
+		  face.reverse! if face.normal.angle_between(thisnm[0]) > $pibytwo
+		  face.position_material material, pts, true
+		  if cull
+		    face.back_material=reverse
+		  else
+		    face.position_material material, pts, false
+		  end
+		end
+	      rescue
+		# SketchUp can't always compute texture layout
+	      end
+	    end
+	    face.set_attribute($ATTR_DICT, $ATTR_HARD_NAME, 1) if hard
+	    face.set_attribute($ATTR_DICT, $ATTR_POLY_NAME, 1) if poly
+
+	    # remove coplanar edges
+	    edges=face.edges	# face may get deleted
+	    edges.each do |edge|
+	      next if edge.deleted?
+	      case edge.faces.length
+	      when 1
+		edge.smooth=smooth
+	      when 2
+		if edge.faces[0].normal.angle_between(edge.faces[1].normal)==0
+		  if not material
+		    edge.erase!
+		    next
+		  end
+		  faces0=edge.faces[0]
+		  faces1=edge.faces[1]
+		  uv0=faces0.get_UVHelper(true, true, tw)
+		  uv1=faces1.get_UVHelper(true, true, tw)
+		  if uv0.get_front_UVQ(edge.start.position)==uv1.get_front_UVQ(edge.start.position) and uv0.get_front_UVQ(edge.end.position)==uv1.get_front_UVQ(edge.end.position) and faces0.back_material==faces1.back_material and (faces0.back_material==reverse or (uv0.get_back_UVQ(edge.start.position)==uv1.get_back_UVQ(edge.start.position) and uv0.get_back_UVQ(edge.end.position)==uv1.get_back_UVQ(edge.end.position)))
+		    # Check that texture isn't mirrored about this edge
+		    for v0 in faces0.vertices
+		      if v0!=edge.start and v0!=edge.end
+			v0=v0.position
+			break
+		      end
+		    end
+		    for v1 in faces1.vertices
+		      if v1!=edge.start and v1!=edge.end
+			v1=v1.position
+			break
+		      end
+		    end
+		    u0=uv0.get_front_UVQ(edge.start.position)
+		    u1=uv0.get_front_UVQ(edge.end.position)
+		    u2=Geom::Point3d.new((u0.x+u1.x)*0.5, (u0.y+u1.y)*0.5, (u0.z+u1.z)*0.5)	# mid point on this edge
+		    edge.erase! if (u2-uv0.get_front_UVQ(v0)).angle_between(u2-uv1.get_front_UVQ(v1)) > $pibytwo
+		  end
+		else
+		  edge.smooth=edge.smooth? and smooth
+		end
+	      else
+		edge.smooth=false
+	      end
+	    end
+	    i+=3	# next tri
+	  end
+	when 'ATTR_LOD'
+	  if c[0].to_f>0.0
+	    msg+="Ignoring lower level(s) of detail.\n"
+	    break
+	  end
+	when 'ATTR_cull'
+	  cull=true
+	when 'ATTR_nocull', 'ATTR_no_cull'
+	  cull=false
+	when 'ATTR_hard'
+	  hard=true
+	when 'ATTR_no_hard'
+	  hard=false
+	when 'ATTR_poly_os'
+	  poly=c[0].to_f > 0.0
+	when 'POINT_COUNTS', 'TEXTURE_LIT', 'ATTR_no_blend', 'ANIM_begin', 'ANIM_end', 'ATTR_shade_flat', 'ATTR_shade_smooth'
+	  # suppress error message
+	when 'VLINE', 'LINES', 'VLIGHT', 'LIGHTS', 'LIGHT_NAMED', 'LIGHT_CUSTOM'
+	  msg+="Ignoring lights and/or lines.\n" if not llerr
+	  llerr=true
+	else
+	  msg+="Ignoring command #{cmd}.\n"
+	end
+      end
+      model.commit_operation
+      msg="Ignoring some geometry that couldn't be imported.\n"+msg if skiperr
+      UI.messagebox(msg, MB_OK, 'X-Plane import') if not msg.empty?
+
+    rescue
+      model.abort_operation
+      UI.messagebox "Can't import #{name.split(/\/|\\/)[-1]}:\nInternal error.", MB_OK, 'X-Plane import'
+    end
+      
+  rescue
+    UI.messagebox "Can't read #{name.split(/\/|\\/)[-1]}:\n#{$!}.", MB_OK, 'X-Plane import'
+  ensure
+    file.close unless file.nil?
+  end
+end
+
+#-----------------------------------------------------------------------------
+
 # Add some menu items to access this
-if !file_loaded?("SU2XPlane.rb")
+
+extension=SketchupExtension.new 'SU2XPlane X-Plane Tools', 'SU2XPlane.rb'
+extension.description='Adds File->Import and File->Export X-Plane Object, Tools->Highlight Untextured, and items to the context menu to control X-Plane attributes.'
+extension.version=$XPlaneExportVersion
+extension.creator='Jonathan Harris'
+extension.copyright='2007'
+if Sketchup.register_extension extension, true
+  UI.menu("File").add_item("Import X-Plane v8 Object") { XPlaneImport(8) }
   UI.menu("File").add_item("Export X-Plane v7 Object") { XPlaneExport(7) }
   UI.menu("File").add_item("Export X-Plane v8 Object") { XPlaneExport(8) }
   UI.menu("Tools").add_item("Highlight Untextured") { XPlaneHighlight() }
