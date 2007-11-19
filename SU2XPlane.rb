@@ -14,7 +14,7 @@
 require 'sketchup.rb'
 require 'extensions.rb'
 
-$XPlaneExportVersion="1.40"
+$XPlaneExportVersion="1.41"
 
 $tw = Sketchup.create_texture_writer
 
@@ -31,13 +31,6 @@ $ATTR_SEQ=[
   $ATTR_POLY|$ATTR_ALPHA, $ATTR_POLY|$ATTR_ALPHA|$ATTR_HARD,
   0, $ATTR_HARD,
   $ATTR_ALPHA, $ATTR_ALPHA|$ATTR_HARD]
-
-# SketchUp units are inches!
-$i2m=0.0254
-$m2i=1/$i2m
-$pibytwo=Math::PI/2
-$smoothlo=Math::PI/180	# 1 degree
-$smoothhi=Math::PI-$smoothlo
 
 # Accumulate vertices and indices into vt and idx
 def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
@@ -144,7 +137,8 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 	    end
 	    n=(ntrans * mesh.normal_at(i)).normalize
 	    n=n.reverse if not front
-	    thisvt << (([tex] + v.to_a + n.to_a) << u.x/u.z-minu << u.y/u.z-minv)
+	    # round to export precision to increase chance of detecting dupes
+	    thisvt << (([tex] + v.to_a.collect{|j| (j*10000).round/10000.0} + n.to_a.collect{|j| (j*1000).round/1000.0}) << ((u.x/u.z-minu)*10000).round/10000.0 << ((u.y/u.z-minv)*10000).round/10000.0)
 	  end
 	    
 	  for i in (1..mesh.count_polygons)
@@ -216,7 +210,7 @@ def XPlaneExport(xpver)
   vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
   idx=Array.new($ATTR_SEQ.length) {[]} # v8: flat arrays of indices. v7: arrays of 3 or 4 length arrays
   notex=[0,0]	# num not textured, num surfaces
-  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new($i2m), xpver, vt, idx, notex)	# coords always returned in inches!
+  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), xpver, vt, idx, notex)	# coords always returned in inches!
   if idx.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
@@ -457,6 +451,11 @@ end
 #-----------------------------------------------------------------------------
 
 def XPlaneImport(xpver)
+  m2i=1/0.0254	# SketchUp units are inches!
+  pibytwo=Math::PI/2
+  smoothangle=35*Math::PI/180
+  planarangle=0.00002	# normals at angles less than this considered coplanar
+
   name=UI.openpanel 'Import X-Plane v8 Object', '', '*.obj'
   return if not name
   begin
@@ -523,14 +522,16 @@ def XPlaneImport(xpver)
 	      i=texdir.collect{|s| s.downcase}.index('custom objects')
 	      material.texture=texdir[0...i].join('/')+'/custom object textures/'+texture if i
 	      if not material.texture
-		material=nil
-		msg+="Can't read texture file #{texture}.\n"
+		# lack of material crashes SketchUp somewhere
+		model.abort_operation
+		UI.messagebox "Can't read texture file #{texture}", MB_OK, 'X-Plane import'
+		return
 	      end
 	    end
 	  end
-	  material.texture.size=10*$m2i if material	# arbitrary
+	  material.texture.size=10*m2i if material	# arbitrary
 	when 'VT'
-	  vt << Geom::Point3d.new(c[0].to_f*$m2i, -c[2].to_f*$m2i, c[1].to_f*$m2i)
+	  vt << Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i)
 	  nm << Geom::Vector3d.new(c[3].to_f, -c[5].to_f, c[4].to_f)
 	  uv << Geom::Point3d.new(c[6].to_f, c[7].to_f, 1.0)
 	when 'IDX'
@@ -563,7 +564,7 @@ def XPlaneImport(xpver)
 		  # Face is back-to-back with existing face
 		  face.position_material material, pts, false
 		else
-		  face.reverse! if face.normal.angle_between(thisnm[0]) > $pibytwo
+		  face.reverse! if face.normal.angle_between(thisnm[0]) > pibytwo
 		  face.position_material material, pts, true
 		  if cull
 		    face.back_material=reverse
@@ -578,51 +579,64 @@ def XPlaneImport(xpver)
 	    face.set_attribute($ATTR_DICT, $ATTR_HARD_NAME, 1) if hard
 	    face.set_attribute($ATTR_DICT, $ATTR_POLY_NAME, 1) if poly
 
+	    # smooth & soften edges
+	    if smooth
+	      face.edges.each do |edge|
+		case edge.faces.length
+		when 1
+		  # ignore
+		when 2
+		  if edge.faces[0].normal.angle_between(edge.faces[1].normal)<=smoothangle
+		    edge.smooth=true
+		    edge.soft=true
+		  end
+		else
+		  edge.smooth=false
+		  edge.soft=false
+		end
+	      end
+	    end
+
 	    # remove coplanar edges
 	    edges=face.edges	# face may get deleted
 	    edges.each do |edge|
-	      next if edge.deleted?
-	      case edge.faces.length
-	      when 1
-		edge.smooth=smooth
-	      when 2
-		if edge.faces[0].normal.angle_between(edge.faces[1].normal)==0
-		  if not material
-		    edge.erase!
-		    next
-		  end
-		  faces0=edge.faces[0]
-		  faces1=edge.faces[1]
-		  uv0=faces0.get_UVHelper(true, true, tw)
-		  uv1=faces1.get_UVHelper(true, true, tw)
-		  if uv0.get_front_UVQ(edge.start.position)==uv1.get_front_UVQ(edge.start.position) and uv0.get_front_UVQ(edge.end.position)==uv1.get_front_UVQ(edge.end.position) and faces0.back_material==faces1.back_material and (faces0.back_material==reverse or (uv0.get_back_UVQ(edge.start.position)==uv1.get_back_UVQ(edge.start.position) and uv0.get_back_UVQ(edge.end.position)==uv1.get_back_UVQ(edge.end.position)))
-		    # Check that texture isn't mirrored about this edge
-		    for v0 in faces0.vertices
-		      if v0!=edge.start and v0!=edge.end
-			v0=v0.position
-			break
-		      end
-		    end
-		    for v1 in faces1.vertices
-		      if v1!=edge.start and v1!=edge.end
-			v1=v1.position
-			break
-		      end
-		    end
-		    u0=uv0.get_front_UVQ(edge.start.position)
-		    u1=uv0.get_front_UVQ(edge.end.position)
-		    u2=Geom::Point3d.new((u0.x+u1.x)*0.5, (u0.y+u1.y)*0.5, (u0.z+u1.z)*0.5)	# mid point on this edge
-		    edge.erase! if (u2-uv0.get_front_UVQ(v0)).angle_between(u2-uv1.get_front_UVQ(v1)) > $pibytwo
-		  end
-		else
-		  edge.smooth=edge.smooth? and smooth
+	      if !edge.deleted? and edge.faces.length==2 and edge.faces[0].normal.angle_between(edge.faces[1].normal)<=planarangle	# same_direction? is too forgiving
+		if not material
+		  edge.erase!
+		  next
 		end
-	      else
-		edge.smooth=false
+		faces0=edge.faces[0]
+		faces1=edge.faces[1]
+		uv0=faces0.get_UVHelper(true, true, tw)
+		uv1=faces1.get_UVHelper(true, true, tw)
+		if uv0.get_front_UVQ(edge.start.position)==uv1.get_front_UVQ(edge.start.position) and uv0.get_front_UVQ(edge.end.position)==uv1.get_front_UVQ(edge.end.position) and faces0.back_material==faces1.back_material and (faces0.back_material==reverse or (uv0.get_back_UVQ(edge.start.position)==uv1.get_back_UVQ(edge.start.position) and uv0.get_back_UVQ(edge.end.position)==uv1.get_back_UVQ(edge.end.position)))
+		  # Check that texture isn't mirrored about this edge
+		  for v0 in faces0.vertices
+		    if v0!=edge.start and v0!=edge.end
+		      u0=uv0.get_front_UVQ(v0.position)
+		      u0=Geom::Vector3d.new(u0.x/u0.z,u0.y/u0.z,1.0)
+		      break
+		    end
+		  end
+		  for v1 in faces1.vertices
+		    if v1!=edge.start and v1!=edge.end
+		      u1=uv1.get_front_UVQ(v1.position)
+		      u1=Geom::Vector3d.new(u1.x/u1.z,u1.y/u1.z,1.0)
+		      break
+		    end
+		  end
+		  u2=uv0.get_front_UVQ(edge.start.position)
+		  u2=Geom::Vector3d.new(u2.x/u2.z,u2.y/u2.z,1.0)
+		  u3=uv0.get_front_UVQ(edge.end.position)
+		  u3=Geom::Vector3d.new(u3.x/u3.z,u3.y/u3.z,1.0)
+		  edge.erase! if (u2-u0).cross(u2-u3).z * (u2-u1).cross(u2-u3).z <= 0
+		end
 	      end
 	    end
+
 	    i+=3	# next tri
 	  end
+
 	when 'ATTR_LOD'
 	  if c[0].to_f>0.0
 	    msg+="Ignoring lower level(s) of detail.\n"
@@ -672,7 +686,9 @@ extension.description='Adds File->Import and File->Export X-Plane Object, Tools-
 extension.version=$XPlaneExportVersion
 extension.creator='Jonathan Harris'
 extension.copyright='2007'
-if Sketchup.register_extension extension, true
+Sketchup.register_extension extension, true
+
+if !file_loaded?("SU2XPlane.rb")
   UI.menu("File").add_item("Import X-Plane v8 Object") { XPlaneImport(8) }
   UI.menu("File").add_item("Export X-Plane v7 Object") { XPlaneExport(7) }
   UI.menu("File").add_item("Export X-Plane v8 Object") { XPlaneExport(8) }
@@ -696,5 +712,7 @@ if Sketchup.register_extension extension, true
   if help
     UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help) }
   end
+  file_loaded("SU2XPlane.rb")
 end
-file_loaded("SU2XPlane.rb")
+
+#Sketchup.send_action "showRubyPanel:"
