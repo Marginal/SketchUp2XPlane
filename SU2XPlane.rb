@@ -78,7 +78,7 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 	else
 	  material=ent.back_material
 	end
-	
+
 	if nomats or (material and material.alpha>0.0)
 	  if material and material.texture
 	    tex=material.texture.filename
@@ -140,7 +140,7 @@ def XPlaneAccumPolys(entities, trans, xpver, vt, idx, notex)
 	    # round to export precision to increase chance of detecting dupes
 	    thisvt << (([tex] + v.to_a.collect{|j| (j*10000).round/10000.0} + n.to_a.collect{|j| (j*1000).round/1000.0}) << ((u.x/u.z-minu)*10000).round/10000.0 << ((u.y/u.z-minv)*10000).round/10000.0)
 	  end
-	    
+
 	  for i in (1..mesh.count_polygons)
 	    thistri=[]	# indices in this face
 	    mesh.polygon_at(i).each do |index|
@@ -215,7 +215,7 @@ def XPlaneExport(xpver)
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
   end
-  
+
   allidx=[]
   $ATTR_SEQ.each do |attrs|
     allidx.concat(idx[attrs])
@@ -371,7 +371,7 @@ def XPlaneHighlight()
     end
     untextured.alpha=1.0
     untextured.texture=nil
-    
+
     reverse=materials["XPReverse"]
     if (not reverse) or (reverse.texture and reverse.texture.filename)
       reverse=materials.add("XPReverse")
@@ -669,7 +669,7 @@ def XPlaneImport(xpver)
       model.abort_operation
       UI.messagebox "Can't import #{name.split(/\/|\\/)[-1]}:\nInternal error.", MB_OK, 'X-Plane import'
     end
-      
+
   rescue
     UI.messagebox "Can't read #{name.split(/\/|\\/)[-1]}:\n#{$!}.", MB_OK, 'X-Plane import'
   ensure
