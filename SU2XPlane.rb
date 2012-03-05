@@ -355,15 +355,37 @@ def XPlaneValidateAttr(attr)
 end
 
 #-----------------------------------------------------------------------------
+class XPlaneImporter < Sketchup::Importer
 
-def XPlaneImport(xpver)
+  def description
+    return "X-Plane Object (*.obj)"
+  end
+
+  def file_extension
+    return "obj"
+  end
+
+  def id
+    return "org.marginal.x-plane_obj"
+  end
+
+  def supports_options?
+    return false
+  end
+
+  def load_file(file_path, status)
+    return XPlaneImport(file_path)
+  end
+
+end
+
+def XPlaneImport(name)
   m2i=1/0.0254	# SketchUp units are inches!
   pibytwo=Math::PI/2
   smoothangle=35*Math::PI/180
   planarangle=0.00002	# normals at angles less than this considered coplanar
 
-  name=UI.openpanel 'Import X-Plane v8 Object', '', '*.obj'
-  return if not name
+  return 2 if not name
   begin
     file=File.new(name, 'r')
     line=file.readline.split(/\/\/|#/)[0].strip()
@@ -386,7 +408,7 @@ def XPlaneImport(xpver)
     end
 
     model=Sketchup.active_model
-    model.start_operation('Import X-Plane v8 Object')
+    model.start_operation('Import X-Plane Object')
     begin
       entities=model.active_entities	# Open component, else top level
       material=nil
@@ -431,7 +453,7 @@ def XPlaneImport(xpver)
 		# lack of material crashes SketchUp somewhere
 		model.abort_operation
 		UI.messagebox "Can't read texture file #{texture}", MB_OK, 'X-Plane import'
-		return
+		return 1
 	      end
 	    end
 	  end
@@ -570,6 +592,7 @@ def XPlaneImport(xpver)
       model.commit_operation
       msg="Ignoring some geometry that couldn't be imported.\n"+msg if skiperr
       UI.messagebox(msg, MB_OK, 'X-Plane import') if not msg.empty?
+      return 0
 
     rescue
       model.abort_operation
@@ -581,6 +604,8 @@ def XPlaneImport(xpver)
   ensure
     file.close unless file.nil?
   end
+
+  return 1
 end
 
 #-----------------------------------------------------------------------------
@@ -595,7 +620,7 @@ extension.copyright='2007'
 Sketchup.register_extension extension, true
 
 if !file_loaded?("SU2XPlane.rb")
-  UI.menu("File").add_item("Import X-Plane v8 Object") { XPlaneImport(8) }
+  Sketchup.register_importer(XPlaneImporter.new)
   UI.menu("File").add_item("Export X-Plane Object") { XPlaneExport() }
   UI.menu("Tools").add_item("Highlight Untextured") { XPlaneHighlight() }
 
