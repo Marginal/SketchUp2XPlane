@@ -46,7 +46,7 @@ def XPlaneAccumPolys(entities, trans, vt, idx, notex)
     case ent.typename
 
     when "ComponentInstance"
-      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, vt, idx, notex)
+      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, vt, idx, notex) if ent.definition.name!="Susan"	# Silently skip Susan
 
     when "Group"
       XPlaneAccumPolys(ent.entities, trans*ent.transformation, vt, idx, notex)
@@ -173,7 +173,7 @@ def XPlaneExport()
   end
 
   vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
-  idx=Array.new($ATTR_SEQ.length) {[]} # v8: flat arrays of indices. v7: arrays of 3 or 4 length arrays
+  idx=Array.new($ATTR_SEQ.length) {[]} # arrays of indices
   notex=[0,0]	# num not textured, num surfaces
   XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), vt, idx, notex)	# coords always returned in inches!
   if idx.empty?
@@ -268,7 +268,7 @@ def XPlaneHighlight()
 
   model=Sketchup.active_model
   materials=model.materials
-  model.start_operation("Highlight Untextured")
+  model.start_operation("Highlight Untextured", true)
   begin
     untextured=materials["XPUntextured"]
     if (not untextured) or (untextured.texture and untextured.texture.filename)
@@ -408,7 +408,7 @@ def XPlaneImport(name)
     end
 
     model=Sketchup.active_model
-    model.start_operation('Import X-Plane Object')
+    model.start_operation('Import '+File.basename(name), true)
     begin
       entities=model.active_entities	# Open component, else top level
       material=nil
@@ -612,8 +612,8 @@ end
 
 # Add some menu items to access this
 
-extension=SketchupExtension.new 'SU2XPlane X-Plane Tools', 'SU2XPlane.rb'
-extension.description='Adds File->Import and File->Export X-Plane Object, Tools->Highlight Untextured, and items to the context menu to control X-Plane attributes.'
+extension=SketchupExtension.new 'X-Plane Import/Export - SketchUp2XPlane', 'SU2XPlane.rb'
+extension.description='Adds File->Import->X-Plane and File->Export X-Plane Object, Tools->Highlight Untextured, and items to the context menu to control X-Plane attributes.'
 extension.version=$XPlaneExportVersion
 extension.creator='Jonathan Harris'
 extension.copyright='2007'
@@ -635,7 +635,7 @@ if !file_loaded?("SU2XPlane.rb")
     menu.set_validation_proc(alpha) { XPlaneValidateAttr($ATTR_ALPHA_NAME) }
   end
 
-  help=Sketchup.find_support_file("SU2XPlane_"+Sketchup.get_locale+".html", "Plugins")
+  help=Sketchup.find_support_file("SU2XPlane_"+Sketchup.get_locale.upcase.split('-')[0]+".html", "Plugins")
   if not help
     help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
   end
