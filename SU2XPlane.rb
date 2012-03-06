@@ -1,7 +1,7 @@
 #
 # X-Plane importer/exporter for SketchUp
 #
-# Copyright (c) 2006,2007 Jonathan Harris
+# Copyright (c) 2006-2012 Jonathan Harris
 # 
 # Mail: <x-plane@marginal.org.uk>
 # Web:  http://marginal.org.uk/x-planescenery/
@@ -14,7 +14,7 @@
 require 'sketchup.rb'
 require 'extensions.rb'
 
-$XPlaneExportVersion="1.41"
+$XPlaneExportVersion="1.42"
 
 $tw = Sketchup.create_texture_writer
 
@@ -616,7 +616,7 @@ extension=SketchupExtension.new 'X-Plane Import/Export - SketchUp2XPlane', 'SU2X
 extension.description='Adds File->Import->X-Plane and File->Export X-Plane Object, Tools->Highlight Untextured, and items to the context menu to control X-Plane attributes.'
 extension.version=$XPlaneExportVersion
 extension.creator='Jonathan Harris'
-extension.copyright='2007'
+extension.copyright='2007-2012'
 Sketchup.register_extension extension, true
 
 if !file_loaded?("SU2XPlane.rb")
