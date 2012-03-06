@@ -1,0 +1,129 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <meta http-equiv="content-language" content="fr">
+  <meta name="description" content="X-Plane plugin pour SketchUp">
+  <meta name="keywords" content="X-Plane, simulator, scenery, SketchUp">
+  <title>SketchUp2XPlane</title>
+  <meta name="author" content="Jonathan Harris">
+  <style type="text/css">
+.banner { font-family: Arial,Helvetica,sans-serif; background-color: lightskyblue; text-align: left; height: 32px; }
+.dnl { font-family: Arial,Helvetica,sans-serif; font-size: small; background-color: lightskyblue; }
+samp { font-family: Arial,Helvetica,sans-serif; }
+h2 { font-family: Arial,Helvetica,sans-serif; }
+h3 { font-family: Arial,Helvetica,sans-serif; }
+h4 { font-family: Arial,Helvetica,sans-serif; }
+h5 { font-family: Arial,Helvetica,sans-serif; }
+  </style>
+</head>
+<body>
+<table style="width: 100%;" border="0" cellpadding="2">
+  <tbody>
+    <tr>
+      <td class="banner">Marginal &rarr; <a href="http://marginal.org.uk/x-planescenery/">X-Plane
+Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">Tools</a> &rarr; SketchUp2XPlane</td>
+    </tr>
+  </tbody>
+</table>
+<hr>
+
+<h2>X-Plane plugin pour SketchUp</h2>
+
+<h3>Vue d'ensemble</h3>
+<p><a href="http://sketchup.google.com/intl/fr/" target="_blank">SketchUp</a> est un logiciel gratuit, éditeur d'objets 3D pour Windows et MacOS.</p>
+<p>Ce plugin SketchUp importe et exporte les modèles vers X-Plane v7 à v10 au format <code>.obj</code>.</p>
+<h3>Installation</h3>
+<p>Copiez les fichiers extraits de l'archive <code>.zip</code> vers le dossier Plugins de SketchUp:</p>
+<ul>
+  <li>Windows: <code>C:\Programmes\Google\Google&nbsp;SketchUp&nbsp;<i>n</i>\Plugins</code></li>
+  <li>Mac OS: <code>/Library/Application&nbsp;Support/Google&nbsp;SketchUp&nbsp;<i>n</i>/SketchUp/plugins</code></li>
+</ul>
+<p>(Re) démarrage de SketchUp.</p>
+<p>Vous pouvez maintenant supprimer le fichier <code>.zip</code> que vous avez téléchargé. Ce fichier d'aide peut être consulté en cliquant sur <samp>Aide&nbsp;&rarr; X-Plane</samp> dans SketchUp.</p>
+
+<h3>Création d'objets décors X-Plane</h3>
+<p>Avant de commencer, vous pouvez obtenir une photo de la zone que vous êtes sur le point de modèlisé:</p>
+<ul>
+  <li>Choisissez <samp>Fenêtre&nbsp;&rarr; Infos&nbsp;sur&nbsp;le&nbsp;modèle&nbsp;&rarr; Géoposition&nbsp;&rarr; Ajouter&nbsp;un&nbsp;emplacement&#8230;</samp></li>
+</ul>
+<p>Créez votre modèle dans SketchUp avec des rectangles, des cercles et des arcs. Enregistrez le fichier SketchUp <code>.skp</code> dans le dossier des avions ou de paysage où vous voulez que le fichier X-Plane <code>.obj</code> se retrouve.</p>
+<p>Dans une application d'édition d'image, créer un fichier de texture qui ressemble à un «<a href="http://fr.wikipedia.org/wiki/Collage_%28art%29" target="_blank">collage</a>» de toutes les textures que vous avez besoin dans votre modèle. La hauteur et la largeur du fichier texture doit être en puissance de deux (par exemple 128, 256, 512, 1024, 2048) mais pas spécialement carré. Enregistrez le fichier texture en 32 bits ou 24 bits au format PNG (c'est à dire avec ou sans canal «Alpha») dans
+le dossier avion ou paysage où vous voulez que le fichier X-Plane <code>.obj</code> se retrouve.</p>
+<p>Utilisez l'outil <samp>Colorier</samp> pour appliquer votre texture d'un fichier à chaque face de votre modèle. Utilisez le&nbsp;menu&nbsp;contextuel <samp>&rarr; Texture&nbsp;&rarr; Position</samp> de cartographie la partie correcte de ce fichier de texture à chaque face.</p>
+<p>Pour placer une texture sur une surface courbe, voir <a href="http://www.youtube.com/watch?v=HHsRRLCAOm8" target="_blank">ici</a> un tutoriel. Ou vous pouvez d'abord activer <samp>Affichage&nbsp;&rarr; Géométrie&nbsp;cachée</samp> et ensuite, sélectionnez l'une des faces de la surface à un moment et placer la texture sur chaque face.</p>
+<p>Si vous voulez que les deux côtés d'une face soient affichées dans X-Plane,
+appliquer l'outil <samp>Colorier</samp> à deux reprises, une fois de chaque côté dela face. Vous pouvez utiliser la <samp>Fenêtre&nbsp;&rarr; Infos&nbsp;sur&nbsp;l'entité</samp> panneau pour voir quelles textures sont actuellement affectées aux deux côtés de la face sélectionnée.</p>
+<p>Vous pouvez utiliser <samp>Outils&nbsp;&rarr; Highlight&nbsp;Untextured</samp> pour vous aider à texturer. Cela ne va pas changer la façon dont votre modèle apparaîtra dans X-Plane, mais elle mettra en évidence, dans SketchUp, des problèmes avec votre texture:</p>
+<ol>
+  <li>Faces non texturés colorées en rouge. Cela vous aide à identifier ces faces.</li>
+  <li>Pour les faces qui sont texturées sur un seul côté, l'autre côté est caché (régler l'opacité à 0). Cela vous permet de voir si vous avez texturé du mauvais côté toutes les faces. Utilisez le menu contextuel <samp>&rarr; Inverser&nbsp;les&nbsp;faces</samp> sur la face si vous aviez cela.</li>
+</ol>
+
+<h4>Attributs</h4>
+<p>Ce plugin ajoute trois entrées au menu contextuel. Ceux-ci peuvent être utilisés lorsque vous avez une face sélectionnée:</p>
+<dl>
+  <dt><samp>Hard</samp></dt>
+  <dd>Contrôle si l'aéronef peut atterrir sur et / ou entrer en collision avec une face dans X-Plane.<br>
+Faire faces "hard" est couteux, donc utiliser cette option avec parcimonie. Vertical "hard" des faces ne fonctionnent pas comme on pouvait s'y attendre, si vous voulez faire un bâtiment «collisable» il suffit d'utiliser ce bouton pour le toit mais pas sur les côtés du bâtiment.</dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>Ground</samp></dt>
+  <dd>Contrôle si la face est rendue avec «polygon offsetting» dans X-Plane.<br>
+Utilisez ce sur les faces qui se trouvent à plat sur le sol pour éviter de raclée (Z-buffer) sous la surface d'X-Plane. Ne pas appuyer sur ce bouton pour les autres faces.</dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>Alpha</samp></dt>
+  <dd>Il s'agit d'une allusion à X-Plane pour que la face soit texturée avec une texture partiellement ou totalement transparente ou translucide.<br>
+Utilisez-le sur toutes les faces transparentes ou translucides à travers lesquelles vous voulez voir les autres faces du même modèle. Ne pas appuyer sur ce bouton pour les faces opaques (normale).</dd>
+</dl>
+
+<h3>Exportation vers X-Plane</h3>
+<p>Si vous ne l'avez pas encore fait, choisissez <samp>Fichier&nbsp;&rarr; Enregistrer sous&#8230;</samp> et enregistrez le fichier <code>.skp</code> dans le dossier avion ou le dossier paysage où vous voulez que le fichier X-Plane <code>.obj</code> se retrouve.</p>
+<p>Si vous avez chargé une photo du terrain de Google Earth, il vous faut le cacher avant de les exporter:</p><ul>
+  <li>Choisissez <samp>Fenêtre&nbsp;&rarr; Calques</samp>.</li>
+  <li>Dans le panneau <samp>Calques</samp> veiller à ce que «Google Earth terrain» et «Google Earth Snapshot» soient décochés.</li>
+  <li>Si vous avez chargé la photo du terrain avant de commencer la modélisation, vous pouvez lire les coordonnées où votre modèle doit être placé dans X-Plane à partir du panneau <samp>Fenêtre&nbsp;&rarr; Infos&nbsp;sur&nbsp;le&nbsp;modèle&nbsp;&rarr; Géoposition<samp>.</li>
+</ul>
+<p>Ensuite:</p>
+<ul>
+  <li>Choisissez <samp>Fichier&nbsp;&rarr; Export&nbsp;X-Plane&nbsp;Object</samp></li>
+</ul>
+<p>Vous pouvez avoir les avertissements suivants:</p>
+<dl>
+  <dt>Warning: You used multiple texture files. Using file <i>name</i>.</dt>
+  <dd>Vous avez utilisé plus d'un fichier de texture pour les faces de votre modèle.<br>
+X-Plane vous oblige à n'utiliser qu'un seul fichier de texture pour l'ensemble des faces de votre modèle.</dd>  <dt>&nbsp;</dt>
+  <dt>Warning: <i>n</i> faces are untextured.</dt>
+  <dd>Vous n'avez pas appliqué de texture à l'ensemble des faces de votre modèle SketchUp.<br>
+X-Plane sera de la couleur des faces non texturées avec le pixel en bas à gauche de votre fichier de texture (ou gris si vous n'avez pas appliqué une texture à l'une des faces).</dd>
+</dl>
+<p>Si vous voyez l'un de ces avertissements, X-Plane ne sera probablement pas capable d'afficher votre modèle comme vous le souhaitiez.</p>
+
+<h3>Limites</h3>
+<p>Construisez votre modèle SketchUp avec des rectangles, des cercles, des arcs, les Composants et Groupes seulement - tous les autres types de SketchUp ne seront pas exportés.</p>
+<p>Ce plugin ne vous permet pas de créer des primitives spécifiques dans X-Plane, comme:</p>
+<ul>
+  <li>Les animations</li>
+  <li>Des attributs: cockpit par exemple, matériaux, etc</li>
+  <li>Des niveaux de détail</li>
+  <li>Des lumières, des lignes et de la fumée.</li>
+</ul>
+
+<h3>Licence</h3>
+<p>Ces outils sont sous les règles de la licence Creative Commons <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.fr" target="_blank">Attribution - Pas d'Utilisation Commerciale - Partage à l'Identique</a>.</p>
+<p>L'utilisation de ces outils n'impose aucune exigence sur vous pour immatriculer votre travail sous une licence Creative Commons. Pour éviter tout doute, cela signifie que vous pouvez autoriser n'importe quel décor que vous faites en utilisant ces outils à des conditions commerciales (sous réserve des restrictions de licences sur des objets importés ou d'une bibliothèque que vous utilisez).</p>
+<p>L'auteur apprécierait une copie de courtoisie de toutes les scènes commerciales que vous faites en utilisant cet outil, mais sans en êtes aucunement obligé.</p>
+
+<hr>
+<table style="width: 100%;" border="0" cellpadding="2" cellspacing="0">
+  <tbody>
+    <tr>
+      <td class="banner">Version 1.41 &copy; 2006-2012 <a href="mailto:x-plane@marginal.org.uk">Jonathan Harris</a>
+<a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.fr">
+<img alt="Creative Commons License" style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" src="http://i.creativecommons.org/l/by-nc-sa/3.0/fr/88x31.png"></a></td>
+      <td class="banner" style="text-align:right" valign="bottom">Traduction en français &copy; 2012 Philippe Mijon</td>
+    </tr>
+  </tbody>
+</table>
+
+</body>
+</html>
