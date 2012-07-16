@@ -627,11 +627,11 @@ if !file_loaded?("SU2XPlane.rb")
   UI.add_context_menu_handler do |menu|
     #submenu = menu.add_submenu "X-Plane"
     menu.add_separator
-    hard=menu.add_item("Hard")      { XPlaneToggleAttr  ($ATTR_HARD_NAME) }
+    hard=menu.add_item("Hard")      { XPlaneToggleAttr($ATTR_HARD_NAME) }
     menu.set_validation_proc(hard)  { XPlaneValidateAttr($ATTR_HARD_NAME) }
-    poly=menu.add_item("Ground")    { XPlaneToggleAttr  ($ATTR_POLY_NAME) }
+    poly=menu.add_item("Ground")    { XPlaneToggleAttr($ATTR_POLY_NAME) }
     menu.set_validation_proc(poly)  { XPlaneValidateAttr($ATTR_POLY_NAME) }
-    alpha=menu.add_item("Alpha")    { XPlaneToggleAttr  ($ATTR_ALPHA_NAME) }
+    alpha=menu.add_item("Alpha")    { XPlaneToggleAttr($ATTR_ALPHA_NAME) }
     menu.set_validation_proc(alpha) { XPlaneValidateAttr($ATTR_ALPHA_NAME) }
   end
 
