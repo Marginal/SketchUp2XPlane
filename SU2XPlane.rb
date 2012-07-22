@@ -14,7 +14,7 @@
 require 'sketchup.rb'
 require 'extensions.rb'
 
-$XPlaneExportVersion="1.42"
+$XPlaneExportVersion="1.43"
 
 $tw = Sketchup.create_texture_writer
 
