@@ -82,6 +82,17 @@ def XPlaneAccumPolys(entities, trans, vt, idx, notex)
 	if nomats or (material and material.alpha>0.0)
 	  if material and material.texture
 	    tex=material.texture.filename
+            if not File.exists? tex
+              # Write embedded texture to filesystem, and update material to use it
+              newtex=File.dirname(Sketchup.active_model.path) + "/" + (tex.split(/[\/\\:]+/)[-1])[0...-3] + "png"
+              if $tw.load(ent, front)!=0 and $tw.write(ent, front, newtex)==0
+                theight = material.texture.height
+                twidth  = material.texture.width
+                material.texture = newtex
+                material.texture.size = [twidth,theight]	# don't know why this should be required but it is
+                tex=newtex
+              end
+            end
 	    # Get minimum uv co-oords
 	    us=[]
 	    vs=[]
