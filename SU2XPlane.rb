@@ -31,9 +31,11 @@ $ATTR_SEQ=[
   $ATTR_POLY|$ATTR_ALPHA, $ATTR_POLY|$ATTR_ALPHA|$ATTR_HARD,
   0, $ATTR_HARD,
   $ATTR_ALPHA, $ATTR_ALPHA|$ATTR_HARD]
+$LIGHTNAMED=['LIGHT_NAMED', 'LIGHT_PARAM']
+$LIGHTCUSTOM=['LIGHT_CUSTOM', 'LIGHT_SPILL_CUSTOM', 'smoke_black', 'smoke_white']
 
 # Accumulate vertices and indices into vt and idx
-def XPlaneAccumPolys(entities, trans, vt, idx, notex)
+def XPlaneAccumPolys(entities, trans, vt, idx, notex, lights)
 
   # Vertices and Indices added at this level (but not below) - to detect dupes
   myvt=[]
@@ -46,10 +48,17 @@ def XPlaneAccumPolys(entities, trans, vt, idx, notex)
     case ent.typename
 
     when "ComponentInstance"
-      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, vt, idx, notex) if ent.definition.name!="Susan"	# Silently skip Susan
+      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, vt, idx, notex, lights) if ent.definition.name!="Susan"	# Silently skip Susan
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, trans*ent.transformation, vt, idx, notex)
+      XPlaneAccumPolys(ent.entities, trans*ent.transformation, vt, idx, notex, lights)
+
+    when "Text"
+      light=ent.text[/\S*/]
+      if $LIGHTNAMED.include?(light) or $LIGHTCUSTOM.include?(light)
+        v=trans * ent.point
+        lights << ([ent.text] + v.to_a.collect{|j| (j*10000).round/10000.0})
+      end
 
     when "Face"
       # if neither side has material then output both sides,
@@ -186,7 +195,8 @@ def XPlaneExport()
   vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
   idx=Array.new($ATTR_SEQ.length) {[]} # arrays of indices
   notex=[0,0]	# num not textured, num surfaces
-  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), vt, idx, notex)	# coords always returned in inches!
+  lights=[]	# array of [freetext, vx, vy, vz]
+  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), vt, idx, notex, lights)	# coords always returned in inches!
   if idx.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
@@ -259,7 +269,17 @@ def XPlaneExport()
     current_attrs=attrs
     current_base+=idx[attrs].length
   end
-  outfile.write("# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{$XPlaneExportVersion}.\n")
+  lights.each do |v|
+    args=v[0].split
+    type=args.shift
+    if $LIGHTNAMED.include?(type)
+      name=args.shift
+      outfile.printf("%s\t%s\t%9.4f %9.4f %9.4f\t%s\n", type, name, v[1], v[3], -v[2], args.join(' '))
+    else
+      outfile.printf("%s\t%9.4f %9.4f %9.4f\t%s\n", type, v[1], v[3], -v[2], args.join(' '))
+    end
+  end
+  outfile.write("\n# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{$XPlaneExportVersion}.\n")
   outfile.close
 
   msg="Wrote #{allidx.length/3} triangles to #{outpath}.\n"
@@ -593,11 +613,22 @@ def XPlaneImport(name)
 	  poly=c[0].to_f > 0.0
 	when 'POINT_COUNTS', 'TEXTURE_LIT', 'ATTR_no_blend', 'ANIM_begin', 'ANIM_end', 'ATTR_shade_flat', 'ATTR_shade_smooth'
 	  # suppress error message
-	when 'VLINE', 'LINES', 'VLIGHT', 'LIGHTS', 'LIGHT_NAMED', 'LIGHT_CUSTOM'
-	  msg+="Ignoring lights and/or lines.\n" if not llerr
+	when 'VLINE', 'LINES', 'VLIGHT', 'LIGHTS'
+	  msg+="Ignoring old-style lights and/or lines.\n" if not llerr
 	  llerr=true
 	else
-	  msg+="Ignoring command #{cmd}.\n"
+          if ($LIGHTNAMED+$LIGHTCUSTOM).include?(cmd)
+            if $LIGHTNAMED.include?(cmd)
+              name=c.shift+' '
+            else
+              name=""
+            end
+            text=entities.add_text(cmd+' '+name+c[3..-1].join(' '), Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i))
+            text.vector=Geom::Vector3d.new(0, 0, 5)	# arrow length & direction - arbitrary
+            text.display_leader=true
+          else
+            msg+="Ignoring command #{cmd}.\n"
+          end
 	end
       end
       model.commit_operation

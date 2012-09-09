@@ -57,6 +57,7 @@ to map the correct portion of this texture file to each face.</p>
   <li>Untextured faces are coloured red. This helps you to identify these faces.</li>
   <li>For faces that are textured on just one side, the other side is hidden (by setting the opacity to 0). This helps you see if you've textured the wrong side of any faces. Use <samp>Context&nbsp;menu&nbsp;&rarr; Reverse&nbsp;Faces</samp> on the face if you have.</li>
 </ol>
+
 <h4>Attributes</h4>
 <p>This plugin adds three entries to the context menu. These can be used when you have a face selected:</p>
 <dl>
@@ -72,6 +73,17 @@ Use this on faces that lie flat on the ground to prevent Z-buffer thrashing in X
   <dd>This is a hint to X-Plane that the face is textured with a partially or wholly transparent or translucent texture.<br>
 Use this on any transparent or translucent faces through which you want to see other faces from the same model. Don't press this button for opaque (normal) faces.</dd>
 </dl>
+
+<h4>Lights</h4>
+<p>Use the Text Tool to create lights:</p>
+<ul>
+  <li>First, use the <samp>Tape Measure</samp> tool to create a "Guide Point" at the location where you want the light to appear.</li>
+  <li>Choose <samp>Tools&nbsp;&rarr; Text</samp>.</li>
+  <li>Select the Guide Point that you just created, then drag your mouse (which creates an arrow pointing to your Guide Point) and click.</li>
+  <li>Type in one of the light types documented <a href="http://developer.x-plane.com/?article=obj8-file-format-specification#GEOMETRY_COMMANDS" target="_blank">here</a> - i.e. <code>LIGHT_NAMED</code>, <code>LIGHT_CUSTOM</code>, <code>LIGHT_PARAM</code>, <code>LIGHT_SPILL_CUSTOM</code>, <code>smoke_black</code> or <code>smoke_white</code>.</li>
+  <li>Also type in any parameters required, but omit the <code>&lt;x&gt; &lt;y&gt; &lt;z&gt;</code> parameters since this plugin will supply values for these parameters.<br>
+Note: For lights of type <code>LIGHT_NAMED</code> and <code>LIGHT_PARAM</code> the file <code>X-Plane/Resources/bitmaps/world/lites/lights.txt</code> lists the usable values for the <code>&lt;name&gt;</code> parameter.</li>
+</ul>
 
 <h3>Exporting to X-Plane</h3>
 <p>If you have not already done so, choose <samp>File&nbsp;&rarr; Save&nbsp;As&#8230;</samp> and save the <code>.skp</code> file in the aircraft or scenery folder where you want the X-Plane <code>.obj</code> file to end up.</p>
@@ -105,7 +117,7 @@ X-Plane will colour the untextured faces with the bottom left pixel from your te
   <li>Animations</li>
   <li>Attributes: <i>eg</i> cockpit, materials etc</li>
   <li>Level Of Detail</li>
-  <li>Lights, Lines and Smoke</li>
+  <li>Lines</li>
 </ul>
 
 <h3>License</h3>

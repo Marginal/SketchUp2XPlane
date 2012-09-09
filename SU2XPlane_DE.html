@@ -59,6 +59,7 @@ wie man f&uuml;r ein Textur auf einer gekr&uuml;mmten Oberfl&auml;che positionie
   <li>Fl&auml;chen ohne Textur sind rot gef&auml;rbt. Das hilft dir, diese Fl&auml;chen zu erkennen.</li>
   <li>Bei Fl&auml;chen, die nur auf einer Seite texturiert sind, ist die andere Seite unsichtbar (Durchsichtigkeit auf 0 gesetzt). Das hilft dir, wenn du die falsche Seite einer Fl&auml;che texturiert hast. Benutze <samp>Kontextmen&uuml;&nbsp;&rarr; Fl&auml;chen&nbsp;umkehren</samp> auf der Fl&auml;che, wenn das geschehen ist</li>
 </ol>
+
 <h4>Attribute</h4>
 <p>Dieses Plugin erweitert das Context-Men&uuml; um drei Eintr&auml;ge. Diese k&ouml;nnen benutzt werden, wenn du eine Fl&auml;che aktiviert hast:</p>
 <dl>
@@ -71,6 +72,17 @@ wie man f&uuml;r ein Textur auf einer gekr&uuml;mmten Oberfl&auml;che positionie
   <dt><samp>Alpha</samp></dt>
   <dd>Dies ist ein Hinweis f&uuml;r X-Plane, dass diese Fl&auml;che mit einer teilweisen oder ganz transparenten oder durchscheinenden Textur versehen ist.<br>Benutze dies auf transparenten oder durchscheinenden Fl&auml;chen, durch die du auf andere Fl&auml;chen im selben Modell sehen willst. Dr&uuml;cke diesen Knopf nicht f&uuml;r opaque (normale) Fl&auml;chen.</dd>
 </dl>
+
+<h4>Lichter</h4>
+<p>Du kannst das Text Tool gebrauchen um Lichter herzustellen:</p>
+<ul>
+  <li>Benutze zuerst das Mess-Werkzeug (Tape Measure) um einen Leitpunkt an der Stelle festzulegen, wo das Licht erscheinen soll.</li>
+  <li>Dann w&auml;hle das <samp>Werkzeug&nbsp;&rarr; Text</samp>.</li>
+  <li>W&auml;hle den Leitpunkt, den du gerade bestimmt hast, dann ziehe mit der Maus (die einen Pfeil zeigt, der zu deinem Leitpunkt deutet) und klick.</li>
+  <li>Hier hinein schreibst eines von den verschiedenen Lichtquellen/Lichtern, die <a href="http://developer.x-plane.com/?article=obj8-file-format-specification#GEOMETRY_COMMANDS" target="_blank">hier</a> dokumentiert sind. Z.B. <code>LIGHT_NAMED</code>, <code>LIGHT_CUSTOM</code>, <code>LIGHT_PARAM</code>, <code>LIGHT_SPILL_CUSTOM</code>, <code>smoke_black</code> oder <code>smoke_white</code>.</li>
+  <li>Du musst auch alle ben&ouml;tigten Parameter hineinschreiben, aber die f&uuml;r <code>&lt;x&gt; &lt;y&gt; &lt;z&gt;</code> weglassen. F&uuml;r die Werte dieser Parameter sorgt das Plugin selbst.<br>
+Anmerkung: F&uuml;r Licht vom Typ <code>LIGHT_NAMED</code> und <code>LIGHT_PARAM</code> listet die Datei <code>X-Plane/Resources/bitmaps/world/lites/lights.txt</code> brauchbare Werte f&uuml;r <code>&lt;name&gt;</code> Parameter auf.</li>
+</ul>
 
 <h3>Export nach X-Plane</h3>
 <p>Wenn du es nicht schon getan hast, w&auml;hle <samp>Datei&nbsp;&rarr; Speichern&nbsp;unter&#8230;</samp> und sichere die <code>.skp</code> Datei in dem Aircraft- oder Scenery-Ordner, den du f&uuml;r deine X-Plane <code>.obj</code> Datei vorgesehen hast</p>
@@ -104,7 +116,7 @@ X-Plane wird untexturierte Fl&auml;chen mit dem unteren linken Pixel deiner Text
   <li>Animationen</li>
   <li>Attribute: <i>z,B.</i> Cockpit, Materialien etc</li>
   <li>Level Of Detail</li>
-  <li>Lichter, Linien und Rauch</li>
+  <li>Linien</li>
 </ul>
 
 <h3>Lizenz</h3>
