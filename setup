@@ -1,3 +1,4 @@
-VER=`sed -nE 's/\\$XPlaneExportVersion="([[:digit:]]+)(\.)([[:digit:]]+)"/\1\3/p' SU2XPlane.rb`
-rm -f SketchUp2XPlane_${VER}.zip
-zip SketchUp2XPlane_${VER}.zip SU2XPlane*.html SU2XPlane.rb
+VER=`sed -nE 's/[[:space:]]+Version="([[:digit:]]+)(\.)([[:digit:]]+)"/\1\3/p' SU2XPlane.rb`
+rm -f SketchUp2XPlane_${VER}.zip SketchUp2XPlane_${VER}.rbz
+zip SketchUp2XPlane_${VER}.zip SU2XPlane*.html SU2XPlane.rb SU2XPlane/*.rb
+cp -p SketchUp2XPlane_${VER}.zip SketchUp2XPlane_${VER}.rbz

@@ -1,5 +1,7 @@
 *.bak
 *.skb
+*~.skp
+*.rbz
 *.zip
 
 .DS_Store
