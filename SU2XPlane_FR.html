@@ -76,6 +76,17 @@ Utilisez ce sur les faces qui se trouvent à plat sur le sol pour éviter de raclé
 Utilisez-le sur toutes les faces transparentes ou translucides à travers lesquelles vous voulez voir les autres faces du même modèle. Ne pas appuyer sur ce bouton pour les faces opaques (normale).</dd>
 </dl>
 
+<h4>Lumières</h4>
+<p>Utilisez l'outil <samp>Texte</samp> pour créer des lumières:</p>
+<ul>
+  <li>Tout d'abord, utilisez l'outil <samp>Mètre</samp> pour créer un «Point de guidage» à l'endroit où vous voulez que la lumière apparaisse.</li>
+  <li>Choisissez <samp>Outils&nbsp;&rarr; Texte</samp>.</li>
+  <li>Sélectionnez le point que vous venez de créer, puis faites glisser votre souris (ce qui crée une flèche pointant vers votre point de repère), puis cliquez dessus.</li>
+  <li>Tapez le nom de l'un des types de lumière documentés <a href="http://developer.x-plane.com/?article=obj8-file-format-specification#GEOMETRY_COMMANDS" target="_blank">ici</a>, c'est-à-dire <code>LIGHT_NAMED</code>, <code>LIGHT_CUSTOM</code>, <code>LIGHT_PARAM</code>, <code>LIGHT_SPILL_CUSTOM</code>, <code>smoke_black</code> ou <code>smoke_white</code>.</li>
+  <li>Tapez également les paramètres requis, sauf pour les paramètres <code>&lt;x&gt; &lt;y&gt; &lt;z&gt;</code>, dont les valeurs seront fournies par le plugin.<br>
+Remarque : Pour les lumières de type <code>LIGHT_NAMED</code> et <code>LIGHT_PARAM</code> le fichier <code>X-Plane/Resources/bitmaps/world/lites/lights.txt</code> répertorie les valeurs utilisables pour le paramètre <code>&lt;name&gt;</code>.</li>
+</ul>
+
 <h3>Exportation vers X-Plane</h3>
 <p>Si vous ne l'avez pas encore fait, choisissez <samp>Fichier&nbsp;&rarr; Enregistrer sous&#8230;</samp> et enregistrez le fichier <code>.skp</code> dans le dossier avion ou le dossier paysage où vous voulez que le fichier X-Plane <code>.obj</code> se retrouve.</p>
 <p>Si vous avez chargé une photo du terrain de Google Earth, il vous faut le cacher avant de les exporter:</p><ul>
@@ -105,7 +116,7 @@ X-Plane sera de la couleur des faces non texturées avec le pixel en bas à gauche
   <li>Les animations</li>
   <li>Des attributs: cockpit par exemple, matériaux, etc</li>
   <li>Des niveaux de détail</li>
-  <li>Des lumières, des lignes et de la fumée.</li>
+  <li>Des lignes.</li>
 </ul>
 
 <h3>Licence</h3>
