@@ -32,10 +32,14 @@ module SU2XPlane
             ATTR_POLY|ATTR_ALPHA, ATTR_POLY|ATTR_ALPHA|ATTR_HARD,
             0, ATTR_HARD,
             ATTR_ALPHA, ATTR_ALPHA|ATTR_HARD]
+  ATTR_ANIM_TRANS="trans"
 
   # Lights that we understand
   LIGHTNAMED=['LIGHT_NAMED', 'LIGHT_PARAM']
   LIGHTCUSTOM=['LIGHT_CUSTOM', 'LIGHT_SPILL_CUSTOM', 'smoke_black', 'smoke_white']
+
+  # Misc
+  DYNAMIC_DICT='dynamic_attributes'
 end
 
 
@@ -60,6 +64,7 @@ if !file_loaded?("SU2XPlane.rb")
     submenu.set_validation_proc(poly)  { XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
     alpha=submenu.add_item("Alpha")    { XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
     submenu.set_validation_proc(alpha) { XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+    anim=submenu.add_item("Animation...")    { XPlaneMakeAnimation() }
   end
 
   help=Sketchup.find_support_file("SU2XPlane_"+Sketchup.get_locale.upcase.split('-')[0]+".html", "Plugins")

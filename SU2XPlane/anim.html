@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+
+<html>
+  
+<head>
+
+  <!-- <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js#startOpened"></script> -->
+  <script type="text/javascript" src="anim.js"></script>
+  <script type="text/javascript" src="fd-slider.js"></script>	<!-- from http://www.frequency-decoder.com/2010/11/18/unobtrusive-slider-control-html5-input-range-polyfill -->
+  <script>
+    debugger;
+    var oldonload = window.onload;
+    window.onload=function() {
+    if (typeof oldonload == 'function') { oldonload(); };
+    window.location="skp:on_load";	<!-- kick-off remaining initialization -->
+    }
+  </script>
+
+  <meta http-equiv="MSThemeCompatible" content="Yes">
+  
+  <link href="fd-slider.css" rel="stylesheet" />
+  <style>
+    * { margin: 0px; }
+    body { font-family:sans-serif; }
+    input[type=text] { border: 1px inset; }	/* workaround for Safari bug */
+    table { margin-top: 8px; margin-bottom: 8px; font-size: small; }
+    th { font-weight: normal; font-size: smaller; }
+    .addremovebutton { width: 32px; font-weight: bold; }
+    .header { padding: 12px; background: #e2ded7; }
+    .description { padding: 12px; font-size: smaller; }
+    .data { padding: 12px; }
+    .panel { border: 1px inset; padding: 4px; background: #e2ded7; }
+    .preview { padding: 12px; font-size: small; }
+    .footer { background: #e2ded7; position: fixed; bottom: 0px; width: 100%; height: 30px; text-align: center; }
+    .fd-slider-handle { cursor: default; }
+    .fd-slider-range, .oldie .fd-slider-range {
+      background-color: #ddd;
+      background-image: -webkit-gradient(linear, left top, left bottom, from(#ececec), to(#ccc)); 
+      background-image: -webkit-linear-gradient(top, #ececec, #ccc); 
+      background-image: linear-gradient(to bottom, #ececec, #ccc);
+      filter: progid:DXImageTransform.Microsoft.gradient(GradientType=1,startColorstr='#ffececec',endColorstr='#ffcccccc');
+    }
+    body.fd-slider-drag-horizontal, body.fd-slider-drag-horizontal * { cursor: default; }
+  </style>
+
+</head>
+
+<body>
+  
+  <a name="top"></a>
+
+  <div class="header">
+    <h2 id="title">Title</h2>
+  </div>      
+
+  <hr>
+
+  <div class="description">
+    <p>You can make this component (and any children) animate in X-Plane according to the value of one of the simulator DataRefs of type "int", "float" or "double" listed <a target="_blank" href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html">here</a>.</p>
+    <p>DataRefs listed with "[<i>n</i>]" after their type are arrays; you will need to also supply an Index value for these.</p>
+  </div>
+
+  <div class="data">
+    <form name="form" class="panel">
+
+      <table>
+        <tr>
+          <td>DataRef</td>
+          <td><input type="text" name="dataref" id="dataref" size="40" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"></td>
+        <tr></tr>
+          <td>Index</td>
+          <td><input type="text" name="dataref_index" name="dataref_index" size="4" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)"></td>
+        </tr>
+        <tr><td> </td></tr>
+      </table>
+
+      <hr>
+
+      <table>
+        <thead>
+          <tr>
+            <th></th>
+            <th></th>
+            <th>DataRef value</th>
+            <th></th>
+          </tr>
+        </thead>
+        <tbody id="keyframes">
+        </tbody>
+      </table>
+
+    </form>
+  </div>
+
+  <div class="preview">
+    <p style="float: left;">Preview</p>
+    <div style="float: left; width: 200px; padding-left: 12px; padding-right: 12px;">
+      <input id="preview-slider" type="range" min="0" max="200" step="1" value="0" onchange="previewCallback(this)" style="width: 200px; padding: 0px;">
+    </div>
+    <p id="preview-value" style="float: left;"></p>
+  </div>
+
+</body>
+
+</html>
