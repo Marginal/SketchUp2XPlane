@@ -32,7 +32,21 @@ module SU2XPlane
             ATTR_POLY|ATTR_ALPHA, ATTR_POLY|ATTR_ALPHA|ATTR_HARD,
             0, ATTR_HARD,
             ATTR_ALPHA, ATTR_ALPHA|ATTR_HARD]
-  ATTR_ANIM_TRANS="trans"
+
+  # Animation attributes. Must be consistent with anim.js
+  ANIM_DATAREF='dataref'
+  ANIM_INDEX='index'
+  ANIM_FRAME_='frame_'
+  ANIM_MATRIX_='matrix_'
+  ANIM_LOOP='loop'
+  ANIM_HS_='hs_'
+  ANIM_VAL_HIDE='hide'
+  ANIM_VAL_SHOW='show'
+  ANIM_HS_HIDESHOW='_hideshow'
+  ANIM_HS_DATAREF='_dataref'
+  ANIM_HS_INDEX='_index'
+  ANIM_HS_FROM='_from'
+  ANIM_HS_TO='_to'
 
   # Lights that we understand
   LIGHTNAMED=['LIGHT_NAMED', 'LIGHT_PARAM']

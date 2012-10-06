@@ -23,7 +23,7 @@
     * { margin: 0px; }
     body { font-family:sans-serif; }
     input[type=text] { border: 1px inset; }	/* workaround for Safari bug */
-    table { margin-top: 8px; margin-bottom: 8px; font-size: small; }
+    table { font-size: small; }
     th { font-weight: normal; font-size: smaller; }
     .addremovebutton { width: 32px; font-weight: bold; }
     .header { padding: 12px; background: #e2ded7; }
@@ -42,6 +42,9 @@
     }
     body.fd-slider-drag-horizontal, body.fd-slider-drag-horizontal * { cursor: default; }
   </style>
+<!--[if lte IE 8]>
+  <style>hr { margin:-7px 0; }</style>
+<![endif]-->
 
 </head>
 
@@ -61,21 +64,15 @@
   </div>
 
   <div class="data">
-    <form name="form" class="panel">
-
+    <form class="panel">
       <table>
         <tr>
           <td>DataRef</td>
-          <td><input type="text" name="dataref" id="dataref" size="40" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"></td>
-        <tr></tr>
-          <td>Index</td>
-          <td><input type="text" name="dataref_index" name="dataref_index" size="4" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)"></td>
+          <td><input type="text" id="dataref" style="width: 200px;" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"> [<input type="text" id="index" size="4" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)">]</td>
         </tr>
-        <tr><td> </td></tr>
+        <tr></tr>
       </table>
-
       <hr>
-
       <table>
         <thead>
           <tr>
@@ -88,16 +85,33 @@
         <tbody id="keyframes">
         </tbody>
       </table>
-
+      <hr>
+      <table>
+        <tr>
+          <td>Preview</td><td></td>
+          <td style="width: 200px;">
+            <input id="preview-slider" type="range" min="0" max="200" step="1" value="0" onchange="previewCallback(this)" style="width: 200px; padding: 0px;">
+          </td><td></td>
+          <td id="preview-value"></td>
+        </tr>
+      </table>
     </form>
   </div>
 
-  <div class="preview">
-    <p style="float: left;">Preview</p>
-    <div style="float: left; width: 200px; padding-left: 12px; padding-right: 12px;">
-      <input id="preview-slider" type="range" min="0" max="200" step="1" value="0" onchange="previewCallback(this)" style="width: 200px; padding: 0px;">
-    </div>
-    <p id="preview-value" style="float: left;"></p>
+  <div class="data">
+    <form class="panel">
+      <table>
+        <tr>
+          <td>Hide / Show</td>
+        </tr>
+        <tr></tr>
+      </table>
+      <hr>
+      <table>
+        <tbody id="hideshow">
+        </tbody>
+      </table>
+    </form>
   </div>
 
 </body>
