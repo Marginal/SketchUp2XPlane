@@ -21,7 +21,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   def initialize(component)
     @component=component
     if @component.typename!='ComponentInstance' then fail end
-    @lastaction=nil
+    @lastaction=nil	# Record last change to the component for the purpose of merging Undo steps
     if Object::RUBY_PLATFORM =~ /darwin/i
       @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 374, 500)
     else
@@ -32,7 +32,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.add_action_callback("on_load") { |d,p| update_dialog }
     @dlg.add_action_callback("on_close") {|d,p| @dlg.close }
     @dlg.add_action_callback("on_set_var") { |d,p| set_var(p) }
-    @dlg.add_action_callback("on_set_position") { |d,p| set_position(p) }
+    @dlg.add_action_callback("on_set_transform") { |d,p| set_transform(p) }
+    @dlg.add_action_callback("on_get_transform") { |d,p| get_transform(p) }
     @dlg.add_action_callback("on_insert_frame") { |d,p| insert_frame(p) }
     @dlg.add_action_callback("on_delete_frame") { |d,p| delete_frame(p) }
     @dlg.add_action_callback("on_insert_hideshow") { |d,p| insert_hideshow(p) }
@@ -109,7 +110,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   def set_var(p)
     action=@component.definition.name+'/'+p
     model=Sketchup.active_model
-    model.start_operation('DataRef value', true, false, action==@lastaction)	# merge into last if setting same var again
+    model.start_operation('Animation value', true, false, action==@lastaction)	# merge into last if setting same var again
     @component.set_attribute(SU2XPlane::ATTR_DICT, p, @dlg.get_element_value(p).strip)
     model.commit_operation
     @lastaction=action
@@ -119,12 +120,23 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.execute_script("document.getElementById('preview-value').innerHTML=''")	# reset preview display since may no longer be accurate
   end
 
-  def set_position(p)
+  def set_transform(p)
+    action=@component.definition.name+'/'+SU2XPlane::ANIM_MATRIX_+p
     model=Sketchup.active_model
-    model.start_operation("Keyframe position", true)
+    model.start_operation("Set Transformation", true, false, action==@lastaction)	# merge into last if setting same transformation again
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, @component.transformation.to_a)
     model.commit_operation
-    @lastaction=nil
+    @lastaction=action
+  end
+
+  def get_transform(p)
+    action=@component.definition.name+'/preview'
+    model=Sketchup.active_model
+    model.start_operation('Preview Animation', true, false, action==@lastaction)	# treat same as preview for the sake of Undo
+    @component.transformation=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)
+    model.commit_operation
+    @lastaction=action
+    @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
   end
 
   def insert_frame(p)

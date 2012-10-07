@@ -66,7 +66,7 @@ function addKeyframe(keyframe, val, hasdeleter)
     }
     row.insertCell(-1).innerHTML="Keyframe #"+keyframe
     row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_FRAME_+keyframe+'" value="'+val+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
-    row.insertCell(-1).innerHTML='<input type="button" value="Set Position" onclick="window.location=\'skp:on_set_position@'+keyframe+'\'">'
+    row.insertCell(-1).innerHTML='<input type="button" value="Set" onclick="window.location=\'skp:on_set_transform@'+keyframe+'\'"> <input type="button" value="Get" onclick="window.location=\'skp:on_get_transform@'+keyframe+'\'">'
 }
 
 function addLoop(val)
