@@ -124,6 +124,11 @@ class XPlaneAnimation < Sketchup::EntityObserver
     action=@component.definition.name+'/'+SU2XPlane::ANIM_MATRIX_+p
     model=Sketchup.active_model
     model.start_operation("Set Transformation", true, false, action==@lastaction)	# merge into last if setting same transformation again
+    # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So reset scale before saving transformation.
+    #puts @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
+    t=@component.transformation.to_a
+    @component.transformation=@component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    #puts @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, @component.transformation.to_a)
     model.commit_operation
     @lastaction=action
@@ -134,6 +139,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     model=Sketchup.active_model
     model.start_operation('Preview Animation', true, false, action==@lastaction)	# treat same as preview for the sake of Undo
     @component.transformation=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)
+    #puts "Keyframe #{p}", @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
     model.commit_operation
     @lastaction=action
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
@@ -153,6 +159,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+newframe.to_s, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(newframe-1).to_s))
     end
     # use current transformation for inserted frame
+    t=@component.transformation.to_a
+    @component.transformation=@component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, @component.transformation.to_a)
     model.commit_operation
     update_dialog()
@@ -274,6 +282,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
       Geom::Transformation.interpolate(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_start.to_s),
                                        @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
                                        interp)
+    #puts "Keyframe #{key_start+interp}", @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
     model.commit_operation
     @lastaction=action
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % val)
@@ -312,6 +321,8 @@ def XPlaneMakeAnimation()
       model.start_operation('Animate', true)
     end
     modified=true
+    t=component.transformation.to_a
+    component.transformation=component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF, '')
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX, '')
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+'0', '0.0')
