@@ -1,3 +1,3 @@
-cp -p SU2XPlane*.html SU2XPlane.rb /Library/Application\ Support/Google\ SketchUp\ 8/SketchUp/plugins/
+cp -p *-SU2XPlane*.html SU2XPlane.rb /Library/Application\ Support/Google\ SketchUp\ 8/SketchUp/plugins/
 mkdir -p /Library/Application\ Support/Google\ SketchUp\ 8/SketchUp/plugins/SU2XPlane
 cp -p SU2XPlane/*.css SU2XPlane/*.html SU2XPlane/*.js SU2XPlane/*.rb /Library/Application\ Support/Google\ SketchUp\ 8/SketchUp/plugins/SU2XPlane

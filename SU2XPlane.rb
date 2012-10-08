@@ -81,12 +81,14 @@ if !file_loaded?("SU2XPlane.rb")
     anim=submenu.add_item("Animation...")    { XPlaneMakeAnimation() }
   end
 
-  help=Sketchup.find_support_file("SU2XPlane_"+Sketchup.get_locale.upcase.split('-')[0]+".html", "Plugins")
-  if not help
-    help=Sketchup.find_support_file("SU2XPlane.html", "Plugins")
+  help=Dir.glob(File.join(Sketchup.find_support_file("Plugins"), '*-SU2XPlane_'+Sketchup.get_locale.upcase.split('-')[0]+'.html'))
+  if help.empty?
+    help=Dir.glob(File.join(Sketchup.find_support_file("Plugins"), '*-SU2XPlane.html'))
   end
-  if help
-    UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help) }
+  if help.first
+    UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help.first) }
+  else
+    UI.menu("Help").add_item("X-Plane") { UI.messagebox("X-Plane help files are missing!") }
   end
   file_loaded("SU2XPlane.rb")
 end
