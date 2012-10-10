@@ -14,9 +14,17 @@ class XPlaneModelObserver < Sketchup::ModelObserver
     @parent.update_dialog()
   end
 
+  def onDeleteModel(model)
+    # This doesn't fire on closing the model, so currently worthless. Maybe it will work in the future.
+    @parent.close()
+  end
+
 end
 
+
 class XPlaneAnimation < Sketchup::EntityObserver
+
+  @@dlgs={}	# map components to open dialogs
 
   def initialize(component)
     @component=component
@@ -27,10 +35,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
     else
       @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 396, 640)
     end
+    @@dlgs[@component]=@dlg
     @dlg.allow_actions_from_host("getfirebug.com")	# for debugging on Windows
     @dlg.set_file(Sketchup.find_support_file('SU2XPlane', 'Plugins') + "/anim.html")
     @dlg.add_action_callback("on_load") { |d,p| update_dialog }
-    @dlg.add_action_callback("on_close") {|d,p| @dlg.close }
+    @dlg.add_action_callback("on_close") {|d,p| close }
+    @dlg.add_action_callback("on_add_child") { |d,p| add_child }
     @dlg.add_action_callback("on_set_var") { |d,p| set_var(p) }
     @dlg.add_action_callback("on_set_transform") { |d,p| set_transform(p) }
     @dlg.add_action_callback("on_get_transform") { |d,p| get_transform(p) }
@@ -42,9 +52,21 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @component.add_observer(self)
     @modelobserver=XPlaneModelObserver.new(self)
     Sketchup.active_model.add_observer(@modelobserver)
-    @dlg.set_on_close { begin @component.remove_observer(self) rescue TypeError end; Sketchup.active_model.remove_observer(@modelobserver) }
+    @dlg.set_on_close {
+      begin @component.remove_observer(self) rescue TypeError end
+      Sketchup.active_model.remove_observer(@modelobserver)
+      @@dlgs.delete(@component)
+    }
     @dlg.show
     @dlg.bring_to_front
+  end
+
+  def XPlaneAnimation.dlgs()
+    return @@dlgs
+  end
+
+  def close()
+    @dlg.close
   end
 
   def count_frames()
@@ -66,7 +88,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     begin
       if @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil
         # User has undone creation of animation attributes
-        @dlg.close
+        close()
         return
       end
     rescue TypeError
@@ -104,7 +126,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def onEraseEntity(entity)	# from EntityObserver
     # destroy ourselves if the component instance that we are animating is deleted
-    @dlg.close
+    close()
   end
 
   def set_var(p)
@@ -336,6 +358,11 @@ def XPlaneMakeAnimation()
     model.commit_operation
   end
 
-  XPlaneAnimation.new(component)
+  if XPlaneAnimation.dlgs.include?(component)
+    # An animation dialog for this component already exists
+    XPlaneAnimation.dlgs[component].bring_to_front
+  else
+    XPlaneAnimation.new(component)
+  end
 
 end
