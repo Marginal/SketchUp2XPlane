@@ -30,7 +30,7 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
       nomats = (not ent.material and not ent.back_material)
 
       if not (ent.material and ent.material.texture and ent.material.texture.filename) and not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
-	notex[0]+=1	# Only count once per surface (but still cylinders=24)
+        notex[0]+=1	# Only count once per surface (but still cylinders=24)
       end
       notex[1]+=1
 
@@ -40,21 +40,26 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
       attrs|=SU2XPlane::ATTR_ALPHA if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0
 
       # Create transformation w/out translation for normals
-      narray=trans.to_a
-      narray[12..16]=[0,0,0,1]
-      ntrans = Geom::Transformation.new(narray)
+      t=trans.to_a
+      t[12..16]=[0,0,0,1]
+      ntrans = Geom::Transformation.new(t)
+
+      # If determinant is negative (e.g. component is mirrored), tri indices need to be reversed.
+      # Simpify calculation by only considering rotation and scale parts (i.e. top left 3x3) of the transformation matrix,
+      det=t[0]*t[5]*t[1] - t[0]*t[6]*t[9] - t[1]*t[4]*t[10] + t[1]*t[6]*t[8] + t[2]*t[4]*t[9] - t[2]*t[5]*t[8]
 
       mesh=ent.mesh(7)	# vertex, uvs & normal
       [true,false].each do |front|
-	if front
-	  material=ent.material
-	else
-	  material=ent.back_material
-	end
+        if front
+          material=ent.material
+        else
+          material=ent.back_material
+        end
+        reverseidx=!(front^(det<0))
 
-	if nomats or (material and material.alpha>0.0)
-	  if material and material.texture
-	    tex=material.texture.filename
+        if nomats or (material and material.alpha>0.0)
+          if material and material.texture
+            tex=material.texture.filename
             if not File.exists? tex
               # Write embedded texture to filesystem, and update material to use it
               newtex=File.dirname(Sketchup.active_model.path) + "/" + (tex.split(/[\/\\:]+/)[-1])[0...-3] + "png"
@@ -66,67 +71,67 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
                 tex=newtex
               end
             end
-	    # Get minimum uv co-oords
-	    us=[]
-	    vs=[]
-	    ent.outer_loop.vertices.each do |vertex|
-	      if front
-		u=uvHelp.get_front_UVQ(vertex.position).to_a
-	      else
-		u=uvHelp.get_back_UVQ(vertex.position).to_a
-	      end
-	      us << (u.x/u.z).floor
-	      vs << (u.y/u.z).floor
-	    end
-	    minu=us.min
-	    minv=vs.min
-	  else
-	    tex=nil
-	    minu=minv=0
-	  end
+            # Get minimum uv co-oords
+            us=[]
+            vs=[]
+            ent.outer_loop.vertices.each do |vertex|
+              if front
+                u=uvHelp.get_front_UVQ(vertex.position).to_a
+              else
+                u=uvHelp.get_back_UVQ(vertex.position).to_a
+              end
+              us << (u.x/u.z).floor
+              vs << (u.y/u.z).floor
+            end
+            minu=us.min
+            minv=vs.min
+          else
+            tex=nil
+            minu=minv=0
+          end
 
-	  attrs|=SU2XPlane::ATTR_HARD if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
-	  thisvt=[]	# Vertices in this face
-	  for i in (1..mesh.count_points)
-	    v=trans * mesh.point_at(i)
-	    if tex
-	      u=mesh.uv_at(i, front)
-	    else
-	      u=[0,0,1]
-	    end
-	    n=(ntrans * mesh.normal_at(i)).normalize
-	    n=n.reverse if not front
-	    # round to export precision to increase chance of detecting dupes
-	    thisvt << (([tex] + v.to_a.collect{|j| (j*10000).round/10000.0} + n.to_a.collect{|j| (j*1000).round/1000.0}) << ((u.x/u.z-minu)*10000).round/10000.0 << ((u.y/u.z-minv)*10000).round/10000.0)
-	  end
+          attrs|=SU2XPlane::ATTR_HARD if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
+          thisvt=[]	# Vertices in this face
+          for i in (1..mesh.count_points)
+            v=trans * mesh.point_at(i)
+            if tex
+              u=mesh.uv_at(i, front)
+            else
+              u=[0,0,1]
+            end
+            n=(ntrans * mesh.normal_at(i)).normalize
+            n=n.reverse if not front
+            # round to export precision to increase chance of detecting dupes
+            thisvt << (([tex] + v.to_a.collect{|j| (j*10000).round/10000.0} + n.to_a.collect{|j| (j*1000).round/1000.0}) << ((u.x/u.z-minu)*10000).round/10000.0 << ((u.y/u.z-minv)*10000).round/10000.0)
+          end
 
-	  for i in (1..mesh.count_polygons)
-	    thistri=[]	# indices in this face
-	    mesh.polygon_at(i).each do |index|
-	      if index>0
-		v=thisvt[index-1]
-	      else
-		v=thisvt[-index-1]
-	      end
-	      # Look for duplicate vertex
-	      thisidx=myvt.rindex(v)
-	      if not thisidx
-		# Didn't find a duplicate vertex
-		thisidx=myvt.length
-		myvt << v
-	      end
-	      if front
-		thistri.unshift(thisidx)
-	      else
-		thistri.push(thisidx)
-	      end
-	    end
-	    if not thistri.empty?
+          for i in (1..mesh.count_polygons)
+            thistri=[]	# indices in this face
+            mesh.polygon_at(i).each do |index|
+              if index>0
+                v=thisvt[index-1]
+              else
+                v=thisvt[-index-1]
+              end
+              # Look for duplicate vertex
+              thisidx=myvt.rindex(v)
+              if not thisidx
+                # Didn't find a duplicate vertex
+                thisidx=myvt.length
+                myvt << v
+              end
+              if reverseidx
+                thistri.push(thisidx)
+              else
+                thistri.unshift(thisidx)
+              end
+            end
+            if not thistri.empty?
               myidx[attrs].concat(thistri)
-	    end
-	  end
+            end
+          end
 
-	end
+        end
 
       end	# [true,false].each do |front|
 
