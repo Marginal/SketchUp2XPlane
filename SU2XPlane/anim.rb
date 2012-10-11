@@ -30,6 +30,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @component=component
     if @component.typename!='ComponentInstance' then fail end
     @lastaction=nil	# Record last change to the component for the purpose of merging Undo steps
+    @myaction=false	# Record other changes made to the component so we don't merge those in to our Undo steps
     if Object::RUBY_PLATFORM =~ /darwin/i
       @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 374, 500)
     else
@@ -124,18 +125,37 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @lastaction=nil
   end
 
+  def onChangeEntity(entity)	# from EntityObserver
+    # destroy ourselves if the component instance that we are animating is deleted
+    if @myaction
+      # This change was caused by me
+      @myaction=false
+    else
+      # This change was caused by other editing - don't merge later Undo steps with it
+      @lastaction=nil
+    end
+  end
+
+  def start_operation(op_name, action)
+    # Merge this operation into last if performing same action again. If action==false don't merge even if it is the same action.
+    Sketchup.active_model.start_operation(op_name, true, false, action==@lastaction)
+    @lastaction = (action==false ? nil : action)
+  end
+
+  def commit_operation()
+    @myaction=true	# This change was caused by me
+    Sketchup.active_model.commit_operation
+  end
+
   def onEraseEntity(entity)	# from EntityObserver
     # destroy ourselves if the component instance that we are animating is deleted
     close()
   end
 
   def set_var(p)
-    action=@component.definition.name+'/'+p
-    model=Sketchup.active_model
-    model.start_operation('Animation value', true, false, action==@lastaction)	# merge into last if setting same var again
+    start_operation('Animation value', "#{@component.object_id}/#{p}")	# merge into last if setting same var again
     @component.set_attribute(SU2XPlane::ATTR_DICT, p, @dlg.get_element_value(p).strip)
-    model.commit_operation
-    @lastaction=action
+    commit_operation
     disable=!can_preview()
     @dlg.execute_script("document.getElementById('preview-slider').disabled=#{disable}")
     @dlg.execute_script("fdSlider."+(disable ? "disable" : "enable")+"('preview-slider')")
@@ -143,33 +163,28 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def set_transform(p)
-    action=@component.definition.name+'/'+SU2XPlane::ANIM_MATRIX_+p
+    start_operation("Set Position", "#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p)	# merge into last if setting same transformation again
     model=Sketchup.active_model
-    model.start_operation("Set Transformation", true, false, action==@lastaction)	# merge into last if setting same transformation again
     # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So reset scale before saving transformation.
     #puts @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
     t=@component.transformation.to_a
     @component.transformation=@component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     #puts @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, @component.transformation.to_a)
-    model.commit_operation
-    @lastaction=action
+    commit_operation
   end
 
   def get_transform(p)
-    action=@component.definition.name+'/preview'
+    start_operation('Preview Animation', "#{@component.object_id}/preview")	# treat same as preview for the sake of Undo
     model=Sketchup.active_model
-    model.start_operation('Preview Animation', true, false, action==@lastaction)	# treat same as preview for the sake of Undo
     @component.transformation=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)
     #puts "Keyframe #{p}", @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
-    model.commit_operation
-    @lastaction=action
+    commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
   end
 
   def insert_frame(p)
-    model=Sketchup.active_model
-    model.start_operation("Keyframe", true)
+    start_operation("Keyframe", false)
     newframe=p.to_i
     numframes=count_frames()
     # shift everything up
@@ -181,16 +196,16 @@ class XPlaneAnimation < Sketchup::EntityObserver
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+newframe.to_s, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(newframe-1).to_s))
     end
     # use current transformation for inserted frame
+    model=Sketchup.active_model
     t=@component.transformation.to_a
     @component.transformation=@component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, @component.transformation.to_a)
-    model.commit_operation
+    commit_operation
     update_dialog()
   end
 
   def delete_frame(p)
-    model=Sketchup.active_model
-    model.start_operation("Erase Keyframe", true)
+    start_operation("Erase Keyframe", false)
     oldframe=p.to_i
     numframes=count_frames()-1
     # shift everything down
@@ -198,15 +213,14 @@ class XPlaneAnimation < Sketchup::EntityObserver
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s,  @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(frame+1).to_s))
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+(frame+1).to_s))
     end
-    Sketchup.active_model.selection.first.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(SU2XPlane::ANIM_FRAME_+numframes.to_s)
-    Sketchup.active_model.selection.first.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(SU2XPlane::ANIM_MATRIX_+numframes.to_s)
-    model.commit_operation
+    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(SU2XPlane::ANIM_FRAME_+numframes.to_s)
+    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(SU2XPlane::ANIM_MATRIX_+numframes.to_s)
+    commit_operation
     update_dialog()
   end
 
   def insert_hideshow(p)
-    model=Sketchup.active_model
-    model.start_operation("Hide/Show", true)
+    start_operation("Hide/Show", false)
     newhs=p.to_i
     numhs=count_hideshow()
     # shift everything up
@@ -225,13 +239,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX,    '')
     @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM,     '0.0')
     @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO,       '1.0')
-    model.commit_operation
+    commit_operation
     update_dialog()
   end
 
   def delete_hideshow(p)
-    model=Sketchup.active_model
-    model.start_operation("Erase Hide/Show", true)
+    start_operation("Erase Hide/Show", false)
     oldhs=p.to_i
     numhs=count_hideshow()-1
     # shift everything down
@@ -245,12 +258,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
       @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO,       @component.get_attribute(SU2XPlane::ATTR_DICT, other+SU2XPlane::ANIM_HS_TO))
     end
     prefix=SU2XPlane::ANIM_HS_+numhs.to_s
-    Sketchup.active_model.selection.first.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_HIDESHOW)
-    Sketchup.active_model.selection.first.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_DATAREF)
-    Sketchup.active_model.selection.first.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_INDEX)
-    Sketchup.active_model.selection.first.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_FROM)
-    Sketchup.active_model.selection.first.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_TO)
-    model.commit_operation
+    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_HIDESHOW)
+    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_DATAREF)
+    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_INDEX)
+    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_FROM)
+    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_TO)
+    commit_operation
     update_dialog()
   end
 
@@ -270,9 +283,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def preview(p)
     if not can_preview() then return end
-    action=@component.definition.name+'/preview'
-    model=Sketchup.active_model
-    model.start_operation('Preview Animation', true, false, action==@lastaction)	# merge into last if previewing again
+    start_operation('Preview Animation', "#{@component.object_id}/preview")	# merge into last if previewing again
     prop=p.to_f	# 0->1
     numframes=count_frames()
     loop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).to_f
@@ -305,8 +316,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
                                        @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
                                        interp)
     #puts "Keyframe #{key_start+interp}", @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
-    model.commit_operation
-    @lastaction=action
+    commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % val)
   end
 
