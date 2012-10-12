@@ -1,16 +1,68 @@
+#
+# X-Plane animation UI
+#
+# An X-Plane animation is represented by attaching an AttributeDictionary named SU2XPlane::ATTR_DICT to a component.
+# (We use ComponentInstances rather than Groups because SketchUp by default doesn't display Group axes, and the axes' origin
+#  is obviously important for rotation animations).
+# A component can represent zero or one animation, and zero or multiple Hide/Show values.
+# Animations that depend on multiple DataRefs can be represented by nested components.
+#
+# The AttributeDictionary contains a set of animation entries named:
+# - SU2XPlane::ANIM_DATAREF - dataref, or '' if no animation
+# - SU2XPlane::ANIM_INDEX - dataref index, or '' if not an array dataref
+# - SU2XPlane::ANIM_FRAME_#, SU2XPlane::ANIM_MATRIX_# - dataref value and Geom::Transformation.to_a for each keyframe #
+#
+# The AttributeDictionary can also contain multiple entries representing Hide/Show. For each Hide/Show #:
+# - SU2XPlane::ANIM_HS_#SU2XPlane::ANIM_HS_HIDESHOW - "hide" or "show"
+# - SU2XPlane::ANIM_HS_#SU2XPlane::ANIM_HS_DATAREF  - dataref
+# - SU2XPlane::ANIM_HS_#SU2XPlane::ANIM_HS_INDEX    - dataref index, or '' if not an array dataref
+# - SU2XPlane::ANIM_HS_#SU2XPlane::ANIM_HS_FROM, SU2XPlane::ANIM_HS_#SU2XPlane::ANIM_HS_TO - from and to values
+#
+# Each animation component can have an associated WebDialog which displays and allows manipulation of the AttributeDictionary
+# entries. The WebDialog is wrapped by an instance of the XPlaneAnimation class, implemented in this file.
+# The WebDialog allows the user to store the component's current translation/rotation as a KeyFrame position in the component's
+# AttributeDictionary as SU2XPlane::ANIM_MATRIX_#, and to preview the interpolation/extrapolation between KeyFrame positions.
+#
+# There is one complication: The component's transformation (ComponentInstance.transformation) is temporarily rewritten by
+# SketchUp while the component (or component's parent or children) is "open" for editing (i.e. the component or its immediate
+# parent is in Sketchup.active_model.active_path). (Presumably this seemed like a good idea to someone at the time).
+# Storing or setting the component.transformation in this situation gives bogus results unless we adjust for this.
+# See http://sketchucation.com/forums/viewtopic.php?f=323&p=263794 for a discussion.
+# For children of the currently "open" component we can adjust for this by applying Sketchup.active_model.edit_transform.inverse
+# to the child's transformation before storing it, and by applying Sketchup.active_model.edit_transform before setting the
+# child's transformation.
+# For the currently "open" component and its parents we could probably work up the Sketchup.active_model.active_path list to
+# calculate the appropriate adjustment. But setting the open component's or its parents' transformations doesn't update the open
+# component's edit bounding box in the SketchUp UI, so the open component and children can move out of their bounding box which
+# looks weird.
+#
+# So we disable the WebDialog that allows the user to store and/or set component.transformation if the component or any of its
+# children are "open" for editing in the SketchUp UI - i.e. if the the component is not a member or child of
+# Sketchup.active_model.active_entities. Now we only need to apply Sketchup.active_model.edit_transform[.inverse] if the component
+# is a direct child of the currently "open" component - i.e. the component is in Sketchup.active_model.active_entities.
+#
+# SketchUp displays everything outside of the currently "open" component as tinted green - both parents and unrelated component
+# hierarchies. For consistency of UI we also disable the WebDialog for these unrelated components (even though it would be safe
+# to store and/or set their component.transformation without causing edit bounding box weirdness).
+#
+
 class XPlaneModelObserver < Sketchup::ModelObserver
 
   def initialize(parent)
     @parent=parent
   end
 
-  def onTransactionUndo(model)	# from ModelObserver
+  def onTransactionUndo(model)
     # Don't know what's being undone, so just always update dialog
     @parent.update_dialog()
   end
 
-  def onTransactionRedo(model)	# from ModelObserver
+  def onTransactionRedo(model)
     # Don't know what's being redone, so just always update dialog
+    @parent.update_dialog()
+  end
+
+  def onActivePathChanged(model)
     @parent.update_dialog()
   end
 
@@ -70,6 +122,19 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.close
   end
 
+  def included?(entities)
+    # Is this component in entities, or in sub-entities
+    return true if entities.include?(@component)
+    entities.each do |e|
+      if e.typename=='Group'
+        return true if included?(e.entities)
+      elsif e.typename=='ComponentInstance'
+        return true if included?(e.definition.entities)
+      end
+    end
+    return false
+  end
+
   def count_frames()
     # Recalculate frame count very time we need the value in case component has been modified elsewhere
     numframes=0
@@ -98,6 +163,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
     end
     @dlg.execute_script("resetDialog('#{@component.name!='' ? @component.name : @component.definition.name}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}')")
 
+    model=Sketchup.active_model
+    disable=((model.active_path!=nil) and (!included?(model.active_entities)))	# Can't manipulate transformation while subcomponents are being edited.
+
     numframes=count_frames()
     hasdeleter = numframes>2 ? "true" : "false"
     for frame in 0...numframes
@@ -106,9 +174,6 @@ class XPlaneAnimation < Sketchup::EntityObserver
     end
     @dlg.execute_script("addFrameInserter(#{numframes})")
     @dlg.execute_script("addLoop('#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP)}')")
-    disable=!can_preview()
-    @dlg.execute_script("document.getElementById('preview-slider').disabled=#{disable}")
-    @dlg.execute_script("fdSlider."+(disable ? "disable" : "enable")+"('preview-slider')")
 
     hideshow=0
     while true
@@ -121,6 +186,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     end
     @dlg.execute_script("addHSInserter(#{hideshow})")
 
+    @dlg.execute_script("disable(#{disable}, #{disable or !can_preview()})")
     @dlg.execute_script("window.location='#top'")	# Force redisplay - required on Mac
     @lastaction=nil
   end
@@ -164,21 +230,18 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def set_transform(p)
     start_operation("Set Position", "#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p)	# merge into last if setting same transformation again
-    model=Sketchup.active_model
-    # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So reset scale before saving transformation.
-    #puts @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
+    # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale.    model=Sketchup.active_model
     t=@component.transformation.to_a
-    @component.transformation=@component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
-    #puts @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
-    @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, @component.transformation.to_a)
+    trans=(model.active_entities.include?(@component) ? model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, trans.to_a)
     commit_operation
   end
 
   def get_transform(p)
     start_operation('Preview Animation', "#{@component.object_id}/preview")	# treat same as preview for the sake of Undo
     model=Sketchup.active_model
-    @component.transformation=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)
-    #puts "Keyframe #{p}", @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
+    t=@component.transformation.to_a
+    @component.transformation=(model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
     commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
   end
@@ -198,7 +261,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     # use current transformation for inserted frame
     model=Sketchup.active_model
     t=@component.transformation.to_a
-    @component.transformation=@component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    @component.transformation=(model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) * @component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, @component.transformation.to_a)
     commit_operation
     update_dialog()
@@ -311,11 +374,13 @@ class XPlaneAnimation < Sketchup::EntityObserver
     val_start=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_start).to_s).to_f
     val_stop =@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s).to_f
     interp= (val - val_start) / (val_stop - val_start)
-    @component.transformation=
+    model=Sketchup.active_model
+    t=@component.transformation.to_a
+    @component.transformation= (model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) *
       Geom::Transformation.interpolate(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_start.to_s),
                                        @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
-                                       interp)
-    #puts "Keyframe #{key_start+interp}", @component.transformation.to_a.join(' '), @component.transformation.origin, @component.transformation.xaxis, @component.transformation.yaxis, @component.transformation.zaxis
+                                       interp) *
+      Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
     commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % val)
   end
@@ -354,13 +419,13 @@ def XPlaneMakeAnimation()
     end
     modified=true
     t=component.transformation.to_a
-    component.transformation=component.transformation*Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    trans=model.edit_transform.inverse * component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF, '')
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX, '')
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+'0', '0.0')
-    component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0', component.transformation.to_a)
+    component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0', trans.to_a)
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+'1', '1.0')
-    component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'1', component.transformation.to_a)
+    component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'1', trans.to_a)
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP, '')
   end
 

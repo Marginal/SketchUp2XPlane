@@ -46,6 +46,18 @@ function resetDialog(title, dataref, index)
     while (hideshow.rows.length) {
         hideshow.deleteRow(-1)
     }
+
+    inputs=document.getElementsByTagName("input")
+    for (var i=0; i<inputs.length; i++) { inputs[i].disabled=false; }
+}
+
+function disable(disable_all, disable_preview)
+{
+    inputs=document.getElementsByTagName("input")
+    for (var i=0; i<inputs.length; i++) { inputs[i].disabled|=disable_all; }
+    document.getElementById('preview-slider').disabled=disable_preview
+    disable_preview ? fdSlider.disable('preview-slider') : fdSlider.enable('preview-slider');
+    document.body.style.backgroundColor=(disable_all ? "#bfdfb7" : "white");
 }
 
 function addFrameInserter(keyframe)
@@ -66,7 +78,7 @@ function addKeyframe(keyframe, val, hasdeleter)
     }
     row.insertCell(-1).innerHTML="Keyframe #"+keyframe
     row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_FRAME_+keyframe+'" value="'+val+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
-    row.insertCell(-1).innerHTML='<input type="button" value="Set" onclick="window.location=\'skp:on_set_transform@'+keyframe+'\'"> <input type="button" value="Get" onclick="window.location=\'skp:on_get_transform@'+keyframe+'\'">'
+    row.insertCell(-1).innerHTML='<input type="button" value="Set" onclick="window.location=\'skp:on_set_transform@'+keyframe+'\'"> <input type="button" value="Show" onclick="window.location=\'skp:on_get_transform@'+keyframe+'\'">'
 }
 
 function addLoop(val)
