@@ -93,7 +93,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.set_file(Sketchup.find_support_file('SU2XPlane', 'Plugins') + "/anim.html")
     @dlg.add_action_callback("on_load") { |d,p| update_dialog }
     @dlg.add_action_callback("on_close") {|d,p| close }
-    @dlg.add_action_callback("on_add_child") { |d,p| add_child }
+    @dlg.add_action_callback("on_erase") { |d,p| erase }
     @dlg.add_action_callback("on_set_var") { |d,p| set_var(p) }
     @dlg.add_action_callback("on_set_transform") { |d,p| set_transform(p) }
     @dlg.add_action_callback("on_get_transform") { |d,p| get_transform(p) }
@@ -283,8 +283,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s,  @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(frame+1).to_s))
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+(frame+1).to_s))
     end
-    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(SU2XPlane::ANIM_FRAME_+numframes.to_s)
-    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(SU2XPlane::ANIM_MATRIX_+numframes.to_s)
+    dict=@component.attribute_dictionary(SU2XPlane::ATTR_DICT)
+    dict.delete_key(SU2XPlane::ANIM_FRAME_+numframes.to_s)
+    dict.delete_key(SU2XPlane::ANIM_MATRIX_+numframes.to_s)
     commit_operation
     update_dialog()
   end
@@ -328,11 +329,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
       @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO,       @component.get_attribute(SU2XPlane::ATTR_DICT, other+SU2XPlane::ANIM_HS_TO))
     end
     prefix=SU2XPlane::ANIM_HS_+numhs.to_s
-    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_HIDESHOW)
-    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_DATAREF)
-    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_INDEX)
-    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_FROM)
-    @component.attribute_dictionary(SU2XPlane::ATTR_DICT).delete_key(prefix+SU2XPlane::ANIM_HS_TO)
+    dict=@component.attribute_dictionary(SU2XPlane::ATTR_DICT)
+    dict.delete_key(prefix+SU2XPlane::ANIM_HS_HIDESHOW)
+    dict.delete_key(prefix+SU2XPlane::ANIM_HS_DATAREF)
+    dict.delete_key(prefix+SU2XPlane::ANIM_HS_INDEX)
+    dict.delete_key(prefix+SU2XPlane::ANIM_HS_FROM)
+    dict.delete_key(prefix+SU2XPlane::ANIM_HS_TO)
     commit_operation
     update_dialog()
   end
@@ -390,6 +392,29 @@ class XPlaneAnimation < Sketchup::EntityObserver
       Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
     commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % val)
+  end
+
+  def erase()
+    start_operation("Erase Animation", false)
+    # Tempting to just do attribute_dictionaries.delete(SU2XPlane::ATTR_DICT), but that woudld erase other attributes like Alpha etc
+    dict=@component.attribute_dictionary(SU2XPlane::ATTR_DICT)
+    0.upto(count_frames()) do |frame|
+      dict.delete_key(SU2XPlane::ANIM_FRAME_+frame.to_s)
+      dict.delete_key(SU2XPlane::ANIM_MATRIX_+frame.to_s)
+    end
+    dict.delete_key(SU2XPlane::ANIM_DATAREF)
+    dict.delete_key(SU2XPlane::ANIM_INDEX)
+
+    0.upto(count_hideshow()) do |hs|
+      prefix=SU2XPlane::ANIM_HS_+hs.to_s
+      dict.delete_key(prefix+SU2XPlane::ANIM_HS_HIDESHOW)
+      dict.delete_key(prefix+SU2XPlane::ANIM_HS_DATAREF)
+      dict.delete_key(prefix+SU2XPlane::ANIM_HS_INDEX)
+      dict.delete_key(prefix+SU2XPlane::ANIM_HS_FROM)
+      dict.delete_key(prefix+SU2XPlane::ANIM_HS_TO)
+    end
+    close()
+    commit_operation
   end
 
 end
