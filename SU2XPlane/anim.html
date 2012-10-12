@@ -4,7 +4,7 @@
   
 <head>
 
-  <!-- <script type="text/javascript" src="https://getfirebug.com/firebug-lite.js#startOpened"></script> -->
+  <!-- <script type="text/javascript" src="http://getfirebug.com/firebug-lite.js#startOpened"></script> -->
   <script type="text/javascript" src="anim.js"></script>
   <script type="text/javascript" src="fd-slider.js"></script>	<!-- from http://www.frequency-decoder.com/2010/11/18/unobtrusive-slider-control-html5-input-range-polyfill -->
   <script>
@@ -23,15 +23,16 @@
     * { margin: 0px; }
     body { font-family:sans-serif; }
     input[type=text] { border: 1px inset; }	/* workaround for Safari bug */
-    table { font-size: small; }
+    table { font-size: small; text-align: center; }
     th { font-weight: normal; font-size: smaller; }
     .addremovebutton { width: 32px; font-weight: bold; }
-    .header { padding: 12px; background: #e2ded7; }
-    .description { padding: 12px; font-size: smaller; }
-    .data { padding: 12px; }
+    .header { padding: 8px; background: #e2ded7; }
+    .description { padding: 8px; font-size: x-small; }
+    .data { padding: 8px; }
     .panel { border: 1px inset; padding: 4px; background: #e2ded7; }
     .preview { padding: 12px; font-size: small; }
-    .footer { background: #e2ded7; position: fixed; bottom: 0px; width: 100%; height: 30px; text-align: center; }
+    .footer { background: #e2ded7; text-align: center;
+    }
     .fd-slider-handle { cursor: default; }
     .fd-slider-range, .oldie .fd-slider-range {
       background-color: #ddd;
@@ -43,7 +44,10 @@
     body.fd-slider-drag-horizontal, body.fd-slider-drag-horizontal * { cursor: default; }
   </style>
 <!--[if lte IE 8]>
-  <style>hr { margin:-7px 0; }</style>
+  <style>
+    hr { margin: -7px; }
+    .footer { margin: -12px 0 0; }
+  </style>
 <![endif]-->
 
 </head>
@@ -58,10 +62,12 @@
 
   <hr>
 
+  <!--
   <div class="description">
     <p>You can make this component (and any children) animate in X-Plane according to the value of one of the simulator DataRefs of type "int", "float" or "double" listed <a target="_blank" href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html">here</a>.</p>
-    <p>DataRefs listed with "[<i>n</i>]" after their type are arrays; you will need to also supply an Index value for these.</p>
+    <p>DataRefs listed with "[<i>n</i>]" after their type are arrays; you will also need to supply an index value for these.</p>
   </div>
+  -->
 
   <div class="data">
     <form class="panel">
@@ -79,7 +85,7 @@
             <th></th>
             <th></th>
             <th>DataRef value</th>
-            <th>Transformation</th>
+            <th>Position</th>
           </tr>
         </thead>
         <tbody id="keyframes">
@@ -98,7 +104,7 @@
     </form>
   </div>
 
-  <div class="data">
+  <div class="data" style="padding-top: 0px;">
     <form class="panel">
       <table>
         <tr>

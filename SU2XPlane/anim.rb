@@ -84,9 +84,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @lastaction=nil	# Record last change to the component for the purpose of merging Undo steps
     @myaction=false	# Record other changes made to the component so we don't merge those in to our Undo steps
     if Object::RUBY_PLATFORM =~ /darwin/i
-      @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 374, 500)
+      @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 360, 398)
     else
-      @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 396, 640)
+      @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 386, 528)
     end
     @@dlgs[@component]=@dlg
     @dlg.allow_actions_from_host("getfirebug.com")	# for debugging on Windows
@@ -161,7 +161,14 @@ class XPlaneAnimation < Sketchup::EntityObserver
       # User has undone creation of animation component -> underlying @component object has been deleted.
       return	#  Ignore and wait for onEraseEntity
     end
-    @dlg.execute_script("resetDialog('#{@component.name!='' ? @component.name : @component.definition.name}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}')")
+    if @component.name!=''
+      title=@component.name
+    elsif @component.respond_to?(:definition)
+      title='&lt;'+@component.definition.name+'&gt;'
+    else
+      title='Group'
+    end
+    @dlg.execute_script("resetDialog('#{title}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}')")
 
     model=Sketchup.active_model
     disable=((model.active_path!=nil) and (!included?(model.active_entities)))	# Can't manipulate transformation while subcomponents are being edited.
@@ -409,15 +416,17 @@ def XPlaneMakeAnimation()
       # Make a new component out of whatever was selected
       component=model.active_entities.add_group(ss).to_component	# add_group is crashy but we should be OK since selection is subset of the active_model
     end
-    component.definition.name='Animation'	# Otherwise has name Group#n
+    component.definition.name='Component#1'	# Otherwise has name Group#n. SketchUp will uniquify.
+    model.selection.add(component)
   end
   
   if component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil
     # We have a pre-existing or new component. In either case set a minimal set of values.
     if !modified
       model.start_operation('Animate', true)
+      modified=true
     end
-    modified=true
+    if component.name=='' and component.typename=='Group' then component.name='Animation' end
     t=component.transformation.to_a
     trans=model.edit_transform.inverse * component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF, '')

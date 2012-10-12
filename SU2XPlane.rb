@@ -70,15 +70,17 @@ if !file_loaded?("SU2XPlane.rb")
   UI.menu("Tools").add_item("Highlight Untextured") { XPlaneHighlight() }
 
   UI.add_context_menu_handler do |menu|
-    menu.add_separator
-    submenu = menu.add_submenu "X-Plane"
-    hard=submenu.add_item("Hard")      { XPlaneToggleAttr(SU2XPlane::ATTR_HARD_NAME) }
-    submenu.set_validation_proc(hard)  { XPlaneValidateAttr(SU2XPlane::ATTR_HARD_NAME) }
-    poly=submenu.add_item("Ground")    { XPlaneToggleAttr(SU2XPlane::ATTR_POLY_NAME) }
-    submenu.set_validation_proc(poly)  { XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
-    alpha=submenu.add_item("Alpha")    { XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
-    submenu.set_validation_proc(alpha) { XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
-    anim=submenu.add_item("Animation...")    { XPlaneMakeAnimation() }
+    if !Sketchup.active_model.selection.empty?
+      menu.add_separator
+      submenu = menu.add_submenu "X-Plane"
+      hard=submenu.add_item("Hard")      { XPlaneToggleAttr(SU2XPlane::ATTR_HARD_NAME) }
+      submenu.set_validation_proc(hard)  { XPlaneValidateAttr(SU2XPlane::ATTR_HARD_NAME) }
+      poly=submenu.add_item("Ground")    { XPlaneToggleAttr(SU2XPlane::ATTR_POLY_NAME) }
+      submenu.set_validation_proc(poly)  { XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
+      alpha=submenu.add_item("Alpha")    { XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+      submenu.set_validation_proc(alpha) { XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+      anim=submenu.add_item("Animation...")    { XPlaneMakeAnimation() }
+    end
   end
 
   help=Dir.glob(File.join(Sketchup.find_support_file("Plugins"), '*-SU2XPlane_'+Sketchup.get_locale.upcase.split('-')[0]+'.html'))
