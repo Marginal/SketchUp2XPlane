@@ -24,7 +24,7 @@
 # AttributeDictionary as SU2XPlane::ANIM_MATRIX_#, and to preview the interpolation/extrapolation between KeyFrame positions.
 #
 # There is one complication: The component's transformation (ComponentInstance.transformation) is temporarily rewritten by
-# SketchUp while the component (or component's parent or children) is "open" for editing (i.e. the component or its immediate
+# SketchUp while the component (or component's parent or (grand)children) are "open" for editing (i.e. the component or its immediate
 # parent is in Sketchup.active_model.active_path). (Presumably this seemed like a good idea to someone at the time).
 # Storing or setting the component.transformation in this situation gives bogus results unless we adjust for this.
 # See http://sketchucation.com/forums/viewtopic.php?f=323&p=263794 for a discussion.
@@ -237,9 +237,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def set_transform(p)
     start_operation("Set Position", "#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p)	# merge into last if setting same transformation again
-    # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale.    model=Sketchup.active_model
-    t=@component.transformation.to_a
-    trans=(model.active_entities.include?(@component) ? model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
+    model=Sketchup.active_model
+    trans=(model.active_entities.include?(@component) ? model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, trans.to_a)
     commit_operation
   end
@@ -247,8 +247,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   def get_transform(p)
     start_operation('Preview Animation', "#{@component.object_id}/preview")	# treat same as preview for the sake of Undo
     model=Sketchup.active_model
-    t=@component.transformation.to_a
-    @component.transformation=(model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
+    @component.transformation=(model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
     commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
   end
@@ -472,6 +471,148 @@ def XPlaneMakeAnimation()
     XPlaneAnimation.dlgs[component].bring_to_front
   else
     XPlaneAnimation.new(component)
+  end
+
+end
+
+
+class Numeric
+
+  def to_rad
+    self * (Math::PI/180)
+  end
+
+  def to_deg
+    self * (180/Math::PI)
+  end
+
+end
+
+
+#
+# Implement 1.9 round() functionality in 1.8
+#
+if Float.instance_method(:round).arity == 0
+  class Float
+    alias_method :oldround, :round
+    def round(ndigits=0)
+      factor = 10.0**ndigits
+      if ndigits > 0
+        return (self*factor).oldround / factor
+      else
+        return ((self*factor).oldround / factor).to_i	# return Integer if ndigits<=0
+      end
+    end
+  end
+
+  class Fixnum
+    def round(ndigits=0)
+      self.to_f.round(ndigits)
+    end
+  end
+end
+
+
+#
+# Extend Transformation with accessors
+#
+class Geom::Transformation
+
+  def XPEuler
+    # returns same as [rotx, roty, rotz], but returns Float radians not Integer degrees
+    # http://www.soi.city.ac.uk/~sbbh653/publications/euler.pdf
+    t = (self * Geom::Transformation.scaling(1/xscale, 1/yscale, 1/zscale)).to_a		# rescaled to identity
+    if (t[2]!=1) && (t[2]!=-1)
+      ry = -Math.asin(t[2])
+      cry= Math.cos(ry)
+      rx = Math.atan2(t[6]/cry,t[10]/cry)
+      rz = Math.atan2(t[1]/cry, t[0]/cry)
+    else
+      ry = (0 <=> t[2]) * Math::PI/2
+      rx = Math.atan2(t[4],t[8])
+      rz = 0
+    end
+    return [rx, ry, rz]
+  end
+
+  if not Geom::Transformation.method_defined? :determinant
+    def determinant
+      t=self.to_a
+      fail if t[3]!=0 or t[7]!=0 or t[11]!=0	# Assume transformation has no projection, so only need to calculate top left 3x3 portion
+      t[0]*t[5]*t[10] - t[0]*t[6]*t[9] - t[1]*t[4]*t[10] + t[1]*t[6]*t[8] + t[2]*t[4]*t[9] - t[2]*t[5]*t[8]
+    end
+  end
+
+end
+
+
+#
+# Extend ComponentInstance with animation accessors.
+# Logic is similar to XPlaneAnimation above, except return values are truncated to output precision etc
+#
+class Sketchup::ComponentInstance
+
+  def XPDataRef
+    # returns DataRef, w/ index if any
+    dataref=get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)
+    return nil if !dataref || dataref==''
+    index=get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)
+    dataref = dataref+'['+index+']' if index and index!=''
+    return dataref
+  end
+
+  def XPCountFrames
+    return 0 if !self.XPDataRef
+    numframes=0
+    while get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+numframes.to_s) != nil do numframes+=1 end
+    return numframes
+  end
+
+  def XPValues
+    retval=[]
+    (0...self.XPCountFrames).each do |frame|
+      retval << get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s)
+    end
+    return retval
+  end
+
+  def XPLoop
+    return '0' if !self.XPDataRef
+    get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP)
+  end
+
+  def XPRotations(trans=Geom::Transformation.new)
+    retval=[]
+    (0...self.XPCountFrames).each do |frame|
+      retval << (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).XPEuler.map { |a| a.to_deg.round(SU2XPlane::P_A) }
+    end
+    return retval
+  end
+
+  def XPTranslations(trans=Geom::Transformation.new)
+    retval=[]
+    (0...self.XPCountFrames).each do |frame|
+      retval << (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).origin.to_a.map { |v| v.round(SU2XPlane::P_V) }
+    end
+    return retval
+  end
+
+  def XPHideShow
+    # returns Array of HideShow values ['hide'/'show', dataref, from, to]
+    retval=[]
+    numhs=0
+    while true
+      prefix=SU2XPlane::ANIM_HS_+numhs.to_s
+      numhs+=1
+      hs=get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)
+      break if !hs
+      dataref=get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_DATAREF)
+      next if !dataref || dataref==''
+      index=get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX)
+      dataref+=('['+index+']') if index and index!=''
+      retval << [hs, dataref, get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM), get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO)]
+    end
+    return retval
   end
 
 end

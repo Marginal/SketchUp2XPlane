@@ -21,17 +21,9 @@ module SU2XPlane
 
   # X-Plane attributes
   ATTR_DICT="X-Plane"
-  ATTR_HARD=1
   ATTR_HARD_NAME="poly"	# incorrect dictionary key not fixed for compatibility
-  ATTR_POLY=2
   ATTR_POLY_NAME="hard"	# ditto
-  ATTR_ALPHA=4
   ATTR_ALPHA_NAME="alpha"
-  ATTR_SEQ=[
-            ATTR_POLY, ATTR_POLY|ATTR_HARD,
-            ATTR_POLY|ATTR_ALPHA, ATTR_POLY|ATTR_ALPHA|ATTR_HARD,
-            0, ATTR_HARD,
-            ATTR_ALPHA, ATTR_ALPHA|ATTR_HARD]
 
   # Animation attributes. Must be consistent with anim.js
   ANIM_DATAREF='dataref'
@@ -52,8 +44,12 @@ module SU2XPlane
   LIGHTNAMED=['LIGHT_NAMED', 'LIGHT_PARAM']
   LIGHTCUSTOM=['LIGHT_CUSTOM', 'LIGHT_SPILL_CUSTOM', 'smoke_black', 'smoke_white']
 
-  # Misc
-  DYNAMIC_DICT='dynamic_attributes'
+  # Output precision
+  P_V=4		# Vertex
+  P_N=3		# Normal
+  P_UV=4	# UV
+  P_A=2		# Animation angle
+
 end
 
 

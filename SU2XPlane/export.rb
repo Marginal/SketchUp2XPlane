@@ -1,27 +1,163 @@
+class XPPrim
+
+  include Comparable
+
+  # Flags for export in order of priority low->high. Attributes represented by lower bits are flipped more frequently on output.
+  HARD=1
+  # animation should come here
+  ALPHA=2
+  NPOLY=4	# negated so ground polygons come first
+
+  # Types
+  TRIS='Tris'
+  LIGHT='Light'
+
+  attr_reader(:typename, :anim, :attrs)
+  attr_accessor(:i)
+
+  def initialize(typename, anim, attrs=NPOLY)
+    @typename=typename	# One of TRIS, LIGHT
+    @anim=anim		# XPAnim context, or nil if top-level - i.e. not animated
+    @attrs=attrs	# bitmask
+    @i=[]		# indices into the global vertex table for Tris. [freetext, vx, vy, vz] for Light
+  end
+
+  def <=>(other)
+    # For sorting primitives in order of priority
+    c = ((self.attrs&(NPOLY|ALPHA)) <=> (other.attrs&(NPOLY|ALPHA)))
+    return c if c!=0
+    if self.anim && other.anim
+      c = ((self.anim) <=> (other.anim))
+      return c if c!=0
+    elsif self.anim || other.anim
+      return -1 if !self.anim	# no animation precedes animation
+      return 1 if !other.anim	# no animation precedes animation
+    end
+    c = ((self.attrs&HARD) <=> (other.attrs&HARD))
+    return c if c!=0
+    c = (self.typename <=> other.typename)
+    return c
+  end
+
+end
+
+class XPAnim
+
+  include Comparable
+
+  attr_reader(:parent, :transformation, :dataref, :v, :loop, :t, :rx, :ry, :rz, :hideshow)
+
+  def initialize(component, parent, trans)
+    @parent=parent	# parent XPAnim, or nil if parent is top-level - i.e. not animated
+    @transformation=trans*component.transformation	# transformation to be applied to sub-geometry
+    @dataref=component.XPDataRef	# DataRef, w/ index if any
+    @v=component.XPValues		# 0 or n keyframe dataref values. Note: stored as String
+    @loop=component.XPLoop		# loop dataref value. Note: stored as String
+    @t=component.XPTranslations(trans)	# translation, 0, 1 or n translations (0=just hide/show, 1=rotation w/ no translation)
+    @rx=@ry=@rz=[]			# 0 or n rotation angles
+    @hideshow=component.XPHideShow	# show/hide values [show/hide, dataref, from, to]
+
+    @t=[@t[0]] if (@t.inject({}) { |h,v| h.store(v,true) && h }).length == 1	# if translation constant across keyframes reduce to one entry
+    rot=component.XPRotations(trans)
+    if (rot.inject({}) { |h,v| h.store(v,true) && h }).length <= 1
+      # rotation constant across all keyframes - just use current rotation
+      if @t.length > 1
+        # strip out translation from children's transformation
+        @transformation=trans * Geom::Transformation.translation(Geom::Point3d.new - component.transformation.origin) * component.transformation
+      else
+        # no animation of any kind
+        @t=[]
+        raise ArgumentError if @hideshow==[]	# and no Hide/Show either
+      end
+    else
+      # we have rotation keyframes, so untranslate and unrotate to obtain children's transformation (i.e. just scale)
+      currentangles=component.transformation.XPEuler()
+      @transformation = Geom::Transformation.translation(Geom::Point3d.new - component.transformation.origin) * component.transformation
+      if (rot.inject({}) { |h,v| h.store(v[0],true) && h }).length > 1
+        # We have rotation about x axis, so unrotate about x
+        @transformation = Geom::Transformation.rotation([0,0,0], [1,0,0], -currentangles[0]) * @transformation
+        @rx = rot.map { |v| v[0] }
+      end
+      if (rot.inject({}) { |h,v| h.store(v[1],true) && h }).length > 1
+        # We have rotation about y axis, so unrotate about y
+        @transformation = Geom::Transformation.rotation([0,0,0], [0,1,0], -currentangles[1]) * @transformation
+        @ry = rot.map { |v| v[1] }
+      end
+      if (rot.inject({}) { |h,v| h.store(v[2],true) && h }).length > 1
+        # We have rotation about z axis, so unrotate about z
+        @transformation = Geom::Transformation.rotation([0,0,0], [0,0,1], -currentangles[2]) * @transformation
+        @rz = rot.map { |v| v[2] }
+      end
+      @transformation = trans * @transformation
+    end
+  end
+
+  def <=>(other)
+    # For sorting animations. We don't examine the animation contents - just ensure that parents come before their children.
+    p=other.parent
+    while p
+      return -1 if p.object_id==self.object_id	# other is a child of self
+      p=p.parent
+    end
+    p=self.parent
+    while p
+      return 1 if p.object_id==other.object_id	# self is a child of other
+      p=p.parent
+    end
+    # no parent/child relationship ('though could be siblings, cousins, etc)
+    return self.object_id<=>other.object_id	# use object_id to give a stable sort
+  end
+
+  def self.ins(anim)
+    # Padding level in output file. Class method so can pass in nil anim.
+    pad=''
+    while anim do
+      pad+="\t"
+      anim=anim.parent
+    end
+    return pad
+  end
+
+end
+
+
 # Accumulate vertices and indices into vt and idx
-def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
+def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, notex)
 
-  # Vertices and Indices added at this level (but not below) - to detect dupes
-  myvt=[]
-  myidx=Array.new(SU2XPlane::ATTR_SEQ.length) {[]}
+  base=vt.length
+  prim=nil	# keep adding to the same XPPrim until attributes change
 
-  entities.each do |ent|
+  # Create transformation w/out translation for normals
+  ntrans = Geom::Transformation.translation(Geom::Point3d.new - trans.origin) * trans
+
+  # If determinant is negative (e.g. parent component is mirrored), tri indices need to be reversed.
+  det = trans.determinant
+
+  # Process Faces before Groups and ComponentInstances so that we can search Vertices added at this level (but not below) to detect dupes
+  (entities.sort { |a,b| b.typename<=>a.typename }).each do |ent|
 
     next if ent.hidden? or not ent.layer.visible?
 
     case ent.typename
 
     when "ComponentInstance"
-      XPlaneAccumPolys(ent.definition.entities, trans*ent.transformation, tw, vt, idx, notex, lights) if ent.definition.name!="Susan"	# Silently skip Susan
+      begin
+        newanim=XPAnim.new(ent, anim, trans)
+        XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, notex)
+      rescue ArgumentError
+        # This component is not an animation
+        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, notex) if ent.definition.name!="Susan"	# Silently skip Susan
+      end
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, trans*ent.transformation, tw, vt, idx, notex, lights)
+      XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, notex)
 
     when "Text"
       light=ent.text[/\S*/]
-      if SU2XPlane::LIGHTNAMED.include?(light) or SU2XPlane::LIGHTCUSTOM.include?(light)
-        v=trans * ent.point
-        lights << ([ent.text] + v.to_a.collect{|j| (j*10000).round/10000.0})
+      if ent.point && (SU2XPlane::LIGHTNAMED.include?(light) || SU2XPlane::LIGHTCUSTOM.include?(light))
+        lightprim=XPPrim.new(XPPrim::LIGHT, anim)
+        lightprim.i = [ent.text] + (trans*ent.point).to_a.map { |v| v.round(SU2XPlane::P_V) }
+        prims << lightprim
       end
 
     when "Face"
@@ -36,17 +172,18 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
 
       uvHelp = ent.get_UVHelper(true, true, tw)
       attrs=0
-      attrs|=SU2XPlane::ATTR_POLY if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)!=0
-      attrs|=SU2XPlane::ATTR_ALPHA if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0
-
-      # Create transformation w/out translation for normals
-      t=trans.to_a
-      t[12..16]=[0,0,0,1]
-      ntrans = Geom::Transformation.new(t)
-
-      # If determinant is negative (e.g. component is mirrored), tri indices need to be reversed.
-      # Simpify calculation by only considering rotation and scale parts (i.e. top left 3x3) of the transformation matrix,
-      det=t[0]*t[5]*t[1] - t[0]*t[6]*t[9] - t[1]*t[4]*t[10] + t[1]*t[6]*t[8] + t[2]*t[4]*t[9] - t[2]*t[5]*t[8]
+      # can't have poly_os or hard in animation
+      if anim
+        attrs |= XPPrim::NPOLY
+      else
+        attrs |= XPPrim::NPOLY if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)==0
+        attrs |= XPPrim::HARD  if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
+      end
+      attrs |= XPPrim::ALPHA if attrs&XPPrim::NPOLY!=0 && ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0	# poly_os implies ground level so no point in alpha
+      if !prim or prim.attrs!=attrs
+        prim=XPPrim.new(XPPrim::TRIS, anim, attrs)
+        prims << prim
+      end
 
       mesh=ent.mesh(7)	# vertex, uvs & normal
       [true,false].each do |front|
@@ -90,7 +227,6 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
             minu=minv=0
           end
 
-          attrs|=SU2XPlane::ATTR_HARD if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
           thisvt=[]	# Vertices in this face
           for i in (1..mesh.count_points)
             v=trans * mesh.point_at(i)
@@ -100,9 +236,9 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
               u=[0,0,1]
             end
             n=(ntrans * mesh.normal_at(i)).normalize
-            n=n.reverse if not front
+            n.reverse! if not front
             # round to export precision to increase chance of detecting dupes
-            thisvt << (([tex] + v.to_a.collect{|j| (j*10000).round/10000.0} + n.to_a.collect{|j| (j*1000).round/1000.0}) << ((u.x/u.z-minu)*10000).round/10000.0 << ((u.y/u.z-minv)*10000).round/10000.0)
+            thisvt << [tex] + v.to_a.map { |j| j.round(SU2XPlane::P_V) } + n.to_a.map { |j| j.round(SU2XPlane::P_N) } + [(u.x/u.z-minu).round(SU2XPlane::P_UV), (u.y/u.z-minv).round(SU2XPlane::P_UV)]
           end
 
           for i in (1..mesh.count_polygons)
@@ -113,12 +249,14 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
               else
                 v=thisvt[-index-1]
               end
-              # Look for duplicate vertex
-              thisidx=myvt.rindex(v)
-              if not thisidx
+              # Look for duplicate in Vertices already added at this level
+              thisidx=vt.last(vt.length-base).rindex(v)
+              if thisidx
+                thisidx+=base
+              else
                 # Didn't find a duplicate vertex
-                thisidx=myvt.length
-                myvt << v
+                thisidx=vt.length
+                vt << v
               end
               if reverseidx
                 thistri.push(thisidx)
@@ -126,9 +264,7 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
                 thistri.unshift(thisidx)
               end
             end
-            if not thistri.empty?
-              myidx[attrs].concat(thistri)
-            end
+            prim.i.concat(thistri)
           end
 
         end
@@ -139,51 +275,49 @@ def XPlaneAccumPolys(entities, trans, tw, vt, idx, notex, lights)
 
   end		# entities.each do |ent|
 
-  # Add new vertices and fix up and add new indices
-  base=vt.length
-  vt.concat(myvt)
-  for attrs in (0...myidx.length)
-    myidx[attrs].collect!{|j| j+base}
-    idx[attrs].concat(myidx[attrs])
-  end
-
 end
 
 #-----------------------------------------------------------------------------
 
 def XPlaneExport()
 
-  if Sketchup.active_model.path==""
+  model=Sketchup.active_model
+  if model.path==''
     UI.messagebox "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.", MB_OK, "X-Plane export"
     outpath="Untitled.obj"
     return
   else
-    outpath=Sketchup.active_model.path[0...-3]+'obj'
+    outpath=model.path[0...-3]+'obj'
+  end
+  if model.active_path!=nil
+    UI.messagebox "Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.", MB_OK, "X-Plane export"
+    return
   end
 
   vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
-  idx=Array.new(SU2XPlane::ATTR_SEQ.length) {[]} # arrays of indices
+  prims=[]	# arrays of XPPrim
   notex=[0,0]	# num not textured, num surfaces
   lights=[]	# array of [freetext, vx, vy, vz]
-  XPlaneAccumPolys(Sketchup.active_model.entities, Geom::Transformation.new(0.0254), Sketchup.create_texture_writer, vt, idx, notex, lights)	# coords always returned in inches!
-  if idx.empty?
+  XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(0.0254,0.0254,0.0254), Sketchup.create_texture_writer, vt, prims, notex)	# coords always returned in inches!
+  if prims.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
   end
 
-  allidx=[]
-  SU2XPlane::ATTR_SEQ.each do |attrs|
-    allidx.concat(idx[attrs])
-  end
+  # Sort to minimise state changes
+  prims.sort!
+
+  # Build global index list
+  allidx=prims.inject([]) { |index, prim| prim.typename==XPPrim::TRIS ? index+prim.i : index }
 
   # examine textures
   tex=nil
   badtex=false
-  allidx.each do |i|
-    if vt[i][0]
+  vt.each do |v|
+    if v[0]
       if not tex
-        tex=vt[i][0]
-      elsif tex!=vt[i][0]
+        tex=v[0]
+      elsif tex!=v[0]
         badtex=true
       end
     end
@@ -220,41 +354,130 @@ def XPlaneExport()
   end
   outfile.write("\n")
 
-  current_attrs=0
+  # Write commands. Batch up primitives that share state into a single TRIS statement
+  current_attrs=XPPrim::NPOLY
+  current_anim=nil
   current_base=0
-  SU2XPlane::ATTR_SEQ.each do |attrs|
-    next if idx[attrs].empty?
-    if current_attrs&SU2XPlane::ATTR_POLY==0 and attrs&SU2XPlane::ATTR_POLY!=0
-      outfile.write("ATTR_poly_os\t2\n")
-    elsif current_attrs&SU2XPlane::ATTR_POLY!=0 and attrs&SU2XPlane::ATTR_POLY==0
-      outfile.write("ATTR_poly_os\t0\n")
+  current_count=0
+  prims.each do |prim|
+    if current_count>0 && (prim.attrs!=current_attrs || prim.anim!=current_anim)
+      # Attribute change - flush TRIS
+      outfile.write("#{XPAnim.ins(current_anim)}TRIS\t#{current_base} #{current_count}\n")
+      current_base += current_count
+      current_count = 0
     end
-    if current_attrs&SU2XPlane::ATTR_HARD==0 and attrs&SU2XPlane::ATTR_HARD!=0
-      outfile.write("ATTR_hard\n")
-    elsif current_attrs&SU2XPlane::ATTR_HARD!=0 and attrs&SU2XPlane::ATTR_HARD==0
-      outfile.write("ATTR_no_hard\n")
-    end
-    outfile.write("TRIS\t#{current_base} #{idx[attrs].length}\n\n")
-    current_attrs=attrs
-    current_base+=idx[attrs].length
-  end
-  lights.each do |v|
-    args=v[0].split
-    type=args.shift
-    if SU2XPlane::LIGHTNAMED.include?(type)
-      name=args.shift
-      outfile.printf("%s\t%s\t%9.4f %9.4f %9.4f\t%s\n", type, name, v[1], v[3], -v[2], args.join(' '))
+
+    if current_anim == prim.anim
+      newa=olda=[]
     else
-      outfile.printf("%s\t%9.4f %9.4f %9.4f\t%s\n", type, v[1], v[3], -v[2], args.join(' '))
+      # close animations
+      anim=current_anim
+      olda=[]
+      while anim do olda.unshift(anim); anim=anim.parent end
+      anim=prim.anim
+      newa=[]
+      while anim do newa.unshift(anim); anim=anim.parent end
+      # pop until we hit a parent common to old and new animations
+      (olda.length-1).downto(0) do |i|
+        if i>newa.length || olda[i]!=newa[i]
+          outfile.write("#{XPAnim.ins(olda[i].parent)}ANIM_end\n")
+          olda.pop()
+        else
+          break
+        end
+      end
     end
+
+    # In priority order
+    if current_attrs&XPPrim::NPOLY==0 && prim.attrs&XPPrim::NPOLY!=0
+      outfile.write("#{XPAnim.ins(current_anim)}ATTR_poly_os\t0\n")
+    elsif current_attrs&XPPrim::NPOLY!=0 && prim.attrs&XPPrim::NPOLY==0
+      outfile.write("#{XPAnim.ins(current_anim)}ATTR_poly_os\t2\n")
+    end
+    if current_attrs&XPPrim::ALPHA==0 && prim.attrs&XPPrim::ALPHA!=0
+      outfile.write("#{XPAnim.ins(prim.anim)}####_alpha\n")
+    elsif current_attrs&XPPrim::ALPHA!=0 && prim.attrs&XPPrim::ALPHA==0
+      outfile.write("#{XPAnim.ins(prim.anim)}####_no_alpha\n")
+    end
+    if current_attrs&XPPrim::HARD==0 && prim.attrs&XPPrim::HARD!=0
+      outfile.write("#{XPAnim.ins(prim.anim)}ATTR_hard\n")
+    elsif current_attrs&XPPrim::HARD!=0 && prim.attrs&XPPrim::HARD==0
+      outfile.write("#{XPAnim.ins(prim.anim)}ATTR_no_hard\n")
+    end
+
+    # Animation
+    newa[(olda.length..-1)].each do |anim|
+      outfile.write("#{XPAnim.ins(anim.parent)}ANIM_begin\n")
+      ins=XPAnim.ins(anim)
+
+      anim.hideshow.each do |hs, dataref, from, to|
+        outfile.write("#{ins}ATTR_#{hs}\t#{from} #{to}\t#{dataref}\n")
+      end
+
+      if anim.t.length==1
+        # not moving - save a potential accessor callback
+        outfile.printf("#{ins}ANIM_trans\t%9.4f %9.4f %9.4f\t%9.4f %9.4f %9.4f\t0 0\tno_ref\n",
+                       anim.t[0][0], anim.t[0][2], -anim.t[0][1], anim.t[0][0], anim.t[0][2], -anim.t[0][1])
+      elsif anim.t.length!=0
+        outfile.write("#{ins}ANIM_trans_begin\t#{anim.dataref}\n")
+
+        0.upto(anim.t.length-1) do |i|
+          outfile.printf("#{ins}\tANIM_trans_key\t\t#{anim.v[i]}\t%9.4f %9.4f %9.4f\n",
+                         anim.t[i][0], anim.t[i][2], -anim.t[i][1])
+        end
+        outfile.write("#{ins}\tANIM_keyframe_loop\t#{anim.loop}\n") if anim.loop.to_f!=0.0
+        outfile.write("#{ins}ANIM_trans_end\n")
+      end
+
+      [[anim.rx,[1,0,0]], [anim.ry,[0,1,0]], [anim.rz,[0,0,1]]].each do |r,axis|
+        if r.length!=0
+          outfile.printf("#{ins}ANIM_rotate_begin\t%d %d %d\t#{anim.dataref}\n",
+                         axis[0], axis[2], -axis[1])
+
+          0.upto(r.length-1) do |i|
+            outfile.printf("#{ins}\tANIM_rotate_key\t\t#{anim.v[i]}\t%7.2f\n", r[i])
+          end
+          outfile.write("#{ins}\tANIM_keyframe_loop\t#{anim.loop}\n") if anim.loop.to_f!=0.0
+          outfile.write("#{ins}ANIM_rotate_end\n")
+        end
+      end
+
+    end
+
+    # Process the primitive
+    if prim.typename==XPPrim::LIGHT
+      args=prim.i[0].split
+      type=args.shift
+      if SU2XPlane::LIGHTNAMED.include?(type)
+        name=args.shift
+        outfile.printf("%s\t%s\t%9.4f %9.4f %9.4f\t%s\n", type, name, prim.i[1], prim.i[3], -prim.i[2], args.join(' '))
+      else
+        outfile.printf("%s\t%9.4f %9.4f %9.4f\t%s\n", type, prim.i[1], prim.i[3], -prim.i[2], args.join(' '))
+      end
+    else
+      # Batch up TRIS
+      current_count += prim.i.length
+    end
+
+    current_attrs = prim.attrs
+    current_anim  = prim.anim
   end
+
+  # Flush last batch of TRIS and close any open animation
+  outfile.write("#{XPAnim.ins(current_anim)}TRIS\t#{current_base} #{current_count}\n") if current_count>0
+  anim=current_anim
+  while anim do
+    outfile.write("#{XPAnim.ins(anim.parent)}ANIM_end\n")
+    anim=anim.parent
+  end
+
   outfile.write("\n# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{SU2XPlane::Version}.\n")
   outfile.close
 
   msg="Wrote #{allidx.length/3} triangles to #{outpath}.\n"
   msg+="\nWarning: #{notex} faces are untextured." if notex
   msg+="\nWarning: You used multiple texture files. Using file #{tex}." if badtex
-  if notex and not badtex and not Sketchup.active_model.materials["XPUntextured"]
+  if notex and not badtex and not model.materials["XPUntextured"]
     yesno=UI.messagebox msg+"\nDo you want to highlight the untexured faces?", MB_YESNO,"X-Plane export"
     XPlaneHighlight() if yesno==6
   else
