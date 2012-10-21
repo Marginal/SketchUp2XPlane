@@ -6,7 +6,8 @@ class XPPrim
   HARD=1
   # animation should come here
   ALPHA=2
-  NPOLY=4	# negated so ground polygons come first
+  NDRAPED=4	# negated so ground polygons come first
+  NPOLY=8	# ditto
 
   # Types
   TRIS='Tris'
@@ -15,7 +16,7 @@ class XPPrim
   attr_reader(:typename, :anim, :attrs)
   attr_accessor(:i)
 
-  def initialize(typename, anim, attrs=NPOLY)
+  def initialize(typename, anim, attrs=NPOLY|NDRAPED)
     @typename=typename	# One of TRIS, LIGHT
     @anim=anim		# XPAnim context, or nil if top-level - i.e. not animated
     @attrs=attrs	# bitmask
@@ -24,7 +25,7 @@ class XPPrim
 
   def <=>(other)
     # For sorting primitives in order of priority
-    c = ((self.attrs&(NPOLY|ALPHA)) <=> (other.attrs&(NPOLY|ALPHA)))
+    c = ((self.attrs&(NDRAPED|NPOLY|ALPHA)) <=> (other.attrs&(NDRAPED|NPOLY|ALPHA)))
     return c if c!=0
     if self.anim && other.anim
       c = ((self.anim) <=> (other.anim))
@@ -174,10 +175,11 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, notex)
       attrs=0
       # can't have poly_os or hard in animation
       if anim
-        attrs |= XPPrim::NPOLY
+        attrs |= XPPrim::NPOLY|XPPrim::NDRAPED
       else
-        attrs |= XPPrim::NPOLY if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)==0
-        attrs |= XPPrim::HARD  if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
+        attrs |= XPPrim::NPOLY   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)!=0
+        attrs |= XPPrim::HARD    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
+        attrs |= XPPrim::NDRAPED unless attrs&XPPrim::NPOLY==0 && attrs&XPPrim::HARD==0	# Can't be draped if hard
       end
       attrs |= XPPrim::ALPHA if attrs&XPPrim::NPOLY!=0 && ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0	# poly_os implies ground level so no point in alpha
       if !prim or prim.attrs!=attrs
@@ -355,7 +357,7 @@ def XPlaneExport()
   outfile.write("\n")
 
   # Write commands. Batch up primitives that share state into a single TRIS statement
-  current_attrs=XPPrim::NPOLY
+  current_attrs=XPPrim::NPOLY|XPPrim::NDRAPED	# X-Plane's default state
   current_anim=nil
   current_base=0
   current_count=0
@@ -367,6 +369,7 @@ def XPlaneExport()
       current_count = 0
     end
 
+    ins=''	# indent level for any attribute changes
     if current_anim == prim.anim
       newa=olda=[]
     else
@@ -380,7 +383,8 @@ def XPlaneExport()
       # pop until we hit a parent common to old and new animations
       (olda.length-1).downto(0) do |i|
         if i>newa.length || olda[i]!=newa[i]
-          outfile.write("#{XPAnim.ins(olda[i].parent)}ANIM_end\n")
+          ins=XPAnim.ins(olda[i].parent)
+          outfile.write("#{ins}ANIM_end\n")
           olda.pop()
         else
           break
@@ -390,19 +394,24 @@ def XPlaneExport()
 
     # In priority order
     if current_attrs&XPPrim::NPOLY==0 && prim.attrs&XPPrim::NPOLY!=0
-      outfile.write("#{XPAnim.ins(current_anim)}ATTR_poly_os\t0\n")
+      outfile.write("#{ins}ATTR_poly_os\t0\n")
     elsif current_attrs&XPPrim::NPOLY!=0 && prim.attrs&XPPrim::NPOLY==0
-      outfile.write("#{XPAnim.ins(current_anim)}ATTR_poly_os\t2\n")
+      outfile.write("#{ins}ATTR_poly_os\t2\n")
+    end
+    if current_attrs&XPPrim::NDRAPED==0 && prim.attrs&XPPrim::NDRAPED!=0
+      outfile.write("#{ins}ATTR_no_draped\n")
+    elsif current_attrs&XPPrim::NDRAPED!=0 && prim.attrs&XPPrim::NDRAPED==0
+      outfile.write("#{ins}ATTR_draped\n")
     end
     if current_attrs&XPPrim::ALPHA==0 && prim.attrs&XPPrim::ALPHA!=0
-      outfile.write("#{XPAnim.ins(prim.anim)}####_alpha\n")
+      outfile.write("#{ins}####_alpha\n")
     elsif current_attrs&XPPrim::ALPHA!=0 && prim.attrs&XPPrim::ALPHA==0
-      outfile.write("#{XPAnim.ins(prim.anim)}####_no_alpha\n")
+      outfile.write("#{ins}####_no_alpha\n")
     end
     if current_attrs&XPPrim::HARD==0 && prim.attrs&XPPrim::HARD!=0
-      outfile.write("#{XPAnim.ins(prim.anim)}ATTR_hard\n")
+      outfile.write("#{ins}ATTR_hard\n")
     elsif current_attrs&XPPrim::HARD!=0 && prim.attrs&XPPrim::HARD==0
-      outfile.write("#{XPAnim.ins(prim.anim)}ATTR_no_hard\n")
+      outfile.write("#{ins}ATTR_no_hard\n")
     end
 
     # Animation
