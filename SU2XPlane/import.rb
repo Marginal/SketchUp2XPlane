@@ -79,19 +79,23 @@ class XPlaneImporter < Sketchup::Importer
           when 'TEXTURE'
             texture=line[7..-1].strip()
             if not texture.empty?
-              texture=texture.tr(':\\','/')
+              orig_ext=File.extname(texture)
+              texture=texture.tr(':\\','/')[(0...-orig_ext.length)]
               texdir=file_path.split(/\/|\\/)[0...-1]
-              material=model.materials.add texture.split(/\/|\\/)[-1].split('.')[0]
-              material.texture=texdir.join('/')+'/'+texture
-              if not material.texture
-                i=texdir.collect{|s| s.downcase}.index('custom objects')
-                material.texture=texdir[0...i].join('/')+'/custom object textures/'+texture if i
+              material=model.materials.add texture.split(/\/|\\/)[-1]
+              [orig_ext,'.png'].each do |ext|	# also look for a PNG
+                material.texture=texdir.join('/')+'/'+texture+ext
                 if not material.texture
-                  # lack of material crashes SketchUp somewhere
-                  model.abort_operation
-                  UI.messagebox "Can't read texture file #{texture}", MB_OK, 'X-Plane import'
-                  return 1
+                  i=texdir.collect{|s| s.downcase}.index('custom objects')
+                  material.texture=texdir[0...i].join('/')+'/custom object textures/'+texture+ext if i
                 end
+                break if material.texture
+              end
+              if not material.texture
+                # lack of material crashes SketchUp somewhere
+                model.abort_operation
+                UI.messagebox "Import failed.\nCan't read texture file #{texture+orig_ext}", MB_OK, 'X-Plane import'
+                return 0	# Pretend we succeeded to suppress alert dialog
               end
             end
             material.texture.size=10*m2i if material	# arbitrary
@@ -240,7 +244,7 @@ class XPlaneImporter < Sketchup::Importer
         model.commit_operation
         msg="Ignoring some geometry that couldn't be imported.\n"+msg if skiperr
         UI.messagebox(msg, MB_OK, 'X-Plane import') if not msg.empty?
-        return 0
+        return 0	# Success
 
       rescue
         model.abort_operation
@@ -250,9 +254,9 @@ class XPlaneImporter < Sketchup::Importer
     rescue
       UI.messagebox "Can't read #{file_path.split(/\/|\\/)[-1]}:\n#{$!}.", MB_OK, 'X-Plane import'
     ensure
-      file.close unless file.nil?
+      file.close unless !file
     end
 
-    return 1
+    return 0	# Pretend we succeeded to suppress alert dialog
   end
 end
