@@ -582,9 +582,20 @@ class Sketchup::ComponentInstance
   end
 
   def XPRotations(trans=Geom::Transformation.new)
-    retval=[]
-    (0...self.XPCountFrames).each do |frame|
-      retval << (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).XPEuler.map { |a| a.to_deg.round(SU2XPlane::P_A) }
+    # Returns Array of transformations converted to rotations about x, y, z axis
+    # In order that rotations crossing +/-180 are handled correctly we interpolate between frames.
+    numframes=self.XPCountFrames
+    return [] if numframes==0
+    trans = Geom::Transformation.scaling(1/trans.xscale, 1/trans.yscale, 1/trans.zscale) * trans	# interpolate gets wacky with non-identity scale
+    lasttrans = trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0'))
+    lastval   = lasttrans.XPEuler
+    retval=[lastval.map { |a| a.to_deg.round(SU2XPlane::P_A) }]
+    (1...numframes).each do |frame|
+      thistrans = trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))
+      halfway = Geom::Transformation.interpolate(lasttrans, thistrans, 0.5).XPEuler
+      lastval = (0..2).map { |i| lastval[i] + 2*(halfway[i]-lastval[i]) }
+      lasttrans = thistrans
+      retval << lastval.map { |a| a.to_deg.round(SU2XPlane::P_A) }
     end
     return retval
   end
