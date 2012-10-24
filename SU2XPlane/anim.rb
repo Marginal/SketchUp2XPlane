@@ -78,8 +78,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   @@dlgs={}	# map components to open dialogs
 
-  def initialize(component)
+  def initialize(component, model)
     @component=component
+    @model=model
     if @component.typename!='ComponentInstance' then fail end
     @lastaction=nil	# Record last change to the component for the purpose of merging Undo steps
     @myaction=false	# Record other changes made to the component so we don't merge those in to our Undo steps
@@ -104,10 +105,10 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.add_action_callback("on_preview") { |d,p| preview(p) }
     @component.add_observer(self)
     @modelobserver=XPlaneModelObserver.new(self)
-    Sketchup.active_model.add_observer(@modelobserver)
+    @model.add_observer(@modelobserver)
     @dlg.set_on_close {
       begin @component.remove_observer(self) rescue TypeError end
-      Sketchup.active_model.remove_observer(@modelobserver)
+      @model.remove_observer(@modelobserver)
       @@dlgs.delete(@component)
     }
     @dlg.show
@@ -152,8 +153,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
   def update_dialog()
     # Remaining initialization, deferred 'til DOM is ready via window.onload
     begin
-      if @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil
-        # User has undone creation of animation attributes
+      if !@model.valid? || @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil
+        # User has closed the window on Mac, or undone creation of animation attributes
         close()
         return
       end
@@ -170,8 +171,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     end
     @dlg.execute_script("resetDialog('#{title}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}')")
 
-    model=Sketchup.active_model
-    disable=((model.active_path!=nil) and (!included?(model.active_entities)))	# Can't manipulate transformation while subcomponents are being edited.
+    disable=((@model.active_path!=nil) and (!included?(@model.active_entities)))	# Can't manipulate transformation while subcomponents are being edited.
 
     numframes=count_frames()
     hasdeleter = numframes>2 ? "true" : "false"
@@ -199,7 +199,6 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def onChangeEntity(entity)	# from EntityObserver
-    # destroy ourselves if the component instance that we are animating is deleted
     if @myaction
       # This change was caused by me
       @myaction=false
@@ -211,13 +210,17 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def start_operation(op_name, action)
     # Merge this operation into last if performing same action again. If action==false don't merge even if it is the same action.
-    Sketchup.active_model.start_operation(op_name, true, false, action==@lastaction)
+    if !@model.valid?
+      close()
+      fail
+    end
+    @model.start_operation(op_name, true, false, action==@lastaction)
     @lastaction = (action==false ? nil : action)
   end
 
   def commit_operation()
     @myaction=true	# This change was caused by me
-    Sketchup.active_model.commit_operation
+    @model.commit_operation
   end
 
   def onEraseEntity(entity)	# from EntityObserver
@@ -238,16 +241,14 @@ class XPlaneAnimation < Sketchup::EntityObserver
   def set_transform(p)
     start_operation("Set Position", "#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p)	# merge into last if setting same transformation again
     # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
-    model=Sketchup.active_model
-    trans=(model.active_entities.include?(@component) ? model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
+    trans=(@model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, trans.to_a)
     commit_operation
   end
 
   def get_transform(p)
     start_operation('Preview Animation', "#{@component.object_id}/preview")	# treat same as preview for the sake of Undo
-    model=Sketchup.active_model
-    @component.transformation=(model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
+    @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
     commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
   end
@@ -265,9 +266,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+newframe.to_s, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(newframe-1).to_s))
     end
     # use current transformation for inserted frame
-    model=Sketchup.active_model
     t=@component.transformation.to_a
-    @component.transformation=(model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) * @component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * @component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, @component.transformation.to_a)
     commit_operation
     update_dialog()
@@ -340,6 +340,10 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def can_preview()
     # determine if previewable - i.e. dataref values are in order
+    if !@model.valid?
+      close()
+      fail
+    end
     inorder=(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF) != '')
     frame=1
     while inorder
@@ -382,9 +386,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
     val_start=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_start).to_s).to_f
     val_stop =@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s).to_f
     interp= (val - val_start) / (val_stop - val_start)
-    model=Sketchup.active_model
     t=@component.transformation.to_a
-    @component.transformation= (model.active_entities.include?(@component) ? model.edit_transform : Geom::Transformation.new) *
+    @component.transformation= (@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) *
       Geom::Transformation.interpolate(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_start.to_s),
                                        @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
                                        interp) *
@@ -470,7 +473,7 @@ def XPlaneMakeAnimation()
     # An animation dialog for this component already exists
     XPlaneAnimation.dlgs[component].bring_to_front
   else
-    XPlaneAnimation.new(component)
+    XPlaneAnimation.new(component, model)
   end
 
 end
