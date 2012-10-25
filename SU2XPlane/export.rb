@@ -369,7 +369,7 @@ def XPlaneExport()
       current_count = 0
     end
 
-    ins=''	# indent level for any attribute changes
+    ins=XPAnim.ins(current_anim)	# indent level for any attribute changes
     if current_anim == prim.anim
       newa=olda=[]
     else
@@ -420,12 +420,12 @@ def XPlaneExport()
       ins=XPAnim.ins(anim)
 
       anim.hideshow.each do |hs, dataref, from, to|
-        outfile.write("#{ins}ATTR_#{hs}\t#{from} #{to}\t#{dataref}\n")
+        outfile.write("#{ins}ANIM_#{hs}\t#{from} #{to}\t#{dataref}\n")
       end
 
       if anim.t.length==1
         # not moving - save a potential accessor callback
-        outfile.printf("#{ins}ANIM_trans\t%9.4f %9.4f %9.4f\t%9.4f %9.4f %9.4f\t0 0\tno_ref\n",
+        outfile.printf("#{ins}ANIM_trans\t%9.4f %9.4f %9.4f\t%9.4f %9.4f %9.4f\t0 0\tnone\n",
                        anim.t[0][0], anim.t[0][2], -anim.t[0][1], anim.t[0][0], anim.t[0][2], -anim.t[0][1])
       elsif anim.t.length!=0
         outfile.write("#{ins}ANIM_trans_begin\t#{anim.dataref}\n")
@@ -459,9 +459,9 @@ def XPlaneExport()
       type=args.shift
       if SU2XPlane::LIGHTNAMED.include?(type)
         name=args.shift
-        outfile.printf("%s\t%s\t%9.4f %9.4f %9.4f\t%s\n", type, name, prim.i[1], prim.i[3], -prim.i[2], args.join(' '))
+        outfile.printf("#{ins}%s\t%s\t%9.4f %9.4f %9.4f\t%s\n", type, name, prim.i[1], prim.i[3], -prim.i[2], args.join(' '))
       else
-        outfile.printf("%s\t%9.4f %9.4f %9.4f\t%s\n", type, prim.i[1], prim.i[3], -prim.i[2], args.join(' '))
+        outfile.printf("#{ins}%s\t%9.4f %9.4f %9.4f\t%s\n", type, prim.i[1], prim.i[3], -prim.i[2], args.join(' '))
       end
     else
       # Batch up TRIS
