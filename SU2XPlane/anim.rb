@@ -76,7 +76,8 @@ end
 
 class XPlaneAnimation < Sketchup::EntityObserver
 
-  @@dlgs={}	# map components to open dialogs
+  @@instances={}	# map components to instances
+  attr_reader(:dlg)
 
   def initialize(component, model)
     @component=component
@@ -89,7 +90,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     else
       @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 386, 528)
     end
-    @@dlgs[@component]=@dlg
+    @@instances[@component]=self
     @dlg.allow_actions_from_host("getfirebug.com")	# for debugging on Windows
     @dlg.set_file(Sketchup.find_support_file('SU2XPlane', 'Plugins') + "/anim.html")
     @dlg.add_action_callback("on_load") { |d,p| update_dialog }
@@ -109,14 +110,14 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.set_on_close {
       begin @component.remove_observer(self) rescue TypeError end
       @model.remove_observer(@modelobserver)
-      @@dlgs.delete(@component)
+      @@instances.delete(@component)
     }
     @dlg.show
     @dlg.bring_to_front
   end
 
-  def XPlaneAnimation.dlgs()
-    return @@dlgs
+  def XPlaneAnimation.instances()
+    return @@instances
   end
 
   def close()
@@ -469,9 +470,10 @@ def XPlaneMakeAnimation()
     model.commit_operation
   end
 
-  if XPlaneAnimation.dlgs.include?(component)
+  if XPlaneAnimation.instances.include?(component)
     # An animation dialog for this component already exists
-    XPlaneAnimation.dlgs[component].bring_to_front
+    XPlaneAnimation.instances[component].update_dialog
+    XPlaneAnimation.instances[component].dlg.bring_to_front
   else
     XPlaneAnimation.new(component, model)
   end
@@ -564,6 +566,16 @@ class Sketchup::ComponentInstance
     return dataref
   end
 
+  def XPDataRef=(dataref)
+    self.name=dataref.split('/').last
+    index=dataref.index('[')
+    if index
+      set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX, dataref[(index+1...-1)])
+      dataref=dataref[(0...index)]
+    end
+    set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF, dataref)
+  end
+
   def XPCountFrames
     return 0 if !self.XPDataRef
     numframes=0
@@ -579,9 +591,17 @@ class Sketchup::ComponentInstance
     return retval
   end
 
+  def XPSetValue(frame, value)
+    set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s, value.to_s)
+  end
+
   def XPLoop
     return '0' if !self.XPDataRef
     get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP)
+  end
+
+  def XPLoop=(loop)
+    set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP, loop.to_s)
   end
 
   def XPRotations(trans=Geom::Transformation.new)
@@ -599,12 +619,24 @@ class Sketchup::ComponentInstance
     return retval
   end
 
+  def XPRotateFrame(frame, v, a)
+    # Apply rotation, cumulative with any previously applied.
+    # Use current transformation origin as centre of rotation if no existing animation for this frame.
+    current = (get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s) ? Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s)) : transformation)
+    set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s, (Geom::Transformation.rotation(current.origin, v, a) * current).to_a)
+  end
+
   def XPTranslations(trans=Geom::Transformation.new)
     retval=[]
     (0...self.XPCountFrames).each do |frame|
       retval << (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).origin.to_a.map { |v| v.round(SU2XPlane::P_V) }
     end
     return retval
+  end
+
+  def XPTranslateFrame(frame, v)
+    # Assumes that no translation exists for this frame (or can be overwritten).
+    set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s, Geom::Transformation.translation(v).to_a)
   end
 
   def XPHideShow
@@ -623,6 +655,25 @@ class Sketchup::ComponentInstance
       retval << [hs, dataref, get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM), get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO)]
     end
     return retval
+  end
+
+  def XPAddHideShow(hs, dataref, from, to)
+    numhs=0
+    prefix=''
+    while true
+      prefix=SU2XPlane::ANIM_HS_+numhs.to_s
+      break if !get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)
+      numhs+=1
+    end
+    set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW, hs)
+    index=dataref.index('[')
+    if index
+      set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX, dataref[(index+1...-1)])
+      dataref=dataref[(0...index)]
+    end
+    set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_DATAREF, dataref)
+    set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM, from.to_s)
+    set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO, to.to_s)
   end
 
 end

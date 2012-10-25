@@ -1,3 +1,10 @@
+class XPlaneImporterError < StandardError
+  attr_reader :message
+  def initialize(message)
+    @message = message
+  end
+end
+
 class XPlaneImporter < Sketchup::Importer
 
   def description
@@ -34,14 +41,14 @@ class XPlaneImporter < Sketchup::Importer
       else
         linesep="\n"
       end
-      raise 'This is not a valid X-Plane file' if not ['A','I'].include?(line)
+      raise XPlaneImporterError, 'This is not a valid X-Plane file' if not ['A','I'].include?(line)
       line=file.readline(linesep).split(/\/\/|#/)[0].strip()
       if line.split()[0]=='2'
-        raise "Can't read X-Plane version 6 files"
+        raise XPlaneImporterError, "Can't read X-Plane version 6 files"
       elsif line!='800'
-        raise "Can't read X-Plane version #{line.to_i/100} files"
+        raise XPlaneImporterError, "Can't read X-Plane version #{line.to_i/100} files"
       elsif not file.readline(linesep).split(/\/\/|#/)[0].strip()=='OBJ'
-        raise 'This is not a valid X-Plane file'
+        raise XPlaneImporterError, 'This is not a valid X-Plane file'
       end
 
       model=Sketchup.active_model
@@ -60,13 +67,17 @@ class XPlaneImporter < Sketchup::Importer
         cull=true
         hard=false
         poly=false
+        draped=false
         vt=[]
         nm=[]
         uv=[]
         idx=[]
-        msg=''
-        llerr=false
-        skiperr=false
+        msg={}
+        # Animation context
+        anim_context=[]			# Stack of animation ComponentInstances
+        anim_off=[Geom::Vector3d.new]	# stack of compensating offsets for children of animations
+        anim_axes=Geom::Vector3d.new
+        anim_frame=0
 
         while true
           line=file.gets(linesep)
@@ -112,11 +123,11 @@ class XPlaneImporter < Sketchup::Importer
             count=c[1].to_i
             i=start
             while i<start+count
-              thisvt=[vt[idx[i+2]],vt[idx[i+1]],vt[idx[i]]]
+              thisvt=[vt[idx[i+2]].offset(anim_off.last), vt[idx[i+1]].offset(anim_off.last), vt[idx[i]].offset(anim_off.last)]
               begin
                 face=entities.add_face thisvt
               rescue
-                skiperr=true if not (thisvt[0]==thisvt[1] or thisvt[0]==thisvt[2] or thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
+                msg["Ignoring some geometry that couldn't be imported."]=true if not (thisvt[0]==thisvt[1] or thisvt[0]==thisvt[2] or thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
                 i+=3	# next tri
                 next
               end
@@ -208,7 +219,7 @@ class XPlaneImporter < Sketchup::Importer
 
           when 'ATTR_LOD'
             if c[0].to_f>0.0
-              msg+="Ignoring lower level(s) of detail.\n"
+              msg["Ignoring lower level(s) of detail."]=true
               break
             end
           when 'ATTR_cull'
@@ -221,11 +232,77 @@ class XPlaneImporter < Sketchup::Importer
             hard=false
           when 'ATTR_poly_os'
             poly=c[0].to_f > 0.0
-          when 'POINT_COUNTS', 'TEXTURE_LIT', 'ATTR_no_blend', 'ANIM_begin', 'ANIM_end', 'ATTR_shade_flat', 'ATTR_shade_smooth'
+          when 'ATTR_draped'
+            poly=true
+          when 'ATTR_no_draped'
+            poly=false
+
+          when 'ANIM_begin'
+            anim_context.push(entities.add_group.to_component)
+            anim_context.last.definition.name='Component#1'	# Otherwise has name Group#n. SketchUp will uniquify.
+            anim_context.last.XPLoop=''				# may not be set below
+            anim_off.push(anim_off.last.clone)			# inherit parent offset
+            entities=anim_context.last.definition.entities	# To hold child geometry
+          when 'ANIM_end'
+            anim_context.last.transformation = Geom::Transformation.new(anim_context.last.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')) if anim_context.last.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')	# set current position to first keyframe position
+            anim_context.pop
+            anim_off.pop
+            entities=(anim_context.empty? ? model.active_entities : anim_context.last.definition.entities)
+          when 'ANIM_trans'
+            if [c[0], c[1], c[2]]==[c[3], c[4], c[5]]
+              # special form for just shifting rotation origin
+              if anim_context.last.transformation.origin==[0,0,0]
+                anim_context.last.transformation=Geom::Transformation.translation(Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i).offset(anim_off.last))
+                anim_off[-1]=Geom::Vector3d.new	# We've applied this offset
+              else
+                # Deal with AC3D plugin which shifts origin back - we don't want to shift the component origin back since then the
+                # origin would not be at centre of rotation, and could end up far away from the child geometry
+                anim_off[-1] = Geom::Vector3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i)
+              end
+            else
+              # v8-style translation
+              anim_context.last.XPTranslateFrame(0, Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i).offset(anim_off.last))
+              anim_context.last.XPTranslateFrame(1, Geom::Point3d.new(c[3].to_f*m2i, -c[5].to_f*m2i, c[4].to_f*m2i).offset(anim_off.last))
+              anim_context.last.XPSetValue(0, c[6].to_f)
+              anim_context.last.XPSetValue(1, c[7].to_f)
+              anim_context.last.XPDataRef=c[8]
+              anim_off[-1]=Geom::Vector3d.new	# We've applied this offset
+            end
+          when 'ANIM_trans_begin'
+            anim_context.last.XPDataRef=c[0]
+            anim_frame=0
+          when 'ANIM_trans_key'
+            anim_context.last.XPSetValue(anim_frame, c.shift.to_f)
+            anim_context.last.XPTranslateFrame(anim_frame, Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i).offset(anim_off.last))
+            anim_frame+=1
+          when 'ANIM_trans_end'
+            anim_off[-1]=Geom::Vector3d.new	# We've applied this offset
+          when 'ANIM_rotate'
+            anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
+            anim_context.last.XPRotateFrame(0, anim_axes, c[3].to_f.to_rad)
+            anim_context.last.XPRotateFrame(1, anim_axes, c[4].to_f.to_rad)
+            anim_context.last.XPSetValue(0, c[5].to_f)
+            anim_context.last.XPSetValue(1, c[6].to_f)
+            anim_context.last.XPDataRef=c[7]
+          when 'ANIM_rotate_begin'
+            anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
+            anim_context.last.XPDataRef=c[3]
+            anim_frame=0
+          when 'ANIM_rotate_key'
+            anim_context.last.XPSetValue(anim_frame, c[0].to_f)
+            anim_context.last.XPRotateFrame(anim_frame, anim_axes, c[1].to_f.to_rad)
+            anim_frame+=1
+          when 'ANIM_keyframe_loop'
+            anim_context.last.XPLoop=c[0].to_f
+          when 'ANIM_hide', 'ANIM_show'
+            anim_context.last.XPAddHideShow(cmd[5..-1], c[2], c[0].to_f, c[1].to_f)
+
+          when 'POINT_COUNTS', 'TEXTURE_LIT', 'ATTR_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ANIM_trans_end', 'ANIM_rotate_end'
             # suppress error message
-          when 'VLINE', 'LINES', 'VLIGHT', 'LIGHTS'
-            msg+="Ignoring old-style lights and/or lines.\n" if not llerr
-            llerr=true
+          when 'VLINE', 'LINES'
+            msg["Ignoring old-style lines."]=true
+          when 'VLIGHT', 'LIGHTS'
+            msg["Ignoring old-style lights."]=true
           else
             if (SU2XPlane::LIGHTNAMED+SU2XPlane::LIGHTCUSTOM).include?(cmd)
               if SU2XPlane::LIGHTNAMED.include?(cmd)
@@ -234,25 +311,25 @@ class XPlaneImporter < Sketchup::Importer
                 name=""
               end
               text=entities.add_text(cmd+' '+name+c[3..-1].join(' '), Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i))
-              text.vector=Geom::Vector3d.new(0, 0, 5)	# arrow length & direction - arbitrary
+              text.vector=Geom::Vector3d.new(0, 0, -5)	# arrow length & direction - arbitrary
               text.display_leader=true
             else
-              msg+="Ignoring command #{cmd}.\n"
+              msg["Ignoring command #{cmd}."]=true
             end
           end
         end
         model.commit_operation
-        msg="Ignoring some geometry that couldn't be imported.\n"+msg if skiperr
-        UI.messagebox(msg, MB_OK, 'X-Plane import') if not msg.empty?
+        UI.messagebox(msg.keys.sort.join("\n"), MB_OK, 'X-Plane import') if !msg.empty?
         return 0	# Success
 
-      rescue
-        model.abort_operation
+      rescue => e
+        puts "Error: #{e.inspect}", e.backtrace	# Report to console
+        model.abort_operation			# Otherwise SketchUp crashes on half-imported stuff
         UI.messagebox "Can't import #{file_path.split(/\/|\\/)[-1]}:\nInternal error.", MB_OK, 'X-Plane import'
       end
 
-    rescue
-      UI.messagebox "Can't read #{file_path.split(/\/|\\/)[-1]}:\n#{$!}.", MB_OK, 'X-Plane import'
+    rescue XPlaneImporterError => e
+      UI.messagebox "Can't read #{file_path.split(/\/|\\/)[-1]}:\n#{e.message}.", MB_OK, 'X-Plane import'
     ensure
       file.close unless !file
     end

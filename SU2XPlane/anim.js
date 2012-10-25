@@ -110,7 +110,7 @@ function addHideShow(number, hideshow, dataref, index, from, to)
     cell=row.insertCell(-1)
     cell.innerHTML='DataRef'
     cell.style.visibility='hidden'	// So that hideshow dataref and index input boxes line up with animation input boxes
-    row.insertCell(-1).innerHTML='<select id="'+prefix+ANIM_HS_HIDESHOW+'" onchange="checkText(this)"> <option value="'+ANIM_VAL_HIDE+'">Hide</option> <option value="'+ANIM_VAL_SHOW+'">Show</option> </select> from <input type="text" id="'+prefix+ANIM_HS_FROM+'" value="'+from+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)"> to <input type="text" id="'+prefix+ANIM_HS_TO+'" value="'+to+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
+    row.insertCell(-1).innerHTML='<select id="'+prefix+ANIM_HS_HIDESHOW+'" onchange="checkText(this)"> <option value="'+ANIM_VAL_HIDE+'">Hide</option> <option value="'+ANIM_VAL_SHOW+'">Show</option> </select> when <input type="text" id="'+prefix+ANIM_HS_FROM+'" value="'+from+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)"> to <input type="text" id="'+prefix+ANIM_HS_TO+'" value="'+to+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
     document.getElementById(prefix+ANIM_HS_HIDESHOW).selectedIndex = (hideshow==ANIM_VAL_HIDE ? 0 : 1)
 }
 
