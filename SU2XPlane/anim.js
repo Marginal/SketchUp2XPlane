@@ -72,9 +72,9 @@ function addKeyframe(keyframe, val, hasdeleter)
     var table=document.getElementById("keyframes");
     var row=table.insertRow(-1)
     if (hasdeleter) {
-        row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="-" onclick="window.location=\'skp:on_delete_frame@'+keyframe+'\'">'
+        row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="\u2212" onclick="window.location=\'skp:on_delete_frame@'+keyframe+'\'">'
     } else {
-        row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="-" disabled>'
+        row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="\u2212" disabled>'
     }
     row.insertCell(-1).innerHTML="Keyframe #"+keyframe
     row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_FRAME_+keyframe+'" value="'+val+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
@@ -104,7 +104,7 @@ function addHideShow(number, hideshow, dataref, index, from, to)
     var prefix=ANIM_HS_+number
     var table=document.getElementById("hideshow");
     var row=table.insertRow(-1)
-    row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="-" onclick="window.location=\'skp:on_delete_hideshow@'+number+'\'">'
+    row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="\u2212" onclick="window.location=\'skp:on_delete_hideshow@'+number+'\'">'
     row.insertCell(-1).innerHTML='<input type="text" id="'+prefix+ANIM_HS_DATAREF+'" value="'+dataref+'" style="width: 200px;" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"> [<input type="text" id="'+prefix+ANIM_HS_INDEX+'" value="'+index+'" size="4" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)">]'
     row=table.insertRow(-1)
     cell=row.insertCell(-1)
