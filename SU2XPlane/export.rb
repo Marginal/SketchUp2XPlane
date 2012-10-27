@@ -300,7 +300,7 @@ def XPlaneExport()
   prims=[]	# arrays of XPPrim
   notex=[0,0]	# num not textured, num surfaces
   lights=[]	# array of [freetext, vx, vy, vz]
-  XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(0.0254,0.0254,0.0254), Sketchup.create_texture_writer, vt, prims, notex)	# coords always returned in inches!
+  XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, notex)	# coords always returned in inches!
   if prims.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return

@@ -24,9 +24,8 @@ class XPlaneImporter < Sketchup::Importer
   end
 
   def load_file(file_path, status)
-    m2i=1/0.0254	# SketchUp units are inches!
-    pibytwo=Math::PI/2
-    smoothangle=35*Math::PI/180
+    pibytwo=90.degrees
+    smoothangle=35.degrees
     planarangle=0.00002	# normals at angles less than this considered coplanar
 
     return 2 if not file_path
@@ -109,9 +108,9 @@ class XPlaneImporter < Sketchup::Importer
                 return 0	# Pretend we succeeded to suppress alert dialog
               end
             end
-            material.texture.size=10*m2i if material	# arbitrary
+            material.texture.size=10.m if material	# arbitrary
           when 'VT'
-            vt << Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i)
+            vt << Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m)
             nm << Geom::Vector3d.new(c[3].to_f, -c[5].to_f, c[4].to_f)
             uv << Geom::Point3d.new(c[6].to_f, c[7].to_f, 1.0)
           when 'IDX'
@@ -252,17 +251,17 @@ class XPlaneImporter < Sketchup::Importer
             if [c[0], c[1], c[2]]==[c[3], c[4], c[5]]
               # special form for just shifting rotation origin
               if anim_context.last.transformation.origin==[0,0,0]
-                anim_context.last.transformation=Geom::Transformation.translation(Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i).offset(anim_off.last))
+                anim_context.last.transformation=Geom::Transformation.translation(Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m).offset(anim_off.last))
                 anim_off[-1]=Geom::Vector3d.new	# We've applied this offset
               else
                 # Deal with AC3D plugin which shifts origin back - we don't want to shift the component origin back since then the
                 # origin would not be at centre of rotation, and could end up far away from the child geometry
-                anim_off[-1] = Geom::Vector3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i)
+                anim_off[-1] = Geom::Vector3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m)
               end
             else
               # v8-style translation
-              anim_context.last.XPTranslateFrame(0, Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i).offset(anim_off.last))
-              anim_context.last.XPTranslateFrame(1, Geom::Point3d.new(c[3].to_f*m2i, -c[5].to_f*m2i, c[4].to_f*m2i).offset(anim_off.last))
+              anim_context.last.XPTranslateFrame(0, Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m).offset(anim_off.last))
+              anim_context.last.XPTranslateFrame(1, Geom::Point3d.new(c[3].to_f.m, -c[5].to_f.m, c[4].to_f.m).offset(anim_off.last))
               anim_context.last.XPSetValue(0, c[6].to_f)
               anim_context.last.XPSetValue(1, c[7].to_f)
               anim_context.last.XPDataRef=c[8]
@@ -273,14 +272,14 @@ class XPlaneImporter < Sketchup::Importer
             anim_frame=0
           when 'ANIM_trans_key'
             anim_context.last.XPSetValue(anim_frame, c.shift.to_f)
-            anim_context.last.XPTranslateFrame(anim_frame, Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i).offset(anim_off.last))
+            anim_context.last.XPTranslateFrame(anim_frame, Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m).offset(anim_off.last))
             anim_frame+=1
           when 'ANIM_trans_end'
             anim_off[-1]=Geom::Vector3d.new	# We've applied this offset
           when 'ANIM_rotate'
             anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
-            anim_context.last.XPRotateFrame(0, anim_axes, c[3].to_f.to_rad)
-            anim_context.last.XPRotateFrame(1, anim_axes, c[4].to_f.to_rad)
+            anim_context.last.XPRotateFrame(0, anim_axes, c[3].to_f.degrees)
+            anim_context.last.XPRotateFrame(1, anim_axes, c[4].to_f.degrees)
             anim_context.last.XPSetValue(0, c[5].to_f)
             anim_context.last.XPSetValue(1, c[6].to_f)
             anim_context.last.XPDataRef=c[7]
@@ -290,7 +289,7 @@ class XPlaneImporter < Sketchup::Importer
             anim_frame=0
           when 'ANIM_rotate_key'
             anim_context.last.XPSetValue(anim_frame, c[0].to_f)
-            anim_context.last.XPRotateFrame(anim_frame, anim_axes, c[1].to_f.to_rad)
+            anim_context.last.XPRotateFrame(anim_frame, anim_axes, c[1].to_f.degrees)
             anim_frame+=1
           when 'ANIM_keyframe_loop'
             anim_context.last.XPLoop=c[0].to_f
@@ -310,7 +309,7 @@ class XPlaneImporter < Sketchup::Importer
               else
                 name=""
               end
-              text=entities.add_text(cmd+' '+name+c[3..-1].join(' '), Geom::Point3d.new(c[0].to_f*m2i, -c[2].to_f*m2i, c[1].to_f*m2i))
+              text=entities.add_text(cmd+' '+name+c[3..-1].join(' '), Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m))
               text.vector=Geom::Vector3d.new(0, 0, -5)	# arrow length & direction - arbitrary
               text.display_leader=true
             else

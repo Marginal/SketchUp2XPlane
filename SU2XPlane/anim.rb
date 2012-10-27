@@ -497,19 +497,6 @@ def XPlaneMakeAnimation()
 end
 
 
-class Numeric
-
-  def to_rad
-    self * (Math::PI/180)
-  end
-
-  def to_deg
-    self * (180/Math::PI)
-  end
-
-end
-
-
 #
 # Implement 1.9 round() functionality in 1.8
 #
@@ -625,10 +612,10 @@ class Sketchup::ComponentInstance
     # In order to handle rotations that cross 0/360 we assume that each rotation is within +/-180 from the last
     numframes=self.XPCountFrames
     return [] if !self.XPDataRef || numframes==0
-    lastval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0'.to_s))).XPEuler.map { |a| a.to_deg.round(SU2XPlane::P_A) }
+    lastval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0'.to_s))).XPEuler.map { |a| a.radians.round(SU2XPlane::P_A) }
     retval = [lastval]
     (1...numframes).each do |frame|
-      thisval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).XPEuler.map { |a| a.to_deg.round(SU2XPlane::P_A) }
+      thisval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).XPEuler.map { |a| a.radians.round(SU2XPlane::P_A) }
       lastval = (0..2).map { |i| (thisval[i]-lastval[i]+180) % 360 + lastval[i]-180 }
       retval << lastval
     end
