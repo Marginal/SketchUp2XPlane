@@ -593,13 +593,13 @@ class Sketchup::ComponentInstance
   end
 
   def XPCountFrames
-    return 0 if !self.XPDataRef
     numframes=0
     while get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+numframes.to_s) != nil do numframes+=1 end
     return numframes
   end
 
   def XPValues
+    return [] if !self.XPDataRef
     retval=[]
     (0...self.XPCountFrames).each do |frame|
       retval << get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s)
@@ -624,7 +624,7 @@ class Sketchup::ComponentInstance
     # Returns Array of transformations converted to rotations about x, y, z axis
     # In order to handle rotations that cross 0/360 we assume that each rotation is within +/-180 from the last
     numframes=self.XPCountFrames
-    return [] if numframes==0
+    return [] if !self.XPDataRef || numframes==0
     lastval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0'.to_s))).XPEuler.map { |a| a.to_deg.round(SU2XPlane::P_A) }
     retval = [lastval]
     (1...numframes).each do |frame|
@@ -643,6 +643,7 @@ class Sketchup::ComponentInstance
   end
 
   def XPTranslations(trans=Geom::Transformation.new)
+    return [] if !self.XPDataRef
     retval=[]
     (0...self.XPCountFrames).each do |frame|
       retval << (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).origin.to_a.map { |v| v.round(SU2XPlane::P_V) }
@@ -651,7 +652,7 @@ class Sketchup::ComponentInstance
   end
 
   def XPTranslateFrame(frame, v)
-    # Assumes that no translation exists for this frame (or can be overwritten).
+    # Assumes that no transformation exists for this frame (or can be overwritten).
     set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s, Geom::Transformation.translation(v).to_a)
   end
 
