@@ -48,8 +48,9 @@
 
 class XPlaneModelObserver < Sketchup::ModelObserver
 
-  def initialize(parent)
+  def initialize(model, parent)
     @parent=parent
+    model.add_observer(self)
   end
 
   def onTransactionUndo(model)
@@ -73,6 +74,20 @@ class XPlaneModelObserver < Sketchup::ModelObserver
 
 end
 
+
+class XPlaneSelectionObserver < Sketchup::SelectionObserver
+
+  def initialize(model, parent)
+    @parent=parent
+    model.selection.add_observer(self)
+  end
+
+  def onSelectionBulkChange(selection)
+    # Fake up an EntityObserver message to prevent merging of Undos
+    @parent.onChangeEntity(nil)
+  end
+
+end
 
 class XPlaneAnimation < Sketchup::EntityObserver
 
@@ -105,11 +120,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.add_action_callback("on_delete_hideshow") { |d,p| delete_hideshow(p) }
     @dlg.add_action_callback("on_preview") { |d,p| preview(p) }
     @component.add_observer(self)
-    @modelobserver=XPlaneModelObserver.new(self)
-    @model.add_observer(@modelobserver)
+    @modelobserver=XPlaneModelObserver.new(@model, self)
+    @selectionobserver=XPlaneSelectionObserver.new(@model, self)
     @dlg.set_on_close {
       begin @component.remove_observer(self) rescue TypeError end
       @model.remove_observer(@modelobserver)
+      @model.selection.remove_observer(@selectionobserver)
       @@instances.delete(@component)
     }
     @dlg.show
