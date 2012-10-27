@@ -46,7 +46,7 @@ class XPAnim
 
   include Comparable
 
-  attr_reader(:parent, :transformation, :dataref, :v, :loop, :t, :rx, :ry, :rz, :hideshow)
+  attr_reader(:parent, :transformation, :dataref, :v, :loop, :t, :rx, :ry, :rz, :hideshow, :label)
 
   def initialize(component, parent, trans)
     @parent=parent	# parent XPAnim, or nil if parent is top-level - i.e. not animated
@@ -57,6 +57,7 @@ class XPAnim
     @t=component.XPTranslations(trans)	# translation, 0, 1 or n translations (0=just hide/show, 1=rotation w/ no translation)
     @rx=@ry=@rz=[]			# 0 or n rotation angles
     @hideshow=component.XPHideShow	# show/hide values [show/hide, dataref, from, to]
+    @label=(component.name!='' ? component.name : "<#{component.definition.name}>")	# tag in output file
 
     @t=[@t[0]] if (@t.inject({}) { |h,v| h.store(v,true) && h }).length == 1	# if translation constant across keyframes reduce to one entry
     rot=component.XPRotations(trans)
@@ -418,6 +419,7 @@ def XPlaneExport()
     newa[(olda.length..-1)].each do |anim|
       outfile.write("#{XPAnim.ins(anim.parent)}ANIM_begin\n")
       ins=XPAnim.ins(anim)
+      outfile.write("#{ins}# #{anim.label}\n")
 
       anim.hideshow.each do |hs, dataref, from, to|
         outfile.write("#{ins}ANIM_#{hs}\t#{from} #{to}\t#{dataref}\n")
