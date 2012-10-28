@@ -1,3 +1,8 @@
+# -*- coding: utf-8 -*-
+class XPIndices < Array
+  attr_accessor(:base)	# Offset in global table
+end
+
 class XPPrim
 
   include Comparable
@@ -13,14 +18,14 @@ class XPPrim
   TRIS='Tris'
   LIGHT='Light'
 
-  attr_reader(:typename, :anim, :attrs)
-  attr_accessor(:i)
+  attr_reader(:typename, :attrs)
+  attr_accessor(:anim, :i)
 
   def initialize(typename, anim, attrs=NPOLY|NDRAPED)
     @typename=typename	# One of TRIS, LIGHT
     @anim=anim		# XPAnim context, or nil if top-level - i.e. not animated
     @attrs=attrs	# bitmask
-    @i=[]		# indices into the global vertex table for Tris. [freetext, vx, vy, vz] for Light
+    @i=XPIndices.new	# indices into the global vertex table for Tris. [freetext, vx, vy, vz] for Light
   end
 
   def <=>(other)
@@ -46,10 +51,11 @@ class XPAnim
 
   include Comparable
 
-  attr_reader(:parent, :transformation, :dataref, :v, :loop, :t, :rx, :ry, :rz, :hideshow, :label)
+  attr_reader(:parent, :cachekey, :transformation, :dataref, :v, :loop, :t, :rx, :ry, :rz, :hideshow, :label)
 
   def initialize(component, parent, trans)
     @parent=parent	# parent XPAnim, or nil if parent is top-level - i.e. not animated
+    @cachekey=component.definition.object_id
     @transformation=trans*component.transformation	# transformation to be applied to sub-geometry
     @dataref=component.XPDataRef	# DataRef, w/ index if any
     @v=component.XPValues		# 0 or n keyframe dataref values. Note: stored as String
@@ -124,7 +130,7 @@ end
 
 
 # Accumulate vertices and indices into vt and idx
-def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, notex)
+def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
 
   base=vt.length
   prim=nil	# keep adding to the same XPPrim until attributes change
@@ -134,6 +140,12 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, notex)
 
   # If determinant is negative (e.g. parent component is mirrored), tri indices need to be reversed.
   det = trans.determinant
+
+  # If this is an animated component, store its geometry in case the component instance is used again.
+  # If this is a Group or non-animated Component we're actually adding to the parent animated component.
+  if anim
+    primcache[anim.cachekey]=[] if !primcache.include?(anim.cachekey)
+  end
 
   # Process Faces before Groups and ComponentInstances so that we can search Vertices added at this level (but not below) to detect dupes
   (entities.sort { |a,b| b.typename<=>a.typename }).each do |ent|
@@ -145,14 +157,23 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, notex)
     when "ComponentInstance"
       begin
         newanim=XPAnim.new(ent, anim, trans)
-        XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, notex)
+        if primcache.include?(newanim.cachekey)
+          # re-use existing definition's vertices, indices and attributes (but not its animation context).
+          primcache[newanim.cachekey].each do |p|
+            prim=p.clone()
+            prim.anim=newanim
+            prims << prim
+          end
+        else
+          XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, primcache, notex)
+        end
       rescue ArgumentError
         # This component is not an animation
-        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, notex) if ent.definition.name!="Susan"	# Silently skip Susan
+        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, notex) if ent.definition.name!="Susan"	# Silently skip Susan
       end
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, notex)
+      XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, notex)
 
     when "Text"
       light=ent.text[/\S*/]
@@ -160,6 +181,7 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, notex)
         lightprim=XPPrim.new(XPPrim::LIGHT, anim)
         lightprim.i = [ent.text] + (trans*ent.point).to_a.map { |v| v.round(SU2XPlane::P_V) }
         prims << lightprim
+        primcache[anim.cachekey].push(lightprim) if anim
       end
 
     when "Face"
@@ -186,6 +208,7 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, notex)
       if !prim or prim.attrs!=attrs
         prim=XPPrim.new(XPPrim::TRIS, anim, attrs)
         prims << prim
+        primcache[anim.cachekey].push(prim) if anim
       end
 
       mesh=ent.mesh(7)	# vertex, uvs & normal
@@ -301,7 +324,7 @@ def XPlaneExport()
   prims=[]	# arrays of XPPrim
   notex=[0,0]	# num not textured, num surfaces
   lights=[]	# array of [freetext, vx, vy, vz]
-  XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, notex)	# coords always returned in inches!
+  XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {}, notex)	# coords always returned in inches!
   if prims.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
@@ -311,7 +334,14 @@ def XPlaneExport()
   prims.sort!
 
   # Build global index list
-  allidx=prims.inject([]) { |index, prim| prim.typename==XPPrim::TRIS ? index+prim.i : index }
+  allidx=prims.inject([]) do |index, prim|
+    if prim.typename==XPPrim::TRIS && !prim.i.base
+      prim.i.base=index.length
+      index+prim.i
+    else
+      index
+    end
+  end
 
   # examine textures
   tex=nil
@@ -465,8 +495,17 @@ def XPlaneExport()
       else
         outfile.printf("#{ins}%s\t%9.4f %9.4f %9.4f\t%s\n", type, prim.i[1], prim.i[3], -prim.i[2], args.join(' '))
       end
+    elsif current_count==0
+      current_base  = prim.i.base
+      current_count = prim.i.length
+    elsif current_base+current_count != prim.i.base
+      # Indices can get out of order when dealing with an animated component that is re-used. But a component
+      # shouldn't have multiple allocations in global table without a state change so this code shouldn't be called.
+      outfile.write("#{XPAnim.ins(current_anim)}TRIS\t#{current_base} #{current_count}\n")
+      current_base  = prim.i.base
+      current_count = prim.i.length
     else
-      # Batch up TRIS
+      # Normal case - batch up TRIS
       current_count += prim.i.length
     end
 
