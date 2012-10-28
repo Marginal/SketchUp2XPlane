@@ -66,7 +66,7 @@ class XPlaneImporter < Sketchup::Importer
         cull=true
         hard=false
         poly=false
-        draped=false
+        alpha=false
         vt=[]
         nm=[]
         uv=[]
@@ -126,13 +126,11 @@ class XPlaneImporter < Sketchup::Importer
               begin
                 face=entities.add_face thisvt
               rescue
-                msg["Ignoring some geometry that couldn't be imported."]=true if not (thisvt[0]==thisvt[1] or thisvt[0]==thisvt[2] or thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
+                msg["Ignoring some geometry that couldn't be imported."]=true if !(thisvt[0]==thisvt[1] || thisvt[0]==thisvt[2] || thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
                 i+=3	# next tri
                 next
               end
-              thisnm=[nm[idx[i+2]],nm[idx[i+1]],nm[idx[i]]]
-              smooth=(thisnm[0]!=thisnm[1] or thisnm[0]!=thisnm[2] or thisnm[1]!=thisnm[2])
-              if material and uv[idx[i+2]]!=[0.0,0.0,1.0] or uv[idx[i+1]]!=[0.0,0.0,1.0] or uv[idx[i]]!=[0.0,0.0,1.0]
+              if material && (uv[idx[i+2]]!=[0.0,0.0,1.0] || uv[idx[i+1]]!=[0.0,0.0,1.0] || uv[idx[i]]!=[0.0,0.0,1.0])
                 # SketchUp doesn't like colocated UVs
                 thisuv=[uv[idx[i+2]]]
                 thisuv << ((uv[idx[i+1]]!=uv[idx[i+2]]) ? uv[idx[i+1]] : uv[idx[i+1]]+Geom::Vector3d.new(1.0/2048,0,0))
@@ -155,11 +153,13 @@ class XPlaneImporter < Sketchup::Importer
                   # SketchUp can't always compute texture layout
                 end
               end
+              face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME,1) if alpha
               face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 1) if hard
               face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 1) if poly
 
               # smooth & soften edges
-              if smooth
+              thisnm=[nm[idx[i+2]],nm[idx[i+1]],nm[idx[i]]]
+              if thisnm[0]!=thisnm[1] || thisnm[0]!=thisnm[2] || thisnm[1]!=thisnm[2]
                 face.edges.each do |edge|
                   case edge.faces.length
                   when 1
@@ -179,7 +179,7 @@ class XPlaneImporter < Sketchup::Importer
               # remove coplanar edges
               edges=face.edges	# face may get deleted
               edges.each do |edge|
-                if !edge.deleted? and edge.faces.length==2 and edge.faces[0].normal.angle_between(edge.faces[1].normal)<=planarangle	# same_direction? is too forgiving
+                if !edge.deleted? && edge.faces.length==2 && edge.faces[0].normal.angle_between(edge.faces[1].normal)<=planarangle	# same_direction? is too forgiving
                   if not material
                     edge.erase!
                     next
@@ -188,17 +188,17 @@ class XPlaneImporter < Sketchup::Importer
                   faces1=edge.faces[1]
                   uv0=faces0.get_UVHelper(true, true, tw)
                   uv1=faces1.get_UVHelper(true, true, tw)
-                  if uv0.get_front_UVQ(edge.start.position)==uv1.get_front_UVQ(edge.start.position) and uv0.get_front_UVQ(edge.end.position)==uv1.get_front_UVQ(edge.end.position) and faces0.back_material==faces1.back_material and (faces0.back_material==reverse or (uv0.get_back_UVQ(edge.start.position)==uv1.get_back_UVQ(edge.start.position) and uv0.get_back_UVQ(edge.end.position)==uv1.get_back_UVQ(edge.end.position)))
+                  if uv0.get_front_UVQ(edge.start.position)==uv1.get_front_UVQ(edge.start.position) && uv0.get_front_UVQ(edge.end.position)==uv1.get_front_UVQ(edge.end.position) && faces0.back_material==faces1.back_material && (faces0.back_material==reverse || (uv0.get_back_UVQ(edge.start.position)==uv1.get_back_UVQ(edge.start.position) && uv0.get_back_UVQ(edge.end.position)==uv1.get_back_UVQ(edge.end.position)))
                     # Check that texture isn't mirrored about this edge
                     for v0 in faces0.vertices
-                      if v0!=edge.start and v0!=edge.end
+                      if v0!=edge.start && v0!=edge.end
                         u0=uv0.get_front_UVQ(v0.position)
                         u0=Geom::Vector3d.new(u0.x/u0.z,u0.y/u0.z,1.0)
                         break
                       end
                     end
                     for v1 in faces1.vertices
-                      if v1!=edge.start and v1!=edge.end
+                      if v1!=edge.start && v1!=edge.end
                         u1=uv1.get_front_UVQ(v1.position)
                         u1=Geom::Vector3d.new(u1.x/u1.z,u1.y/u1.z,1.0)
                         break
@@ -235,6 +235,10 @@ class XPlaneImporter < Sketchup::Importer
             poly=true
           when 'ATTR_no_draped'
             poly=false
+          when '####_alpha'
+            alpha=true
+          when '####_no_alpha'
+            alpha=false
 
           when 'ANIM_begin'
             anim_context.push(entities.add_group.to_component)
