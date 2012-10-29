@@ -324,7 +324,13 @@ def XPlaneExport()
   prims=[]	# arrays of XPPrim
   notex=[0,0]	# num not textured, num surfaces
   lights=[]	# array of [freetext, vx, vy, vz]
-  XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {}, notex)	# coords always returned in inches!
+  begin
+    XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {}, notex)	# coords always returned in inches!
+  rescue => e
+    puts "Error: #{e.inspect}", e.backtrace	# Report to console
+    UI.messagebox "Internal error!\n\nSaving your model, then quitting and restarting\nSketchUp might clear the problem.", MB_OK, 'X-Plane export'
+    return
+  end
   if prims.empty?
     UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
     return
@@ -500,7 +506,7 @@ def XPlaneExport()
       current_count = prim.i.length
     elsif current_base+current_count != prim.i.base
       # Indices can get out of order when dealing with an animated component that is re-used. But a component
-      # shouldn't have multiple allocations in global table without a state change so this code shouldn't be called.
+      # shouldn't have multiple allocations in the global table without a state change so this code shouldn't be called.
       outfile.write("#{XPAnim.ins(current_anim)}TRIS\t#{current_base} #{current_count}\n")
       current_base  = prim.i.base
       current_count = prim.i.length
