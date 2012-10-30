@@ -122,10 +122,10 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @component.add_observer(self)
     @modelobserver=XPlaneModelObserver.new(@model, self)
     @selectionobserver=XPlaneSelectionObserver.new(@model, self)
-    @dlg.set_on_close {
+    @dlg.set_on_close {	# Component or Model might be deleted, so use exception blocks
       begin @component.remove_observer(self) rescue TypeError end
-      @model.remove_observer(@modelobserver)
-      @model.selection.remove_observer(@selectionobserver)
+      begin @model.remove_observer(@modelobserver) rescue TypeError end
+      begin @model.selection.remove_observer(@selectionobserver) rescue NameError end
       @@instances.delete(@component)
     }
     @dlg.show
