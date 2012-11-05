@@ -1,6 +1,6 @@
 var reText =/^[\w/]*$/;
 var reInt  =/^\d*$/;
-var reFloat=/^\-?\d*.?\d*$/;
+var reFloat=new RegExp('^\\-?\\d*\\' + 1.5.toLocaleString().substring(1,2) + '?\\d*$');
 
 // Must be consistent with SU2XPlane.rb
 var ANIM_DATAREF='dataref'
@@ -31,8 +31,10 @@ function checkAndSet(e, re)
     }
 }
 
-function resetDialog(title, dataref, index, l10n_datarefval, l10n_position, l10n_preview, l10n_hideshow, l10n_erase)
+function resetDialog(title, dataref, index, l10n_datarefval, l10n_position, l10n_preview, l10n_hideshow, l10n_erase, l10_decimal)
 {
+    reFloat=new RegExp('^\\-?\\d*\\' + l10_decimal + '?\\d*$');	// Ensure that Ruby and Javascript agree.
+
     document.getElementById("title").innerHTML=title;
     document.getElementById(ANIM_DATAREF).value=dataref;
     document.getElementById(ANIM_INDEX).value=index;

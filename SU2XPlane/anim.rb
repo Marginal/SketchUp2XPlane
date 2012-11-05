@@ -91,6 +91,9 @@ end
 
 class XPlaneAnimation < Sketchup::EntityObserver
 
+  # DataRef values are stored as Strings - need to convert decimal separator to user's locale for display
+  DecimalSep=1.2.to_l.to_s.match(/\d(\D)\d/)[1]	# Hack! http://sketchucation.com/forums/viewtopic.php?f=180&t=28346
+
   @@instances={}	# map components to instances
   attr_reader(:dlg)
 
@@ -189,7 +192,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
       title='Group'
     end
     l10n_datarefval, l10n_position, l10n_preview, l10n_hideshow, l10n_erase = XPL10n.t('DataRef value'), XPL10n.t('Position'), XPL10n.t('Preview'), XPL10n.t('Hide / Show'), XPL10n.t('Erase')
-    @dlg.execute_script("resetDialog('#{title}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}', '#{l10n_datarefval}', '#{l10n_position}', '#{l10n_preview}', '#{l10n_hideshow}', '#{l10n_erase}')")
+    @dlg.execute_script("resetDialog('#{title}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}', '#{l10n_datarefval}', '#{l10n_position}', '#{l10n_preview}', '#{l10n_hideshow}', '#{l10n_erase}', '#{DecimalSep}')")
 
     disable=((@model.active_path!=nil) and (!included?(@model.active_entities)))	# Can't manipulate transformation while subcomponents are being edited.
 
@@ -198,10 +201,10 @@ class XPlaneAnimation < Sketchup::EntityObserver
     l10n_set, l10n_recall = XPL10n.t('Set'), XPL10n.t('Recall')
     for frame in 0...numframes
       @dlg.execute_script("addFrameInserter(#{frame})")
-      @dlg.execute_script("addKeyframe(#{frame}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s)}', #{hasdeleter}, '#{l10n_set}', '#{l10n_recall}')")
+      @dlg.execute_script("addKeyframe(#{frame}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s).tr('.',DecimalSep)}', #{hasdeleter}, '#{l10n_set}', '#{l10n_recall}')")
     end
     @dlg.execute_script("addFrameInserter(#{numframes})")
-    @dlg.execute_script("addLoop('#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP)}')")
+    @dlg.execute_script("addLoop('#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).tr('.',DecimalSep)}')")
 
     hideshow=0
     l10n_hide, l10n_show, l10n_when, l10n_to = XPL10n.t('Hide'), XPL10n.t('Show'), XPL10n.t('when'), XPL10n.t('to')
@@ -210,7 +213,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
       hs=@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)
       if hs==nil then break end
       @dlg.execute_script("addHSInserter(#{hideshow})")
-      @dlg.execute_script("addHideShow(#{hideshow}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO)}', '#{l10n_hide}', '#{l10n_show}', '#{l10n_when}', '#{l10n_to}')")
+      @dlg.execute_script("addHideShow(#{hideshow}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM).tr('.',DecimalSep)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO).tr('.',DecimalSep)}', '#{l10n_hide}', '#{l10n_show}', '#{l10n_when}', '#{l10n_to}')")
       hideshow+=1
     end
     @dlg.execute_script("addHSInserter(#{hideshow})")
@@ -252,7 +255,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def set_var(p)
     start_operation(XPL10n.t('Animation value'), "#{@component.object_id}/#{p}")	# merge into last if setting same var again
-    @component.set_attribute(SU2XPlane::ATTR_DICT, p, @dlg.get_element_value(p).strip)
+    @component.set_attribute(SU2XPlane::ATTR_DICT, p, @dlg.get_element_value(p).strip.tr(DecimalSep,'.'))
     commit_operation
     disable=!can_preview()
     @dlg.execute_script("document.getElementById('preview-slider').disabled=#{disable}")
@@ -415,7 +418,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
                                        interp) *
       Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
     commit_operation
-    @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % val)
+    @dlg.execute_script("document.getElementById('preview-value').innerHTML='#{('%.6g' % val).tr('.',DecimalSep)}'")
   end
 
   def erase()
