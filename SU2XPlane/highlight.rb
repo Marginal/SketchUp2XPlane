@@ -20,17 +20,19 @@ def XPlaneHighlight()
     reverse.alpha=0
     reverse.texture=nil
 
-    count=XPlaneHighlightFaces(model.entities, untextured, reverse)
+    while !model.selection.empty? do model.selection.shift end	# clear selection
+    count=XPlaneHighlightFaces(model.entities, untextured, reverse, model.selection)
     model.commit_operation
     UI.messagebox "All faces are textured", MB_OK,"X-Plane export" if count==0
-  rescue
+  rescue => e
+    puts "Error: #{e.inspect}", e.backtrace	# Report to console
     model.abort_operation
   end
 
 end
 
 
-def XPlaneHighlightFaces(entities, untextured, reverse)
+def XPlaneHighlightFaces(entities, untextured, reverse, selection)
 
   count=0
 
@@ -39,19 +41,20 @@ def XPlaneHighlightFaces(entities, untextured, reverse)
     case ent.typename
 
     when "ComponentInstance"
-      count+=XPlaneHighlightFaces(ent.definition.entities, untextured, reverse)
+      count+=XPlaneHighlightFaces(ent.definition.entities, untextured, reverse, selection)
 
     when "Group"
-      count+=XPlaneHighlightFaces(ent.entities, untextured, reverse)
+      count+=XPlaneHighlightFaces(ent.entities, untextured, reverse, selection)
 
     when "Face"
       if not (ent.material and ent.material.texture and ent.material.texture.filename) and not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
-	ent.material=untextured
-	ent.back_material=reverse
-	count+=1
+        ent.material=untextured
+        ent.back_material=reverse
+        selection.add(ent)
+        count+=1
       else
-	ent.material=reverse if not (ent.material and ent.material.texture and ent.material.texture.filename)
-	ent.back_material=reverse if not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
+        ent.material=reverse if not (ent.material and ent.material.texture and ent.material.texture.filename)
+        ent.back_material=reverse if not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
       end
 
     end
