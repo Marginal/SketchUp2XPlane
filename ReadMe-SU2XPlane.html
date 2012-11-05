@@ -15,6 +15,7 @@ h2 { font-family: Arial,Helvetica,sans-serif; }
 h3 { font-family: Arial,Helvetica,sans-serif; }
 h4 { font-family: Arial,Helvetica,sans-serif; }
 h5 { font-family: Arial,Helvetica,sans-serif; }
+ul { margin: 0; }
   </style>
 </head>
 <body>
@@ -32,7 +33,8 @@ Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">To
 
 <h3>Overview</h3>
 <p><a href="http://www.sketchup.com/" target="_blank">SketchUp</a> is a free (as in beer) 3D object editor for Windows and MacOS.</p>
-<p>This SketchUp plugin imports and exports models in X-Plane v8/v9/v10 <code>.obj</code> format.</p>
+<p>This SketchUp plugin imports and exports models in X-Plane v9/v10 <code>.obj</code> format.</p>
+
 <h3>Installation</h3>
 <p>Copy all the files from the <code>.zip</code> archive into your SketchUp <code>Plugins</code> folder:</p>
 <ul>
@@ -48,51 +50,143 @@ Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">To
   <li>Choose <samp>Window&nbsp;&rarr; Model&nbsp;Info&nbsp;&rarr; Geo-location&nbsp;&rarr; Add&nbsp;Location&#8230;</samp></li>
 </ul>
 <p>Create your model in SketchUp out of Rectangles, Circles and Arcs. Save the SketchUp <code>.skp</code> file in the aircraft or scenery folder where you want the X-Plane <code>.obj</code> file to end up.</p>
-<p>In an image editor application create one texture file that is like a "<a href="http://en.wikipedia.org/wiki/Collage" target="_blank">collage</a>" of all of the textures that you need in your model. The height and width of the texture file must be powers of two (<i>eg</i> 128, 256, 512, 1024, 2048) but it doesn't have to be square. Save the texture file in 32 bit or 24 bit PNG format (<i>ie</i> with or without an "Alpha" channel) in the aircraft or scenery folder where you want the X-Plane <code>.obj</code> file to end up.</p>
-<p>Use the <samp>Paint Bucket</samp> tool to apply your one texture file to every face in your model. Use <samp>Context&nbsp;menu&nbsp;&rarr; Texture&nbsp;&rarr; Position</samp>
-to map the correct portion of this texture file to each face.</p>
+<p>In an image editor application create one texture file that is like a &ldquo;<a href="http://en.wikipedia.org/wiki/Collage" target="_blank">collage</a>&rdquo; of all of the textures that you need in your model. The height and width of the texture file must be powers of two (<i>eg</i> 128, 256, 512, 1024, 2048) but it doesn't have to be square. Save the texture file in 32 bit or 24 bit PNG format (<i>ie</i> with or without an &ldquo;Alpha&rdquo; channel) in the aircraft or scenery folder where you want the X-Plane <code>.obj</code> file to end up.</p>
+<p>Use the <samp>Paint Bucket</samp> tool to apply your one texture file to every face in your model. Use <samp>Context&nbsp;menu&nbsp;&rarr; Texture&nbsp;&rarr; Position</samp> to map the correct portion of this texture file to each face. (If you don't see the <samp>Texture</samp> entry in the context menu then choose <samp>Context&nbsp;menu&nbsp;&rarr; Reverse&nbsp;Faces</samp> and try again).</p>
 <p>See <a href="http://www.youtube.com/watch?v=HHsRRLCAOm8" target="_blank">this</a> tutorial for how to position a texture on a curved surface. Or you can enable <samp>View&nbsp;&rarr; Hidden&nbsp;Geometry</samp> and then select one face of the surface at a time and position the texture on each face.</p>
 <p>If you want both sides of a face to be displayed in X-Plane then apply the <samp>Paint Bucket</samp> tool twice; once on each side of the face. You can use the <samp>Window&nbsp;&rarr; Entity&nbsp;Info</samp> panel to see which texture(s) are currently assigned to the two sides of the currently selected face.</p>
 <p>You can use <samp>Tools&nbsp;&rarr; Highlight&nbsp;Untextured</samp> to help you with texturing. This doesn't change how your model will appear in X-Plane, but it does highlight in SketchUp any problems with your texturing:</p>
-<ol>
+<ul style="list-style-type: circle">
   <li>Untextured faces are coloured red. This helps you to identify these faces.</li>
   <li>For faces that are textured on just one side, the other side is hidden (by setting the opacity to 0). This helps you see if you've textured the wrong side of any faces. Use <samp>Context&nbsp;menu&nbsp;&rarr; Reverse&nbsp;Faces</samp> on the face if you have.</li>
-</ol>
+</ul>
 
 <h4>Attributes</h4>
-<p>This plugin adds three entries to the context menu. These can be used when you have a face selected:</p>
+<p>This plugin adds four entries to the context menu. These can be used when you have face(s) selected:</p>
 <dl>
   <dt><samp>Hard</samp></dt>
   <dd>Controls whether aircraft can land on and/or collide with this face in X-Plane.<br>
-Making faces "hard" is expensive so use this sparingly. Vertical "hard" faces don't work as you might expect; if you want to make a building collidable just use this option on the roof, not on the sides.</dd>
+Making faces &ldquo;hard&rdquo; is expensive so use this sparingly. Vertical &ldquo;hard&rdquo; faces don't work as you might expect; if you want to make a building collidable just use this option on the roof, not on the sides.</dd>
   <dt>&nbsp;</dt>
   <dt><samp>Ground</samp></dt>
-  <dd>Controls whether the face is rendered with "polygon offsetting" in X-Plane and, in X-Plane v10, is draped over the terrain.<br>
+  <dd>Controls whether the face is rendered with &ldquo;polygon offsetting&rdquo; in X-Plane and, in X-Plane v10, is draped over the terrain.<br>
 Use this on faces that lie flat on the ground to prevent Z-buffer thrashing in X-Plane. Don't use this option for other faces.</dd>
   <dt>&nbsp;</dt>
   <dt><samp>Alpha</samp></dt>
   <dd>This is a hint to X-Plane that the face is textured with a partially or wholly transparent or translucent texture.<br>
 Use this on any transparent or translucent faces through which you want to see other faces from the same model. Don't press this button for opaque (normal) faces.</dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>Animation</samp></dt>
+  <dd>See below.</dd>
 </dl>
 
 <h4>Lights</h4>
 <p>Use the Text Tool to create lights:</p>
 <ul>
-  <li>First, use the <samp>Tape Measure</samp> tool to create a "Guide Point" at the location where you want the light to appear.</li>
+  <li>First, use the <samp>Tape Measure</samp> tool to create a &ldquo;Guide Point&rdquo; at the location where you want the light to appear.</li>
   <li>Choose <samp>Tools&nbsp;&rarr; Text</samp>.</li>
   <li>Select the Guide Point that you just created, then drag your mouse (which creates an arrow pointing to your Guide Point) and click.</li>
   <li>Type in one of the light types documented <a href="http://developer.x-plane.com/?article=obj8-file-format-specification#GEOMETRY_COMMANDS" target="_blank">here</a> - i.e. <code>LIGHT_NAMED</code>, <code>LIGHT_CUSTOM</code>, <code>LIGHT_PARAM</code>, <code>LIGHT_SPILL_CUSTOM</code>, <code>smoke_black</code> or <code>smoke_white</code>.</li>
   <li>Also type in any parameters required, but omit the <code>&lt;x&gt; &lt;y&gt; &lt;z&gt;</code> parameters since this plugin will supply values for these parameters.<br>
 Note: For lights of type <code>LIGHT_NAMED</code> and <code>LIGHT_PARAM</code> the file <code>X-Plane/Resources/bitmaps/world/lites/lights.txt</code> lists the usable values for the <code>&lt;name&gt;</code> parameter.</li>
 </ul>
+<p>There are some worked example models of lights <a href="http://marginal.org.uk/x-planescenery/SUlight.zip">here</a>.</p>
+
+<h3>Animations</h3>
+<p>X-Plane supports two kinds of animations; moving/rotating and hiding/showing. Both kinds of animation are controlled from a single dialog in SketchUp:</p>
+<ul>
+  <li>Select the object(s) that you want to animate.</li>
+  <li>Choose <samp>Context&nbsp;menu&nbsp;&rarr; X-Plane&nbsp;&rarr; Animation&#8230;</samp></li>
+</ul>
+<p>SketchUp groups the objects(s) that you selected into a &ldquo;Component&rdquo; (displayed as a rectangular box) and pops up an &ldquo;X-Plane Animation&rdquo; dialog, described below.</p>
+<p>There are some worked example models of animations <a href="http://marginal.org.uk/x-planescenery/SUanimation.zip">here</a>.</p>
+
+<h4>&ldquo;DataRefs&rdquo;</h4>
+<p>You can use the the simulator &ldquo;DataRefs&rdquo; of type &ldquo;int&rdquo;, &ldquo;float&rdquo; or &ldquo;double&rdquo; listed <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">here</a> to drive either kind of animation.<p>
+<ul style="list-style-type: circle">
+  <li>DataRefs of type &ldquo;int&rdquo; give whole number values, usually representing yes/no or on/off states, and so tend to be suitable for hiding/showing type animations.</li>
+  <li>DataRefs of type &ldquo;float&rdquo; and &ldquo;double&rdquo; give fractional values and can be suitable for both types of animation.</li>
+  <li>DataRef listed with &ldquo;[<i>n</i>]&rdquo; after their type are &ldquo;arrays&rdquo; which contain multiple values, the meaning of which depends on the DataRef. You will need to choose which of the <i>n</i> values that you want to use for your animation.<br>
+e.g. sim/flightmodel2/doors/angle_now_deg is listed as being of type &ldquo;float[<i>doors</i>]&rdquo; - for this DataRef each array value represents the rotation angle of one landing gear door.</li>
+</ul>
+<p>The DataRefs are grouped logically by name. Some examples:</p>
+<dl>
+  <dt>sim/aircraft/...</dt>
+  <dd>Values obtained from the <code>.acf</code> file of the aircraft that the user is piloting.</dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/cockpit/... &amp; sim/cockpit2/...</dt>
+  <dd>The state of cockpit instruments and switches in the aircraft that the user is piloting.<br>
+    <small>(sim/cockpit/... is deprecated; use sim/cockpit2/... for new models).</small></dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/flightmodel/... &amp; sim/flightmodel2/...</dt>
+  <dd>The state of the engines, wings, landing gear etc of the aircraft that the user is piloting.<br>
+    <small>(sim/flightmodel/... is deprecated; use sim/flightmodel2/... for new models).</small></dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/graphics/...</dt>
+  <dd>Various rendering settings and world state unrelated to the aircraft that the user is piloting.
+    <ul style="list-style-type: circle">
+      <li>sim/graphics/scenery/percent_lights_on is useful if you want to animate something that changes at dawn and dusk.</li>
+    </ul>
+  </dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/time/...</dt>
+  <dd>Time values unrelated to the aircraft that the user is piloting.
+    <ul style="list-style-type: circle">
+      <li>sim/time/total_running_time_sec is useful if you want to create an indefinitely repeating animation since it just counts seconds.</li>
+      <li>sim/time/local_time_sec is useful if you want to animate something that depends on the time of day.</li>
+      <li>sim/time/local_date_days is useful if you want to animate something that depends on the time of year.</li>
+    </ul>
+  </dd>
+</dl>
+<p>You can use the <a href="http://wiki.x-plane.com/DataRefEditor" target="_blank">DataRefEditor</a> X-Plane plugin to monitor the value of any of these DataRefs in X-Plane.</p>
+
+<h4>Moving / Rotating</h4>
+<p>If you want your object(s) to rotate (not just move side-to-side) then you need to specify the point about which the rotation should occur - the &ldquo;center of rotation&rdquo;. This point is specified in SketchUp using the &ldquo;origin&rdquo; of the Component's &ldquo;axes&rdquo;:</p>
+<ul>
+  <li>First, use the <samp>Tape Measure</samp> tool to create a &ldquo;Guide Point&rdquo; at the center of rotation.</li>
+  <li>Click on the Component and choose <samp>Context&nbsp;menu&nbsp;&rarr; Change&nbsp;Axes</samp>.<br>
+SketchUp shows the current location and orientation of the Component's axes.</li>
+  <li>SketchUp also shows new axes at the mouse cursor. Move the mouse cursor to the Guide Point that you just created and click to set the new axes' origin.</li>
+  <li>Click twice more to set the orientation of the Component's red and green axes. (Its usually least confusing if you orientate them parallel to the global red and green axes).</li>
+</ul>
+<p>Moving / Rotating animations use the concept of a &ldquo;<a href="http://en.wikipedia.org/wiki/Key_frame#As_applied_to_motion" target="_blank">Keyframe</a>&rdquo; which is a position and a corresponding DataRef value. You specify two or more Keyframes and X-Plane will interpolate or extrapolate to create a smooth transition between the positions based on the current value of the DataRef  (this is known as &ldquo;<a href="http://en.wikipedia.org/wiki/Tweening" target="_blank">tweening</a>&rdquo;).</p>
+
+<p>In the &ldquo;X-Plane Animation&rdquo; dialog specify:</p>
+<ul>
+  <li>The name of the DataRef that drives the animation - one of the DataRefs of type &ldquo;int&rdquo;, &ldquo;float&rdquo; or &ldquo;double&rdquo; listed <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">here</a> - and, if the DataRef is listed with &ldquo;[<i>n</i>]&rdquo; after its type, the array index number.</li>
+  <li>The DataRef values for each Keyframe.<br>
+You must specify DataRef values in ascending order. (It's OK to use the same DataRef value in adjacent Keyframes - this can be useful if you want the animated object(s) to jump between positions).</li>
+  <li>The animated object(s) position in each Keyframe; use the SketchUp <samp>Move</samp> and/or <samp>Rotate</samp> tools to change the position of the Component that contains your objects, then press one of the <samp>(Set)</samp> buttons to specify that position.<br>
+When using the <samp>Rotate</samp> tool you are unlikely to get the results that you expect in X-Plane unless you rotate the Component about its precise axes' origin; so use the Guide Point that you created above.  Avoid rotations of 180&deg; or greater between Keyframes - either SketchUp or this plugin will often go the short way round.</li>
+  <li>A &ldquo;Loop&rdquo; value, if required.<br>
+When you specify a Loop value the DataRef's value in X-Plane is divided by the Loop value, and the remainder is used to drive the animation.</li>
+</ul>
+<p>You can use the <samp>(+)</samp> and <samp>(&#8722;)</samp> buttons to add or delete Keyframes if required. Use the <samp>Recall</samp> buttons to recall the position associated with a Keyframe.</p>
+<p>Drag the <samp>Preview</samp> slider to visualise how the animated object(s) will move between Keyframe positions in X-Plane. The number to the right of the slider is the DataRef value that corresponds to the animated object(s)' current position. If the Preview slider is disabled this means you haven't correctly specified some of the required information in this dialog. If your object(s) don't animate as you expected than review your Component's axes, Keyframe positions and/or DataRef values.</p>
+
+<h4>Hiding / Showing</h4>
+<p>You can selectively hide objects based on a DataRef's value in X-Plane. In the &ldquo;X-Plane Animation&rdquo; dialog press the bottom <samp>(+)</samp> button and specify:</p>
+<ul>
+  <li>The name of the DataRef that drives the animation - one of the DataRefs of type &ldquo;int&rdquo;, &ldquo;float&rdquo; or &ldquo;double&rdquo; listed <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">here</a> - and, if the DataRef is listed with &ldquo;[<i>n</i>]&rdquo; after its type, the array index number.</li>
+  <li>The range of DataRef values that should cause your object(s) to be hidden.</li>
+</ul>
+<p>You can specify multiple conditions - use the <samp>(+)</samp> and <samp>(&#8722;)</samp> buttons to add or delete conditions. You can also specify that a previously hidden object be shown. The last condition that is active &ldquo;wins&rdquo; (<i>i.e.</i> conditions don't &ldquo;stack up&rdquo;) so the order of conditions is significant.</p>
+
+<h4>Complex animations</h4>
+<p>Complex animations can be modelled using a hierarchy of Components. Often the physical nature of the object that you're modelling will dictate the hierarchy; for example an aircraft's aileron trim tab is attached to its aileron (and so moves as the aileron rotates) so should be modelled as a &ldquo;child&rdquo; animation of the aileron animation. To create a child animation:</p>
+<ul>
+  <li>Double-click on the existing (&ldquo;parent&rdquo;) animation to open it.</li>
+  <li>Select the object(s) that you want to animate. (This can be all of the object(s) in the Component or a subset - in our example we would select just the trim tab not the whole aileron).</li>
+  <li>Choose <samp>Context&nbsp;menu&nbsp;&rarr; X-Plane&nbsp;&rarr; Animation&#8230;</samp> and proceed as described above.</li>
+</ul>
+<p>Use the Outliner dialog (<samp>Window&nbsp;&rarr; Outliner</samp>) to visualise the Component hierarchy. You can change the parent/child relationships between Components by dragging entries up and down in this window.</p>
 
 <h3>Exporting to X-Plane</h3>
 <p>If you have not already done so, choose <samp>File&nbsp;&rarr; Save&nbsp;As&#8230;</samp> and save the <code>.skp</code> file in the aircraft or scenery folder where you want the X-Plane <code>.obj</code> file to end up.</p>
 <p>If you have loaded a terrain photo from Google Earth then you need to hide it before exporting:</p>
 <ul>
   <li>Choose <samp>Window&nbsp;&rarr; Layers</samp>.</li>
-  <li>In the <samp>Layers</samp> panel ensure that "Google Earth Terrain" and "Google Earth Snapshot" are both unchecked.</li>
-  <li>If you loaded the terrain photo before you started modelling then you can read the co-ordinates where your model should be placed in X-Plane from the <samp>Window&nbsp;&rarr; Model&nbsp;Info&nbsp;&rarr; Geo-location</samp> panel.</li>
+  <li>In the <samp>Layers</samp> panel ensure that &ldquo;Google Earth Terrain&rdquo; and &ldquo;Google Earth Snapshot&rdquo; are both unchecked.</li>
+  <li>If you loaded the terrain photo before you started modelling then you can read the co-ordinates where your model should be placed in <a href="http://marginal.org.uk/x-planescenery/tools.html" target="_blank">OverlayEditor</a> or <a href="http://developer.x-plane.com/tools/worldeditor/" target="_blank">WED</a> from the <samp>Window&nbsp;&rarr; Model&nbsp;Info&nbsp;&rarr; Geo-location</samp> panel.</li>
 </ul>
 <p>Then:</p>
 <ul>
@@ -115,7 +209,6 @@ X-Plane will colour the untextured faces with the bottom left pixel from your te
 <p>Construct your SketchUp model out of Rectangles, Circles, Arcs, Components and Groups only - any other SketchUp types are not exported.</p>
 <p>This plugin does not allow you to create advanced X-Plane scenery primitives, including:</p>
 <ul>
-  <li>Animations</li>
   <li>Attributes: <i>eg</i> cockpit, materials etc</li>
   <li>Level Of Detail</li>
   <li>Lines</li>
@@ -125,6 +218,7 @@ X-Plane will colour the untextured faces with the bottom left pixel from your te
 <p>These tools are licensed under the Creative Commons <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/" target="_blank">Attribution-NonCommercial-ShareAlike</a> license.</p>
 <p>Use of these tools does not impose any requirement on you to license your work under a Creative Commons license. For the avoidance of doubt, this means that you can license any scenery that you make using these tools under commercial terms (subject to any licensing restrictions on any imported or library objects that you use).</p>
 <p>The author would appreciate a courtesy copy of any commercial scenery that you make using these tools, but you are under no obligation.</p>
+<p>HTML5 <a href="http://www.frequency-decoder.com/2010/11/18/unobtrusive-slider-control-html5-input-range-polyfill" target="_blank">slider control</a> © 2005-2010 Brian McAllister.</p>
 
 <hr>
 <table style="width: 100%;" border="0" cellpadding="2">
