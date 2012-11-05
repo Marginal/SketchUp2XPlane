@@ -8,3 +8,8 @@ cd examples
 zip -v ../SUanimation.zip A1_SeeSaw.skp A2_Radar.skp A3_Windsock.skp A4_Knobs.skp SeeSaw.png knobs.png Windsock.png
 zip -v ../SUlight.zip L1_named_light.skp L2_custom_light.skp gray.png
 cd ..
+
+rm -f SUanimation_DE.zip
+cd examples_DE
+zip -vj ../SUanimation_DE.zip A1_Wippe.skp A2_Radar.skp A3_Windsack.skp A4_Drehknopfen.skp ../examples/SeeSaw.png ../examples/knobs.png ../examples/Windsock.png
+cd ..
