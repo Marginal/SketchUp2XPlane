@@ -1,4 +1,4 @@
 VER=`sed -nE 's/[[:space:]]+Version="([[:digit:]]+)(\.)([[:digit:]]+)"/\1\3/p' SU2XPlane.rb`
 rm -f SketchUp2XPlane_${VER}.zip SketchUp2XPlane_${VER}.rbz
-zip SketchUp2XPlane_${VER}.zip *-SU2XPlane*.html SU2XPlane.rb SU2XPlane/*.css SU2XPlane/*.html SU2XPlane/*.js SU2XPlane/*.rb
+zip SketchUp2XPlane_${VER}.zip *-SU2XPlane*.html SU2XPlane.rb SU2XPlane/*.css SU2XPlane/*.html SU2XPlane/*.js SU2XPlane/*.rb SU2XPlane/*.txt
 cp -p SketchUp2XPlane_${VER}.zip SketchUp2XPlane_${VER}.rbz

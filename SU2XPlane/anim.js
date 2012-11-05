@@ -31,11 +31,16 @@ function checkAndSet(e, re)
     }
 }
 
-function resetDialog(title, dataref, index)
+function resetDialog(title, dataref, index, l10n_datarefval, l10n_position, l10n_preview, l10n_hideshow, l10n_erase)
 {
     document.getElementById("title").innerHTML=title;
     document.getElementById(ANIM_DATAREF).value=dataref;
     document.getElementById(ANIM_INDEX).value=index;
+    document.getElementById("datarefval").innerHTML=l10n_datarefval;
+    document.getElementById("position").innerHTML=l10n_position;
+    document.getElementById("preview").innerHTML=l10n_preview;
+    document.getElementById("hideshowtitle").innerHTML=l10n_hideshow;
+    document.getElementById("erase").value=l10n_erase;
 
     var keyframes=document.getElementById("keyframes");
     while (keyframes.rows.length) {
@@ -67,7 +72,7 @@ function addFrameInserter(keyframe)
     row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="+" onclick="window.location=\'skp:on_insert_frame@'+keyframe+'\'">'
 }
 
-function addKeyframe(keyframe, val, hasdeleter)
+function addKeyframe(keyframe, val, hasdeleter, l10n_set, l10n_recall)
 {
     var table=document.getElementById("keyframes");
     var row=table.insertRow(-1)
@@ -77,8 +82,8 @@ function addKeyframe(keyframe, val, hasdeleter)
         row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="\u2212" disabled>'
     }
     row.insertCell(-1).innerHTML="Keyframe #"+keyframe
-    row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_FRAME_+keyframe+'" value="'+val+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
-    row.insertCell(-1).innerHTML='<input type="button" value="Set" onclick="window.location=\'skp:on_set_transform@'+keyframe+'\'"> <input type="button" value="Show" onclick="window.location=\'skp:on_get_transform@'+keyframe+'\'">'
+    row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_FRAME_+keyframe+'" value="'+val+'" size="6" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
+    row.insertCell(-1).innerHTML='<input type="button" value="'+l10n_set+'" onclick="window.location=\'skp:on_set_transform@'+keyframe+'\'"> <input type="button" value="'+l10n_recall+'" onclick="window.location=\'skp:on_get_transform@'+keyframe+'\'">'
 }
 
 function addLoop(val)
@@ -89,7 +94,7 @@ function addLoop(val)
     cell.innerHTML='DataRef'
     cell.style.visibility='hidden'	// So that input boxes line up with dataref input boxes
     row.insertCell(-1).innerHTML="Loop"
-    row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_LOOP+'" value="'+val+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
+    row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_LOOP+'" value="'+val+'" size="6" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
 }
 
 function addHSInserter(number)
@@ -99,18 +104,18 @@ function addHSInserter(number)
     row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="+" onclick="window.location=\'skp:on_insert_hideshow@'+number+'\'">'
 }
 
-function addHideShow(number, hideshow, dataref, index, from, to)
+function addHideShow(number, hideshow, dataref, index, from, to, l10n_hide, l10n_show, l10n_when, l10n_to)
 {
     var prefix=ANIM_HS_+number
     var table=document.getElementById("hideshow");
     var row=table.insertRow(-1)
     row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="\u2212" onclick="window.location=\'skp:on_delete_hideshow@'+number+'\'">'
-    row.insertCell(-1).innerHTML='<input type="text" id="'+prefix+ANIM_HS_DATAREF+'" value="'+dataref+'" style="width: 200px;" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"> [<input type="text" id="'+prefix+ANIM_HS_INDEX+'" value="'+index+'" size="4" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)">]'
+    row.insertCell(-1).innerHTML='<input type="text" id="'+prefix+ANIM_HS_DATAREF+'" value="'+dataref+'" style="width: 200px;" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"> [<input type="text" id="'+prefix+ANIM_HS_INDEX+'" value="'+index+'" size="3" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)">]'
     row=table.insertRow(-1)
     cell=row.insertCell(-1)
     cell.innerHTML='DataRef'
     cell.style.visibility='hidden'	// So that hideshow dataref and index input boxes line up with animation input boxes
-    row.insertCell(-1).innerHTML='<select id="'+prefix+ANIM_HS_HIDESHOW+'" onchange="checkText(this)"> <option value="'+ANIM_VAL_HIDE+'">Hide</option> <option value="'+ANIM_VAL_SHOW+'">Show</option> </select> when <input type="text" id="'+prefix+ANIM_HS_FROM+'" value="'+from+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)"> to <input type="text" id="'+prefix+ANIM_HS_TO+'" value="'+to+'" size="8" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
+    row.insertCell(-1).innerHTML='<select id="'+prefix+ANIM_HS_HIDESHOW+'" onchange="checkText(this)"> <option value="'+ANIM_VAL_HIDE+'">'+l10n_hide+'</option> <option value="'+ANIM_VAL_SHOW+'">'+l10n_show+'</option> </select> '+l10n_when+' <input type="text" id="'+prefix+ANIM_HS_FROM+'" value="'+from+'" size="6" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)"> '+l10n_to+' <input type="text" id="'+prefix+ANIM_HS_TO+'" value="'+to+'" size="6" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
     document.getElementById(prefix+ANIM_HS_HIDESHOW).selectedIndex = (hideshow==ANIM_VAL_HIDE ? 0 : 1)
 }
 

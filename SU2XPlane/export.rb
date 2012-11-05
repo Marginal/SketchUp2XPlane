@@ -309,14 +309,13 @@ def XPlaneExport()
 
   model=Sketchup.active_model
   if model.path==''
-    UI.messagebox "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.", MB_OK, "X-Plane export"
-    outpath="Untitled.obj"
+    UI.messagebox XPL10n.t("Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model."), MB_OK, "X-Plane export"
     return
   else
     outpath=model.path[0...-3]+'obj'
   end
   if model.active_path!=nil
-    UI.messagebox "Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.", MB_OK, "X-Plane export"
+    UI.messagebox XPL10n.t("Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing."), MB_OK, "X-Plane export"
     return
   end
 
@@ -328,11 +327,11 @@ def XPlaneExport()
     XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {}, notex)	# coords always returned in inches!
   rescue => e
     puts "Error: #{e.inspect}", e.backtrace	# Report to console
-    UI.messagebox "Internal error!\n\nSaving your model, then quitting and restarting\nSketchUp might clear the problem.", MB_OK, 'X-Plane export'
+    UI.messagebox XPL10n.t('Internal error!') + "\n\n" + XPL10n.t('Saving your model, then quitting and restarting\nSketchUp might clear the problem.'), MB_OK, 'X-Plane export'
     return
   end
   if prims.empty?
-    UI.messagebox "Nothing to output!", MB_OK,"X-Plane export"
+    UI.messagebox XPL10n.t('Nothing to export!'), MB_OK,"X-Plane export"
     return
   end
 
@@ -530,11 +529,11 @@ def XPlaneExport()
   outfile.write("\n# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{SU2XPlane::Version}.\n")
   outfile.close
 
-  msg="Wrote #{allidx.length/3} triangles to #{outpath}.\n"
-  msg+="\nWarning: #{notex} faces are untextured." if notex
-  msg+="\nWarning: You used multiple texture files. Using file #{tex}." if badtex
+  msg=XPL10n.t('Wrote %s triangles to %s') % [allidx.length/3, outpath] + ".\n"
+  msg+="\n" + XPL10n.t('Warning: %s faces are untextured') % notex + '.' if notex
+  msg+="\n" + XPL10n.t('Warning: You used multiple texture files. Using file %s') % tex + '.' if badtex
   if notex and not badtex and not model.materials["XPUntextured"]
-    yesno=UI.messagebox msg+"\nDo you want to highlight the untexured faces?", MB_YESNO,"X-Plane export"
+    yesno=UI.messagebox msg+"\n" + XPL10n.t('Do you want to highlight the untextured faces?'), MB_YESNO,"X-Plane export"
     XPlaneHighlight() if yesno==6
   else
     UI.messagebox msg, MB_OK,"X-Plane export"

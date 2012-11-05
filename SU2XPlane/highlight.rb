@@ -23,7 +23,7 @@ def XPlaneHighlight()
     while !model.selection.empty? do model.selection.shift end	# clear selection
     count=XPlaneHighlightFaces(model.entities, untextured, reverse, model.selection)
     model.commit_operation
-    UI.messagebox "All faces are textured", MB_OK,"X-Plane export" if count==0
+    UI.messagebox XPL10n.t('All faces are textured'), MB_OK,"X-Plane export" if count==0
   rescue => e
     puts "Error: #{e.inspect}", e.backtrace	# Report to console
     model.abort_operation

@@ -4,6 +4,8 @@
   
 <head>
 
+  <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+
   <!-- <script type="text/javascript" src="http://getfirebug.com/firebug-lite.js#startOpened"></script> -->
   <script type="text/javascript" src="anim.js"></script>
   <script type="text/javascript" src="fd-slider.js"></script>	<!-- from http://www.frequency-decoder.com/2010/11/18/unobtrusive-slider-control-html5-input-range-polyfill -->
@@ -21,7 +23,7 @@
   <link href="fd-slider.css" rel="stylesheet" />
   <style>
     * { margin: 0px; }
-    body { font-family:sans-serif; }
+    body { font-family: sans-serif; }
     input[type=text] { border: 1px inset; }	/* workaround for Safari bug */
     table { font-size: small; text-align: center; }
     th { font-weight: normal; font-size: smaller; }
@@ -74,7 +76,7 @@
       <table>
         <tr>
           <td>DataRef</td>
-          <td><input type="text" id="dataref" style="width: 200px;" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"> [<input type="text" id="index" size="4" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)">]</td>
+          <td><input type="text" id="dataref" style="width: 200px;" onchange="checkText(this)" onkeyup="checkText(this)" oncut="checkText(this)" onpaste="checkText(this)"> [<input type="text" id="index" size="3" onchange="checkInt(this)" onkeyup="checkInt(this)" oncut="checkInt(this)" onpaste="checkInt(this)">]</td>
         </tr>
         <tr></tr>
       </table>
@@ -84,8 +86,8 @@
           <tr>
             <th></th>
             <th></th>
-            <th>DataRef value</th>
-            <th>Position</th>
+            <th id="datarefval">DataRef value</th>
+            <th id="position">Position</th>
           </tr>
         </thead>
         <tbody id="keyframes">
@@ -94,7 +96,7 @@
       <hr>
       <table>
         <tr>
-          <td>Preview</td><td></td>
+          <td id="preview">Preview</td><td></td>
           <td style="width: 200px;">
             <input id="preview-slider" type="range" min="0" max="200" step="1" value="0" onchange="previewCallback(this)" style="width: 200px; padding: 0px;">
           </td><td></td>
@@ -108,7 +110,7 @@
     <form class="panel">
       <table>
         <tr>
-          <td>Hide / Show</td>
+          <td id="hideshowtitle">Hide / Show</td>
         </tr>
         <tr></tr>
       </table>

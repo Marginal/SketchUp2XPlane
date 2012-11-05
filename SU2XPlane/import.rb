@@ -8,7 +8,7 @@ end
 class XPlaneImporter < Sketchup::Importer
 
   def description
-    return "X-Plane Object (*.obj)"
+    return XPL10n.t('X-Plane Object')+' (*.obj)'
   end
 
   def file_extension
@@ -40,18 +40,18 @@ class XPlaneImporter < Sketchup::Importer
       else
         linesep="\n"
       end
-      raise XPlaneImporterError, 'This is not a valid X-Plane file' if not ['A','I'].include?(line)
+      raise XPlaneImporterError, XPL10n.t('This is not a valid X-Plane file') if not ['A','I'].include?(line)
       line=file.readline(linesep).split(/\/\/|#/)[0].strip()
       if line.split()[0]=='2'
-        raise XPlaneImporterError, "Can't read X-Plane version 6 files"
+        raise XPlaneImporterError, XPL10n.t("Can't read X-Plane version %s files") % '6'
       elsif line!='800'
-        raise XPlaneImporterError, "Can't read X-Plane version #{line.to_i/100} files"
+        raise XPlaneImporterError, XPL10n.t("Can't read X-Plane version %s files") % (line.to_i/100)
       elsif not file.readline(linesep).split(/\/\/|#/)[0].strip()=='OBJ'
-        raise XPlaneImporterError, 'This is not a valid X-Plane file'
+        raise XPlaneImporterError, XPL10n.t('This is not a valid X-Plane file')
       end
 
       model=Sketchup.active_model
-      model.start_operation('Import '+File.basename(file_path), true)
+      model.start_operation("#{XPL10n.t('Import')} #{File.basename(file_path)}", true)
       begin
         entities=model.active_entities	# Open component, else top level
         material=nil
@@ -104,7 +104,7 @@ class XPlaneImporter < Sketchup::Importer
               if not material.texture
                 # lack of material crashes SketchUp somewhere
                 model.abort_operation
-                UI.messagebox "Import failed.\nCan't read texture file #{texture+orig_ext}", MB_OK, 'X-Plane import'
+                UI.messagebox XPL10n.t('Import failed') + ".\n" + XPL10n.t("Can't read texture file %s") % (texture+orig_ext), MB_OK, 'X-Plane import'
                 return 0	# Pretend we succeeded to suppress alert dialog
               end
             end
@@ -126,7 +126,7 @@ class XPlaneImporter < Sketchup::Importer
               begin
                 face=entities.add_face thisvt
               rescue
-                msg["Ignoring some geometry that couldn't be imported."]=true if !(thisvt[0]==thisvt[1] || thisvt[0]==thisvt[2] || thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
+                msg[XPL10n.t("Ignoring some geometry that couldn't be imported")]=true if !(thisvt[0]==thisvt[1] || thisvt[0]==thisvt[2] || thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
                 i+=3	# next tri
                 next
               end
@@ -218,7 +218,7 @@ class XPlaneImporter < Sketchup::Importer
 
           when 'ATTR_LOD'
             if c[0].to_f>0.0
-              msg["Ignoring lower level(s) of detail."]=true
+              msg[XPL10n.t('Ignoring lower level(s) of detail')]=true
               break
             end
           when 'ATTR_cull'
@@ -242,7 +242,7 @@ class XPlaneImporter < Sketchup::Importer
 
           when 'ANIM_begin'
             anim_context.push(entities.add_group.to_component)
-            anim_context.last.definition.name='Component#1'	# Otherwise has name Group#n. SketchUp will uniquify.
+            anim_context.last.definition.name=XPL10n.t('Component')+'#1'	# Otherwise has name Group#n. SketchUp will uniquify.
             anim_context.last.XPLoop=''				# may not be set below
             anim_off.push(anim_off.last.clone)			# inherit parent offset
             entities=anim_context.last.definition.entities	# To hold child geometry
@@ -303,9 +303,9 @@ class XPlaneImporter < Sketchup::Importer
           when 'POINT_COUNTS', 'TEXTURE_LIT', 'ATTR_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ANIM_trans_end', 'ANIM_rotate_end'
             # suppress error message
           when 'VLINE', 'LINES'
-            msg["Ignoring old-style lines."]=true
+            msg[XPL10n.t('Ignoring old-style lines')]=true
           when 'VLIGHT', 'LIGHTS'
-            msg["Ignoring old-style lights."]=true
+            msg[XPL10n.t('Ignoring old-style lights')]=true
           else
             if (SU2XPlane::LIGHTNAMED+SU2XPlane::LIGHTCUSTOM).include?(cmd)
               if SU2XPlane::LIGHTNAMED.include?(cmd)
@@ -317,7 +317,7 @@ class XPlaneImporter < Sketchup::Importer
               text.vector=Geom::Vector3d.new(0, 0, -5)	# arrow length & direction - arbitrary
               text.display_leader=true
             else
-              msg["Ignoring command #{cmd}."]=true
+              msg[XPL10n.t('Ignoring command %s') % cmd]=true
             end
           end
         end
@@ -328,11 +328,11 @@ class XPlaneImporter < Sketchup::Importer
       rescue => e
         puts "Error: #{e.inspect}", e.backtrace	# Report to console
         model.abort_operation			# Otherwise SketchUp crashes on half-imported stuff
-        UI.messagebox "Can't import #{file_path.split(/\/|\\/)[-1]}:\nInternal error.", MB_OK, 'X-Plane import'
+        UI.messagebox XPL10n.t("Can't import %s") % file_path.split(/\/|\\/)[-1] + ":\n" + XPL10n.t('Internal error') + '.', MB_OK, 'X-Plane import'
       end
 
     rescue XPlaneImporterError => e
-      UI.messagebox "Can't read #{file_path.split(/\/|\\/)[-1]}:\n#{e.message}.", MB_OK, 'X-Plane import'
+      UI.messagebox XPL10n.t("Can't read %s") % file_path.split(/\/|\\/)[-1] + ":\n#{e.message}.", MB_OK, 'X-Plane import'
     ensure
       file.close unless !file
     end

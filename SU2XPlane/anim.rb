@@ -101,9 +101,11 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @lastaction=nil	# Record last change to the component for the purpose of merging Undo steps
     @myaction=false	# Record other changes made to the component so we don't merge those in to our Undo steps
     if Object::RUBY_PLATFORM =~ /darwin/i
-      @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 360, 398)
+      @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 392, 398)
+      @dlg.min_width = 392
     else
-      @dlg = UI::WebDialog.new("X-Plane Animation", true, "SU2XPA", 386, 528)
+      @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 450, 528)
+      @dlg.min_width = 450
     end
     @@instances[@component]=self
     @dlg.allow_actions_from_host("getfirebug.com")	# for debugging on Windows
@@ -186,26 +188,29 @@ class XPlaneAnimation < Sketchup::EntityObserver
     else
       title='Group'
     end
-    @dlg.execute_script("resetDialog('#{title}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}')")
+    l10n_datarefval, l10n_position, l10n_preview, l10n_hideshow, l10n_erase = XPL10n.t('DataRef value'), XPL10n.t('Position'), XPL10n.t('Preview'), XPL10n.t('Hide / Show'), XPL10n.t('Erase')
+    @dlg.execute_script("resetDialog('#{title}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_INDEX)}', '#{l10n_datarefval}', '#{l10n_position}', '#{l10n_preview}', '#{l10n_hideshow}', '#{l10n_erase}')")
 
     disable=((@model.active_path!=nil) and (!included?(@model.active_entities)))	# Can't manipulate transformation while subcomponents are being edited.
 
     numframes=count_frames()
     hasdeleter = numframes>2 ? "true" : "false"
+    l10n_set, l10n_recall = XPL10n.t('Set'), XPL10n.t('Recall')
     for frame in 0...numframes
       @dlg.execute_script("addFrameInserter(#{frame})")
-      @dlg.execute_script("addKeyframe(#{frame}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s)}', #{hasdeleter})")
+      @dlg.execute_script("addKeyframe(#{frame}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s)}', #{hasdeleter}, '#{l10n_set}', '#{l10n_recall}')")
     end
     @dlg.execute_script("addFrameInserter(#{numframes})")
     @dlg.execute_script("addLoop('#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP)}')")
 
     hideshow=0
+    l10n_hide, l10n_show, l10n_when, l10n_to = XPL10n.t('Hide'), XPL10n.t('Show'), XPL10n.t('when'), XPL10n.t('to')
     while true
       prefix=SU2XPlane::ANIM_HS_+hideshow.to_s
       hs=@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)
       if hs==nil then break end
       @dlg.execute_script("addHSInserter(#{hideshow})")
-      @dlg.execute_script("addHideShow(#{hideshow}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO)}')")
+      @dlg.execute_script("addHideShow(#{hideshow}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_HIDESHOW)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_DATAREF)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM)}', '#{@component.get_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO)}', '#{l10n_hide}', '#{l10n_show}', '#{l10n_when}', '#{l10n_to}')")
       hideshow+=1
     end
     @dlg.execute_script("addHSInserter(#{hideshow})")
@@ -246,7 +251,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def set_var(p)
-    start_operation('Animation value', "#{@component.object_id}/#{p}")	# merge into last if setting same var again
+    start_operation(XPL10n.t('Animation value'), "#{@component.object_id}/#{p}")	# merge into last if setting same var again
     @component.set_attribute(SU2XPlane::ATTR_DICT, p, @dlg.get_element_value(p).strip)
     commit_operation
     disable=!can_preview()
@@ -256,7 +261,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def set_transform(p)
-    start_operation("Set Position", "#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p)	# merge into last if setting same transformation again
+    start_operation(XPL10n.t('Set Position'), "#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p)	# merge into last if setting same transformation again
     # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
     trans=(@model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, trans.to_a)
@@ -264,14 +269,14 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def get_transform(p)
-    start_operation('Preview Animation', "#{@component.object_id}/preview")	# treat same as preview for the sake of Undo
+    start_operation(XPL10n.t('Preview Animation'), "#{@component.object_id}/preview")	# treat same as preview for the sake of Undo
     @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
     commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
   end
 
   def insert_frame(p)
-    start_operation("Keyframe", false)
+    start_operation(XPL10n.t("Keyframe"), false)
     newframe=p.to_i
     numframes=count_frames()
     # shift everything up
@@ -291,7 +296,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def delete_frame(p)
-    start_operation("Erase Keyframe", false)
+    start_operation(XPL10n.t('Erase Keyframe'), false)
     oldframe=p.to_i
     numframes=count_frames()-1
     # shift everything down
@@ -307,7 +312,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def insert_hideshow(p)
-    start_operation("Hide/Show", false)
+    start_operation(XPL10n.t('Hide / Show'), false)
     newhs=p.to_i
     numhs=count_hideshow()
     # shift everything up
@@ -331,7 +336,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def delete_hideshow(p)
-    start_operation("Erase Hide/Show", false)
+    start_operation(XPL10n.t('Erase Hide / Show'), false)
     oldhs=p.to_i
     numhs=count_hideshow()-1
     # shift everything down
@@ -375,7 +380,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def preview(p)
     if not can_preview() then return end
-    start_operation('Preview Animation', "#{@component.object_id}/preview")	# merge into last if previewing again
+    start_operation(XPL10n.t('Preview Animation'), "#{@component.object_id}/preview")	# merge into last if previewing again
     prop=p.to_f	# 0->1
     numframes=count_frames()
     loop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).to_f
@@ -414,7 +419,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def erase()
-    start_operation("Erase Animation", false)
+    start_operation(XPL10n.t('Erase Animation'), false)
     # Tempting to just do attribute_dictionaries.delete(SU2XPlane::ATTR_DICT), but that woudld erase other attributes like Alpha etc
     dict=@component.attribute_dictionary(SU2XPlane::ATTR_DICT)
     0.upto(count_frames()) do |frame|
@@ -449,7 +454,7 @@ def XPlaneMakeAnimation()
     component=ss.first
   else
     # Make a new component as the basis for animation
-    model.start_operation('Animate', true)
+    model.start_operation(XPL10n.t('Animate'), true)
     modified=true
     if ss.count==1 and ss.first.typename=='Group'
       # Convert selected group
@@ -460,17 +465,16 @@ def XPlaneMakeAnimation()
       # Make a new component out of whatever was selected
       component=model.active_entities.add_group(ss).to_component	# add_group is crashy but we should be OK since selection is subset of the active_model
     end
-    component.definition.name='Component#1'	# Otherwise has name Group#n. SketchUp will uniquify.
+    component.definition.name=XPL10n.t('Component')+'#1'		# Otherwise has name Group#n. SketchUp will uniquify.
     model.selection.add(component)
   end
   
   if component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil
     # We have a pre-existing or new component. In either case set a minimal set of values.
     if !modified
-      model.start_operation('Animate', true)
+      model.start_operation(XPL10n.t('Animate'), true)
       modified=true
     end
-    if component.name=='' and component.typename=='Group' then component.name='Animation' end
     t=component.transformation.to_a
     trans=model.edit_transform.inverse * component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF, '')

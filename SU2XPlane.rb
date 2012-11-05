@@ -61,23 +61,28 @@ extension.copyright='2007-2012'
 Sketchup.register_extension extension, true
 
 if !file_loaded?("SU2XPlane.rb")
-  XPlaneAppObserver.new.onOpenModel(Sketchup.active_model)	# Not sent by SketchUp on initial model - see https://developers.google.com/sketchup/docs/ourdoc/appobserver#onOpenModel
-  Sketchup.register_importer(XPlaneImporter.new)
-  UI.menu("File").add_item("Export X-Plane Object") { XPlaneExport() }
-  UI.menu("Tools").add_item("Highlight Untextured") { XPlaneHighlight() }
+  begin
+    XPlaneAppObserver.new.onOpenModel(Sketchup.active_model)	# Not sent by SketchUp on initial model - see https://developers.google.com/sketchup/docs/ourdoc/appobserver#onOpenModel
+    Sketchup.register_importer(XPlaneImporter.new)
+    UI.menu("File").add_item(XPL10n.t('Export X-Plane Object')) { XPlaneExport() }
+    UI.menu("Tools").add_item(XPL10n.t('Highlight Untextured')) { XPlaneHighlight() }
 
-  UI.add_context_menu_handler do |menu|
-    if !Sketchup.active_model.selection.empty?
-      menu.add_separator
-      submenu = menu.add_submenu "X-Plane"
-      hard=submenu.add_item("Hard")      { XPlaneToggleAttr(SU2XPlane::ATTR_HARD_NAME) }
-      submenu.set_validation_proc(hard)  { XPlaneValidateAttr(SU2XPlane::ATTR_HARD_NAME) }
-      poly=submenu.add_item("Ground")    { XPlaneToggleAttr(SU2XPlane::ATTR_POLY_NAME) }
-      submenu.set_validation_proc(poly)  { XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
-      alpha=submenu.add_item("Alpha")    { XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
-      submenu.set_validation_proc(alpha) { XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
-      anim=submenu.add_item("Animation...")    { XPlaneMakeAnimation() }
+    UI.add_context_menu_handler do |menu|
+      if !Sketchup.active_model.selection.empty?
+        menu.add_separator
+        submenu = menu.add_submenu "X-Plane"
+        hard=submenu.add_item(XPL10n.t('Hard'))         { XPlaneToggleAttr(SU2XPlane::ATTR_HARD_NAME) }
+        submenu.set_validation_proc(hard)               { XPlaneValidateAttr(SU2XPlane::ATTR_HARD_NAME) }
+        poly=submenu.add_item(XPL10n.t('Ground'))       { XPlaneToggleAttr(SU2XPlane::ATTR_POLY_NAME) }
+        submenu.set_validation_proc(poly)               { XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
+        alpha=submenu.add_item(XPL10n.t('Alpha'))       { XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+        submenu.set_validation_proc(alpha)              { XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+        anim=submenu.add_item(XPL10n.t('Animation...')) { XPlaneMakeAnimation() }
+      end
     end
+  rescue NameError => e
+    puts "Error: #{e.inspect}", e.backtrace	# Report to console
+    UI.menu("File").add_item('SU2XPlane plugin folder is missing!') {}
   end
 
   help=Dir.glob(File.join(Sketchup.find_support_file("Plugins"), '*-SU2XPlane_'+Sketchup.get_locale.upcase.split('-')[0]+'.html'))
@@ -87,7 +92,7 @@ if !file_loaded?("SU2XPlane.rb")
   if help.first
     UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help.first) }
   else
-    UI.menu("Help").add_item("X-Plane") { UI.messagebox("X-Plane help files are missing!") }
+    UI.menu("Help").add_item("X-Plane") { UI.messagebox('X-Plane help files are missing!') }
   end
   file_loaded("SU2XPlane.rb")
 end
