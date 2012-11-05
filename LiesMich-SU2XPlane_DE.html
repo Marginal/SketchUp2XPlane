@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
   <meta http-equiv="content-language" content="de">
-  <meta name="description" content="X-Plane Plugin f&uuml;r SketchUp">
+  <meta name="description" content="X-Plane Plugin für SketchUp">
   <meta name="keywords" content="X-Plane, simulator, scenery, SketchUp">
   <title>SketchUp2XPlane</title>
   <meta name="author" content="Jonathan Harris">
@@ -15,6 +15,7 @@ h2 { font-family: Arial,Helvetica,sans-serif; }
 h3 { font-family: Arial,Helvetica,sans-serif; }
 h4 { font-family: Arial,Helvetica,sans-serif; }
 h5 { font-family: Arial,Helvetica,sans-serif; }
+ul { margin: 0; }
   </style>
 </head>
 <body>
@@ -28,12 +29,13 @@ Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">To
 </table>
 <hr>
 
-<h2>X-Plane Plugin f&uuml;r SketchUp</h2>
+<h2>X-Plane Plugin für SketchUp</h2>
 
-<h3>&Uuml;bersicht</h3>
+<h3>Übersicht</h3>
 <p><a href="http://www.sketchup.com/intl/de/" target="_blank">SketchUp</a> ist ein freier (kostenfreier)
-3D Objekt Editor f&uuml;r Windows und MacOS.</p>
-<p>Dieses SketchUp Plugin importiert und exportiert Modelle im X-Plane v8/v9/v10 <code>.obj</code> Format.</p>
+3D Objekt Editor für Windows und MacOS.</p>
+<p>Dieses SketchUp Plugin importiert und exportiert Modelle im X-Plane v9/v10 <code>.obj</code> Format.</p>
+
 <h3>Installation</h3>
 <p>Kopiere sie alle Dateien aus dem <code>.zip</code> Archive in deinen SketchUp <code>Plugins</code> Ordner:</p>
 <ul>
@@ -41,80 +43,174 @@ Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">To
   <li>Mac OS: <code>[Macintosh HD]/Library/Application&nbsp;Support/Google&nbsp;SketchUp&nbsp;<i>n</i>/SketchUp/plugins</code></li>
 </ul>
 <p>SketchUp staren oder neu starten.</p>
-<p>Du kannst nun die <code>.zip</code> Datei, die du herunter geladen hast, l&ouml;schen. Die Hilfe-Datei, die du mit herunter geladen hast, kannst du unter <samp>Hilfe&nbsp;&rarr; X-Plane</samp> in SketchUp aufrufen.</p>
+<p>Du kannst nun die <code>.zip</code> Datei, die du herunter geladen hast, löschen. Die Hilfe-Datei, die du mit herunter geladen hast, kannst du unter <samp>Hilfe&nbsp;&rarr; X-Plane</samp> in SketchUp aufrufen.</p>
 
 <h3>X-Plane-Szenerie-Objekte herstellen</h3>
-<p>Bevor du anf&auml;ngst, kannst du ein Satellitenfoto von der Gegend zu bekommen, an  an der du arbeiten willst:</p>
+<p>Bevor du anfängst, kannst du ein Satellitenfoto von der Gegend zu bekommen, an  an der du arbeiten willst:</p>
 <ul>
-  <li>W&auml;hle <samp>Fenster&nbsp;&rarr; Modellinformationen&nbsp;&rarr; Geostandort&nbsp;&rarr; Ort&nbsp;hinzufügen&#8230;</samp></li>
+  <li>Wähle <samp>Fenster&nbsp;&rarr; Modellinformationen&nbsp;&rarr; Geostandort&nbsp;&rarr; Ort&nbsp;hinzufügen&#8230;</samp></li>
 </ul>
-<p>Stelle dein Modell in SketchUp aus Rechtecken und Kreisen. Sichere die SketchUp <code>.skp</code> Datei in dem Aircraft- oder Scenery-Ordner, den du f&uuml;r X-Plane <code>.obj</code> Dateien vorgesehn hast.</p>
-<p>In einem Bildbearbeitungsprogramm musst du eine einzige Textur-Datei wie eine &quot;<a href="http://de.wikipedia.org/wiki/Collage" target="_blank">collage</a>&quot; von allen Texturen herstellen, die du in deinem Modell brauchst. H&ouml;he und Breite deiner Textur Datei m&uuml;ssen eine Zweier-Potenz haben (<i>z.B</i> 128, 256, 512, 1024, 2048), aber sie muss kein Quadrat sein. Sichere die Textur-Datei im 32bit oder 24bit PNG Format (<i>d.h</i> mit oder ohne &quot;Alpha&quot;-Kanal) in dem Aircraft- oder Scenery-Ordner, den du f&uuml;r deine X-Plane <code>.obj</code> Datei vorgesehen hast.</p>
-<p>Benutze das <samp>Farbeimer</samp>-Funktion, deine Textur-Datei auf jede Fl&auml;che deines Modells zu &uuml;bertragen. Benutze <samp>Kontextmen&uuml;&nbsp;&rarr; Textur&nbsp;&rarr; Position</samp>, um den korrekten Ausschnitt aus deiner Textur-Datei auf jeder Fl&auml;che zu positionieren.</p>
-<p>Klicke <a href="http://www.youtube.com/watch?v=HHsRRLCAOm8" target="_blank">hier</a> f&uuml;r ein Tutorial,
-wie man f&uuml;r ein Textur auf einer gekr&uuml;mmten Oberfl&auml;che positionieren willst. Oder, du kannst zuerst <samp>Ansicht&nbsp;&rarr; Ausgeblendete&nbsp;Geometrie</samp> ausw&auml;hlen. Dann selektiere eine einzelne Fl&auml;che auf dieser Oberfl&auml;che und positioniere nacheinander Textur auf jede Einzelfl&auml;che.</p>
-<p>Wenn du m&ouml;chtest, dass beide Seiten einer Fl&auml;che in X-Plane dargestellt werden, dann benutze das <samp>Farbeimer</samp>-Funktion zweimal; je einmal f&uuml;r jede Seite der Fl&auml;che. Du kannst <samp>Fenster&nbsp;&rarr; Elementinformationen</samp> benutzen, um zu sehen, welche Textur(en) gerade den zwei Seiten der ausgew&auml;hlten Fl&auml;che zugewiesen sind.</p>
-<p>Benutze <samp>Tools&nbsp;&rarr; Highlight&nbsp;Untextured</samp> als Hilfe beim Texturieren. Das &auml;ndert nichts daran, wie dein Modell in X-Plane erscheinen wird, aber es macht irgendwelche Probleme beim Texturieren deutlich:</p>
-<ol>
-  <li>Fl&auml;chen ohne Textur sind rot gef&auml;rbt. Das hilft dir, diese Fl&auml;chen zu erkennen.</li>
-  <li>Bei Fl&auml;chen, die nur auf einer Seite texturiert sind, ist die andere Seite unsichtbar (Durchsichtigkeit auf 0 gesetzt). Das hilft dir, wenn du die falsche Seite einer Fl&auml;che texturiert hast. Benutze <samp>Kontextmen&uuml;&nbsp;&rarr; Fl&auml;chen&nbsp;umkehren</samp> auf der Fl&auml;che, wenn das geschehen ist</li>
-</ol>
+<p>Stelle dein Modell in SketchUp aus Rechtecken und Kreisen. Sichere die SketchUp <code>.skp</code> Datei in dem Aircraft- oder Scenery-Ordner, den du für X-Plane <code>.obj</code> Dateien vorgesehn hast.</p>
+<p>In einem Bildbearbeitungsprogramm musst du eine einzige Textur-Datei wie eine &ldquo;<a href="http://de.wikipedia.org/wiki/Collage" target="_blank">collage</a>&rdquo; von allen Texturen herstellen, die du in deinem Modell brauchst. Höhe und Breite deiner Textur Datei müssen eine Zweier-Potenz haben (<i>z.B</i> 128, 256, 512, 1024, 2048), aber sie muss kein Quadrat sein. Sichere die Textur-Datei im 32bit oder 24bit PNG Format (<i>d.h</i> mit oder ohne &ldquo;Alpha&rdquo;-Kanal) in dem Aircraft- oder Scenery-Ordner, den du für deine X-Plane <code>.obj</code> Datei vorgesehen hast.</p>
+<p>Benutze das <samp>Farbeimer</samp>-Funktion, deine Textur-Datei auf jede Fläche deines Modells zu übertragen. Benutze <samp>Kontext-Menü&nbsp;&rarr; Textur&nbsp;&rarr; Position</samp>, um den korrekten Ausschnitt aus deiner Textur-Datei auf jeder Fläche zu positionieren. <font color="darkred">(If you don't see the <samp>Texture</samp> entry in the context menu then choose <samp>Context&nbsp;menu&nbsp;&rarr; Reverse&nbsp;Faces</samp> and try again).</font></p>
+<p>Klicke <a href="http://www.youtube.com/watch?v=HHsRRLCAOm8" target="_blank">hier</a> für ein Tutorial,
+wie man für ein Textur auf einer gekrümmten Oberfläche positionieren willst. Oder, du kannst zuerst <samp>Ansicht&nbsp;&rarr; Ausgeblendete&nbsp;Geometrie</samp> auswählen. Dann selektiere eine einzelne Fläche auf dieser Oberfläche und positioniere nacheinander Textur auf jede Einzelfläche.</p>
+<p>Wenn du möchtest, dass beide Seiten einer Fläche in X-Plane dargestellt werden, dann benutze das <samp>Farbeimer</samp>-Funktion zweimal; je einmal für jede Seite der Fläche. Du kannst <samp>Fenster&nbsp;&rarr; Elementinformationen</samp> benutzen, um zu sehen, welche Textur(en) gerade den zwei Seiten der ausgewählten Fläche zugewiesen sind.</p>
+<p>Benutze <samp>Tools&nbsp;&rarr; Highlight&nbsp;Untextured</samp> als Hilfe beim Texturieren. Das ändert nichts daran, wie dein Modell in X-Plane erscheinen wird, aber es macht irgendwelche Probleme beim Texturieren deutlich:</p>
+<ul style="list-style-type: circle">
+  <li>Flächen ohne Textur sind rot gefärbt. Das hilft dir, diese Flächen zu erkennen.</li>
+  <li>Bei Flächen, die nur auf einer Seite texturiert sind, ist die andere Seite unsichtbar (Durchsichtigkeit auf 0 gesetzt). Das hilft dir, wenn du die falsche Seite einer Fläche texturiert hast. Benutze <samp>Kontext-Menü&nbsp;&rarr; Flächen&nbsp;umkehren</samp> auf der Fläche, wenn das geschehen ist</li>
+</ul>
 
 <h4>Attribute</h4>
-<p>Dieses Plugin erweitert das Context-Men&uuml; um drei Eintr&auml;ge. Diese k&ouml;nnen benutzt werden, wenn du eine Fl&auml;che aktiviert hast:</p>
+<p>Dieses Plugin erweitert das Kontext-Menü um veir Einträge. Diese können benutzt werden, wenn du einige Flächen aktiviert hast:</p>
 <dl>
   <dt><samp>Hard</samp></dt>
-  <dd>Bestimmt, ob ein Flugzeug landet auf/oder zerschellt an dieser Fl&auml;che in X-Plane. Fl&auml;chen &quot;hard&quot; zu machen ist &quot;teuer&quot; (framerate), also benutze es sparsam. Vertikale &quot;hard&quot; Fl&auml;chen wirken sich nicht so aus, wie du es erwarten w&uuml;rdest; wenn du ein Geb&auml;ude f&uuml;r Kollisionen geeignet machen willst, benutze &quot;hard&quot; f&uuml;r das Dach, nicht f&uuml;r die Seitenfl&auml;chen.</dd>
+  <dd>Bestimmt, ob ein Flugzeug landet auf/oder zerschellt an dieser Fläche in X-Plane. Flächen &ldquo;hard&rdquo; zu machen ist &ldquo;teuer&rdquo; (framerate), also benutze es sparsam. Vertikale &ldquo;hard&rdquo; Flächen wirken sich nicht so aus, wie du es erwarten würdest; wenn du ein Gebäude für Kollisionen geeignet machen willst, benutze &ldquo;hard&rdquo; für das Dach, nicht für die Seitenflächen.</dd>
   <dt>&nbsp;</dt>
   <dt><samp>Ground</samp></dt>
-  <dd>Bestimmt, ob eine Fl&auml;che mit &quot;polygon offsetting&quot; in X-Plane gerendert wird, und in X-Plane v10 &uuml;ber das Gel&auml;nde drapiert wird.<br>
-Benutze dies f&uuml;r Fl&auml;chen, die flach auf dem Grund liegen, um Z-buffer thrashing in X-Plane zu verhindern. Benutze diesen Befehl nicht f&uuml;r andere Fl&auml;chen.</dd>
+  <dd>Bestimmt, ob eine Fläche mit &ldquo;polygon offsetting&rdquo; in X-Plane gerendert wird, und in X-Plane v10 über das Gelände drapiert wird.<br>
+Benutze dies für Flächen, die flach auf dem Grund liegen, um Z-buffer thrashing in X-Plane zu verhindern. Benutze diesen Befehl nicht für andere Flächen.</dd>
   <dt>&nbsp;</dt>
   <dt><samp>Alpha</samp></dt>
-  <dd>Dies ist ein Hinweis f&uuml;r X-Plane, dass diese Fl&auml;che mit einer teilweisen oder ganz transparenten oder durchscheinenden Textur versehen ist.<br>Benutze dies auf transparenten oder durchscheinenden Fl&auml;chen, durch die du auf andere Fl&auml;chen im selben Modell sehen willst. Dr&uuml;cke diesen Knopf nicht f&uuml;r opaque (normale) Fl&auml;chen.</dd>
+  <dd>Dies ist ein Hinweis für X-Plane, dass diese Fläche mit einer teilweisen oder ganz transparenten oder durchscheinenden Textur versehen ist.<br>
+Benutze dies auf transparenten oder durchscheinenden Flächen, durch die du auf andere Flächen im selben Modell sehen willst. Drücke diesen Knopf nicht für opaque (normale) Flächen.</dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>Animation</samp></dt>
+  <dd>Siehe unten.</dd>
 </dl>
 
 <h4>Lichter</h4>
 <p>Du kannst das Text Tool gebrauchen um Lichter herzustellen:</p>
 <ul>
-  <li>Benutze zuerst das Mess-Werkzeug (Tape Measure) um einen Leitpunkt an der Stelle festzulegen, wo das Licht erscheinen soll.</li>
-  <li>Dann w&auml;hle das <samp>Werkzeug&nbsp;&rarr; Text</samp>.</li>
-  <li>W&auml;hle den Leitpunkt, den du gerade bestimmt hast, dann ziehe mit der Maus (die einen Pfeil zeigt, der zu deinem Leitpunkt deutet) und klick.</li>
+  <li>Benutze zuerst das <samp>Maßbandfunktion</samp> um einen Führungspunkt an der Stelle festzulegen, wo das Licht erscheinen soll.</li>
+  <li>Dann wähle das <samp>Werkzeug&nbsp;&rarr; Text</samp>.</li>
+  <li>Wähle den Leitpunkt, den du gerade bestimmt hast, dann ziehe mit der Maus (die einen Pfeil zeigt, der zu deinem Leitpunkt deutet) und klick.</li>
   <li>Hier hinein schreibst eines von den verschiedenen Lichtquellen/Lichtern, die <a href="http://developer.x-plane.com/?article=obj8-file-format-specification#GEOMETRY_COMMANDS" target="_blank">hier</a> dokumentiert sind. Z.B. <code>LIGHT_NAMED</code>, <code>LIGHT_CUSTOM</code>, <code>LIGHT_PARAM</code>, <code>LIGHT_SPILL_CUSTOM</code>, <code>smoke_black</code> oder <code>smoke_white</code>.</li>
-  <li>Du musst auch alle ben&ouml;tigten Parameter hineinschreiben, aber die f&uuml;r <code>&lt;x&gt; &lt;y&gt; &lt;z&gt;</code> weglassen. F&uuml;r die Werte dieser Parameter sorgt das Plugin selbst.<br>
-Anmerkung: F&uuml;r Licht vom Typ <code>LIGHT_NAMED</code> und <code>LIGHT_PARAM</code> listet die Datei <code>X-Plane/Resources/bitmaps/world/lites/lights.txt</code> brauchbare Werte f&uuml;r <code>&lt;name&gt;</code> Parameter auf.</li>
+  <li>Du musst auch alle benötigten Parameter hineinschreiben, aber die für <code>&lt;x&gt; &lt;y&gt; &lt;z&gt;</code> weglassen. Für die Werte dieser Parameter sorgt das Plugin selbst.<br>
+Anmerkung: Für Licht vom Typ <code>LIGHT_NAMED</code> und <code>LIGHT_PARAM</code> listet die Datei <code>X-Plane/Resources/bitmaps/world/lites/lights.txt</code> brauchbare Werte für <code>&lt;name&gt;</code> Parameter auf.</li>
 </ul>
+<p>Einige ausgearbeitete Beispiel-Modelle für Lichter gibt es <a href="http://marginal.org.uk/x-planescenery/SUlight.zip">HIER</a>.</p>
+
+<h3>Animationen</h3>
+<p>X-Plane unterstützt zwei Arten von Animation; verschieben/drehen und ausblenden/zeigen. Beide Arten der Animation können in einem einzigen Dialogfenster in SketchUp kontrolliert werden. Beide Arten von Animation werden über einen einzigen Dialog in SketchUp kontrolliert:</p>
+<ul>
+  <li>In SketchUp wählt man das oder die Objekt/Objekte zum Animieren aus</li>
+  <li>Im <samp>Kontext-Menü&nbsp;&rarr; X-Plane&nbsp;&rarr; Animation&#8230;</samp> wählen</li>
+</ul>
+<p>SketchUp gruppiert das oder die ausgewählten Objekte zu einer &ldquo;Komponente&rdquo; (mit einem blauen Rechteck umrandet) und zeigt den &ldquo;X-Plane Animation&rdquo; Dialog, wie er unten beschrieben ist.</p>
+<p>Einige ausgearbeitete Beispiele für Animation findet man <a href="http://marginal.org.uk/x-planescenery/SUanimation.zip">HIER</a>.</p>
+
+<h4>&ldquo;DataRefs&rdquo;</h4>
+<p>Man kann die Simulator eigenen &ldquo;DataRefs&rdquo; vom Typ &ldquo;int&rdquo;, &ldquo;float&rdquo; oder &ldquo;double&rdquo; benutzen. Dazu gibt es <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">HIER</a> eine Liste mit jeder Art von Animation in X-Plane.<p>
+<ul style="list-style-type: circle">
+  <li>DataRefs vom Typ &ldquo;int&rdquo; enthalten Ganzzahl-Werte, normalerweise ja/nein oder an/aus, die Zustände darstellend. Sie sind so brauchbar für Animation der Art zeigen/ausblenden (hiding/showing).</li>
+  <li>DataRefs vom Typ &ldquo;float&rdquo; und &ldquo;double&rdquo; benutzen Bruchzahlen und können für beide Typen der Animation eingesetzt werden.</li>
+  <li>DataRefs, die mit einem &ldquo;[<i>n</i>]&rdquo; hinter ihrer Typenbezeichnung aufgeführt sind, sind Felder &ldquo;arrays&rdquo; mit mehrfachen Werten, deren Bedeutung vom DataRef abhängt. Man muss selbst wählen, welcher &ldquo;n&rdquo;-Wert für die Animation benutzt werden soll.<br>
+Ein Beispiel: &ldquo;sim/flightmodel2/doors/angle_now_deg&rdquo; ist aufgelistet als Typ &ldquo;float[<i>doors</i>]&rdquo;. Jedes Feld dieser DataRef präsentiert einen Drehwinkel einer Fahrgestell-Klappe.</li>
+</ul>
+<p>Die DataRefs sind logisch nach Namen geordnet. Einige Beispiele:</p>
+<dl>
+  <dt>sim/aircraft/...</dt>
+  <dd>erhalten ihre Werte vom <code>.acf</code> File des Flugzeugs, das der User pilotiert.</dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/cockpit/... &amp; sim/cockpit2/...</dt>
+  <dd>Der Zustand der Cockpit-Instumente und Schalter im Flugzeug, das der User pilotiert.<br>
+    <small>(sim/cockpit/... ist veraltet; benutze sim/cockpit2/... für neue Modelle).</small></dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/flightmodel/... &amp; sim/flightmodel2/...</dt>
+  <dd>Der Zustand von Motoren, Tragflächen, Fahrwerk etc des Flugzeuges, das der User pilotiert.<br>
+    <small>	(sim/flightmodel/... ist veraltet; benutze sim/flightmodel2... für neue Modelle).</small></dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/graphics/...</dt>
+  <dd>Verschiedene Rendering-Einstellungen und Welt-Zustände ohne Beziehung zum Flugzeug oder Piloten.
+    <ul style="list-style-type: circle">
+      <li>sim/graphics/scenery/percent_lights_on  ist nützlich, wenn du etwas animieren willst, das sich in der Morgen- und Abenddämmerung ändert.</li>
+    </ul>
+  </dd>
+  <dt>&nbsp;</dt>
+  <dt>sim/time/...</dt>
+  <dd>Verschiedene Rendering-Einstellungen, die nichts mit Flugzeug oder Pilot zu tun haben.
+    <ul style="list-style-type: circle">
+      <li>sim/time/total_running_time_sec  ist angebracht, wenn du eine unbestimmt sich unendlich sich wiederholende Animation im Sekundentakt herstellen willst.</li>
+      <li>sim/time/local_time_sec kannst du gebrauchen, wenn du irgendetwas abhängig von der Tageszeit animleren willst.</li>
+      <li>sim/time/local_date_days wird gebraucht, um eine von der Jahreszeit abhängige Animation zu schaffen.</li>
+    </ul>
+  </dd>
+</dl>
+<p>Du kannst das <a href="http://wiki.x-plane.com/DataRefEditor" target="_blank">DataRefEditor</a> Plugin benutzen, wenn du den Wert jeder dieser DataRefs in X-Pane einsehen willst.</p>
+
+<h4>Verschieben / Drehen</h4>
+<p>Wenn du nun dein/e Objekt/e drehen lassen willst (nicht nur von Seite zu Seite bewegen), dann musst du zuerst einen Drehpunkt bestimmen. Dieser Punkt ist in SketchUp durch &ldquo;Achsennullpunkt&rdquo; der Komponenten bestimmt:</p>
+<ul>
+  <li>Benutze zunächst <samp>Maßbandfunktion</samp>, um einen &ldquo;Führungspunkt&rdquo; (&ldquo;Guide Point&rdquo;) auf dem Drehpunkt der Rotation festzulegen.</li>
+  <li>Man klickt auf die Komponente und wählt im <samp>Kontext-Menü&nbsp;&rarr; Achsen&nbsp;ändern</samp>.<br>
+    SketchUp zeigt den gegenwärtigen Punkt und die Richtung der Komponenten-Achsen.</li>
+  <li>SketchUp zeigt aber auch neue Achsen unter dem Maus-Cursor. Bewege nun den Cursor an den gerade bestimmten Führungspunkt und klicke um die neue Achsennullpunkt zu setzen.</li>
+  <li>Klicke zweimal mehr, um die Richtung der roten und grünen Komponentenachsen zu setzen. (Dabei ist es weniger verwirrend, wenn man sie parallel zur globalen Rot- und Grünachse ausrichtet.)</li>
+</ul>
+<p>Die Verschieben/Drehen-Animation benutzt das Konzept des &ldquo;<a href="http://de.wikipedia.org/wiki/Keyframe" target="_blank">Keyframe</a>&rdquo;, bei dem die Position einem DataRef-Wert entspricht. Du legst zwei oder mehr Keyframes fest. X-Plane interpoliert oder extrapoliert diese, um einen sanften Übergang zwischen den Positionen des laufenden DataRef-Wertes herzustellen. (Das ist unter dem Begriff &ldquo;<a href="http://de.wikipedia.org/wiki/Tweening" target="_blank">tweening</a>&rdquo; bekannt.)</p>
+
+<p>Im &ldquo;X-Plane Animation&rdquo; Dialog ist festgelegt:</p>
+<ul>
+  <li>Der Name des DataRef, der die Animation steuert - einer der DataRef-Typen &ldquo;int&rdquo;, &ldquo;float&rdquo; oder &ldquo;double&rdquo;, die <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">HIER</a> aufgelistet sind - und, wenn DataRef mit einem &ldquo;[<i>n</i>]&rdquo; hinter dem Typnamen gelistet ist, auch die Feld-Index-Nummer.</li>
+  <li>Array-Index-Nummer wenn DataRef mit &ldquo;[<i>n</i>]&rdquo; aufgeführt ist hinter seinem Typ.</li>
+  <li>Der DataRef-Wert für jeden Keyframe.<br>
+Du musst die DataRef-Werte in aufsteigender Reihenfolge festlegen. (Es ist OK denselben DataRef-Wert zu benutzen wie die entsprechenden Keyframes - das kann  nützlich sein, wenn du das/die animierten Objekt/e zwischen den Positionen springen lassen willst).</li>
+  <li>Die Position jedes animierten Objekts/Objekte in jedem Keyframe. Benutze SketchUps <samp>Verschieben</samp> oder <samp>Drehen</samp> Werkzeug, um die Position  deiner Komponente (die deine Objekte beinhaltet) zu verändern. Dann drücke einen von den <samp>Festlegen</samp> Buttons, um die Position festzulegen.<br>
+Wenn du das <samp>Drehen</samp>-Werkzeug benutzt, wirst du das erwartete Ergebnis in X-Plane nur bekommen, wenn du die Komponente um ihrn Achsennullpunkt drehst. (s.o). Vermeide Drehungen von 180 Grad oder höher zwischen den einzelnen Keyframes, sonst nimmt entweder SketchUp oder dieses Plugin das kürzere Kreissegment.</li>
+  <li>Ein &ldquo;Loop&rdquo;-Wert, falls gefordert.<br>
+    Wenn du einen &ldquo;Loop&rdquo;-Wert festlegst, dann wird der DataRef-Wert in X-Plane durch diesen (Loop)-Wert geteilt und das Ergebnis steuert die Animation.</li>
+</ul>
+<p>Die <samp>(+)</samp> und <samp>(&#8722;)</samp> Buttons kannst du dazu benutzen, um Keyframes hinzuzufügen oder zu löschen, falls nötig. Benutze die <samp>Anzeigen<samp>-Buttons, um dir wieder die Position der Keyframes anzuschauen.</p>
+<p>Ziehe die <samp>Vorschau</samp>-Schieberegler um zu visualisieren, wie sich animierte Objekte zwischen den Keyframe-Positionen in X-Plane bewegen werden. Die Zahl rechts von Slider ist der DataRef-Wert, der der gegenwärtigen Position des/der Objekts/Objekte entspricht. Wenn die Vorschau-Schieberegler ausgeschaltet ist, bedeutet das, dass du irgendeine notwendige Information in diesem Dialogfeld nicht korrekt bestimmt hast. Wenn dein/deine Objekt/Objekte sich nicht bewegen wie erwartet, dann schau dir noch mal Komponentenachsen, Keyframe-Positionen und/oder die DataRef-Werte an.</p>
+
+<h4>Ausblenden/Zeigen</h4>
+<p>Du kannst ausgewählte Objekte auf der Basis von DataRef-Werten in X-Plane erscheinen und verschwinden lassen. Im &ldquo;X-Plane Animation&rdquo; Dialogfeld drücke unten den <samp>(+)</samp> Button und bestimmen:</p>
+<ul>
+  <li>Der Name des DataRef, der die Animation steuert - einer der DataRef-Typen &ldquo;int&rdquo;, &ldquo;float&rdquo; oder &ldquo;double&rdquo;, die <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">HIER</a> aufgelistet sind - und, wenn DataRef mit einem &ldquo;[<i>n</i>]&rdquo; hinter dem Typnamen gelistet ist, auch die Feld-Index-Nummer.</li>
+  <li>Die Reichweite des DataRef-Wertes, der deine Objekte veranlassen soll zu verschwinden.</li>
+</ul>
+<p>Du kannst mehrfache Bedingungen festlegen - benutze die <samp>(+)</samp> and <samp>(&#8722;)</samp> Buttons um Bedingungen hinzuzufügen oder zu löschen. Du kannst auch festlegen, dass ein vorher verborgenes Objekt gezeigt wird. Die letzte Bedingung, die aktiv ist, &ldquo;gewinnt&rdquo; (das heißt: Bedingungen &ldquo;stapeln&rdquo; nicht, daher ist deren Reihenfolge wichtig.</p>
+
+<h4>Komplexe Animationen</h4>
+<p>Komplexe Animationen können erstellt werden, indem man eine Hierarchie der Komponenten benutzt. Oft bestimmt die physikalische Natur eines Objekts, das du erstellst, die Hierarchie. Zum Beispiel ist die Aileron-Trim-Taste im Flugzeug mit seinen Querrudern verbunden (und sich ebenso bewegt wenn Querruder sich dreht). Die Taste sollte also als eine Unterkomponente (&ldquo;child&rdquo;) Animation der Querruder Animation modelliert werden. So erzeugt man eine Kind Animation:</p>
+<ul>
+  <li>Doppelklicken auf die existierende (&ldquo;parent&rdquo;) Animation um sie zu öffnen.</li>
+  <li>Wähle das/die Objekt/Objekte, die du animieren möchtest. (Das können alle Objekte in der Komponente oder ein Teil sein - in unserem Beispiel würden wir nur den Trim Tab, nicht das ganze Querruder/aileron auswählen).</li>
+  <li>Wähle <samp>Kontext-Menü&nbsp;&rarr; X-Plane&nbsp;&rarr; Animation&#8230;</samp> und fahre fort wie oben beschrieben.</li>
+</ul>
+<p>Benutze den Gliederung-Dialog (<samp>Fenster&nbsp;&rarr; Gliederung</samp>), um die Komponenten-Hierarchie zu sehen. Du kannst die parent/child Beziehung zwischen den Komponenten verändern, indem du die Einträge im Fenster hoch und runter schiebst.</p>
 
 <h3>Export nach X-Plane</h3>
-<p>Wenn du es nicht schon getan hast, w&auml;hle <samp>Datei&nbsp;&rarr; Speichern&nbsp;unter&#8230;</samp> und sichere die <code>.skp</code> Datei in dem Aircraft- oder Scenery-Ordner, den du f&uuml;r deine X-Plane <code>.obj</code> Datei vorgesehen hast</p>
+<p>Wenn du es nicht schon getan hast, wähle <samp>Datei&nbsp;&rarr; Speichern&nbsp;unter&#8230;</samp> und sichere die <code>.skp</code> Datei in dem Aircraft- oder Scenery-Ordner, den du für deine X-Plane <code>.obj</code> Datei vorgesehen hast</p>
 <p>Wenn du ein Terrain-Foto von Google Earth geladen hattest, musst du es vor dem Export ausblenden:</p>
 <ul>
-  <li>W&auml;hle <samp>Fenster&nbsp;&rarr; Layer</samp>.</li>
-  <li>Im Dialog <samp>Layer</samp> vergewissere dich, dass &quot;Google Earth Terrain&quot; und &quot;Google Earth Snapshot&quot; beide abgew&auml;hlt sind.</li>
-  <li>Wenn du das Terrain-Foto vor Beginn des Modellierens geladen hast, dann kannst du die Koordinaten, wo dein Modell in X-Plane platziert werden soll, in Dialog <samp>Fenster&nbsp;&rarr; Modellinformationen&nbsp;&rarr; Geostandort</samp> ablesen.</li>
+  <li>Wähle <samp>Fenster&nbsp;&rarr; Layer</samp>.</li>
+  <li>Im Dialog <samp>Layer</samp> vergewissere dich, dass &ldquo;Google Earth Terrain&rdquo; und &ldquo;Google Earth Snapshot&rdquo; beide abgewählt sind.</li>
+  <li>Wenn du das Terrain-Foto vor Beginn des Modellierens geladen hast, dann kannst du die Koordinaten, wo dein Modell in <a href="http://marginal.org.uk/x-planescenery/tools.html" target="_blank">OverlayEditor</a> oder <a href="http://developer.x-plane.com/tools/worldeditor/" target="_blank">WED</a> platziert werden soll, in Dialog <samp>Fenster&nbsp;&rarr; Modellinformationen&nbsp;&rarr; Geostandort</samp> ablesen.</li>
 </ul>
 <p>Dann:</p>
 <ul>
-  <li>W&auml;hle <samp>Datei&nbsp;&rarr; Export X-Plane Object</samp></li>
+  <li>Wähle <samp>Datei&nbsp;&rarr; Export X-Plane Object</samp></li>
 </ul>
 <p>Das Objekt wird im selben Ordner und mit demselben Namen wie die SketchUp Datei erzeugt, aber mit einer <code>.obj</code> Erweiterung.</p>
-<p>Du k&ouml;ntest folgende Warnhinweise sehen:</p>
+<p>Du köntest folgende Warnhinweise sehen:</p>
 <dl>
   <dt>Warning: You used multiple texture files. Using file <i>name</i>.</dt>
-  <dd>Du hast mehr als eine Textur-Datei benutzt, um die Fl&auml;chen in seinem Modell zu texturieren.<br>
-X-Plane fordert, nur eine einzige Textur-Datei f&uuml;r alle deine Fl&auml;chen zu benutzen.</dd>
+  <dd>Du hast mehr als eine Textur-Datei benutzt, um die Flächen in seinem Modell zu texturieren.<br>
+X-Plane fordert, nur eine einzige Textur-Datei für alle deine Flächen zu benutzen.</dd>
   <dt>&nbsp;</dt>
   <dt>Warning: <i>n</i> faces are untextured.</dt>
-  <dd>Du hast in deinem SketchUp Modell nicht auf alle Fl&auml;chen Textur aufgetragen.<br>
-X-Plane wird untexturierte Fl&auml;chen mit dem unteren linken Pixel deiner Textur-Datei f&auml;rben (oder grau, wenn du keine Textur auf irgendeiner deiner Fl&auml;chen platziert hast).</dd>
+  <dd>Du hast in deinem SketchUp Modell nicht auf alle Flächen Textur aufgetragen.<br>
+X-Plane wird untexturierte Flächen mit dem unteren linken Pixel deiner Textur-Datei färben (oder grau, wenn du keine Textur auf irgendeiner deiner Flächen platziert hast).</dd>
 </dl>
 <p>Wenn du eine der Warnungen siehst, wird X-Plane wahrscheinlich dein Modell nicht so darstellen, wie du es erwartet hast.</p>
 
-<h3>Einschr&auml;nkungen</h3>
-<p>Konstruiere dein Sketchup Modell nur aus Rechtecken, Kreisen, B&ouml;gen, Komponenten und Gruppierungen - alle anderen Sketchup Typen werden nicht exportiert.</p>
+<h3>Einschränkungen</h3>
+<p>Konstruiere dein SketchUp Modell nur aus Rechtecken, Kreisen, Bögen, Komponenten und Gruppierungen - alle anderen SketchUp Typen werden nicht exportiert.</p>
 <p>Dieses Plugin eignet sich nicht dazu, fortschrittliche X-Plane scenery primitives herzustellen. Das schlie&szlig;t ein:</p>
 <ul>
-  <li>Animationen</li>
   <li>Attribute: <i>z,B.</i> Cockpit, Materialien etc</li>
   <li>Level Of Detail</li>
   <li>Linien</li>
@@ -122,8 +218,8 @@ X-Plane wird untexturierte Fl&auml;chen mit dem unteren linken Pixel deiner Text
 
 <h3>Lizenz</h3>
 <p>Diese Tools sind lizensiert unter Creative Commons <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.de" target="_blank">Namensnennung-Nicht-kommerziell-Weitergabe unter gleichen Bedingungen</a> Lizenz.</p>
-<p>Der Gebrauch dieser Tool verpflichet dich nicht, deine Arbeit unter Creative Commons zu lizensieren. Um Zweifel auszur&auml;umen: Das bedeutet, dass du jede Szenerie oder jedes Flugger&auml;t, die du unter Benutzung dieser Tools zu kommerziellen Zwecken herstellst, lizensieren kannst.</p>
-<p>Der Autor w&uuml;rde die Freundlichkeit zu sch&auml;tzen wissen, wenn du ihm eine Kopie jeder kommerziellen Szenerie oder jedes kommerziellen Flugger&auml;t, die mit diesen Tool hergestellt sind, zusenden w&uuml;rdest - das ist  aber nicht Bedinngung.</p>
+<p>Der Gebrauch dieser Tool verpflichet dich nicht, deine Arbeit unter Creative Commons zu lizensieren. Um Zweifel auszuräumen: Das bedeutet, dass du jede Szenerie oder jedes Fluggerät, die du unter Benutzung dieser Tools zu kommerziellen Zwecken herstellst, lizensieren kannst.</p>
+<p>Der Autor würde die Freundlichkeit zu schätzen wissen, wenn du ihm eine Kopie jeder kommerziellen Szenerie oder jedes kommerziellen Fluggerät, die mit diesen Tool hergestellt sind, zusenden würdest - das ist  aber nicht Bedinngung.</p>
 
 <hr>
 <table style="width: 100%;" border="0" cellpadding="2" cellspacing="0">
@@ -132,7 +228,7 @@ X-Plane wird untexturierte Fl&auml;chen mit dem unteren linken Pixel deiner Text
       <td class="banner">Version 1.44 &copy; 2006-2012 <a href="mailto:x-plane@marginal.org.uk">Jonathan Harris</a>
 <a rel="license" href="http://creativecommons.org/licenses/by-nc-sa/3.0/deed.de">
 <img alt="Creative Commons License" style="border: 0px solid ; width: 88px; height: 31px; vertical-align: text-bottom;" src="http://i.creativecommons.org/l/by-nc-sa/3.0/de/88x31.png"></a></td>
-      <td class="banner" style="text-align:right" valign="bottom">Deutsche Übersetzung &copy; 2007 Dieter Rosenkranz</td>
+      <td class="banner" style="text-align:right" valign="bottom">Deutsche Übersetzung &copy; 2007-2012 Dieter Rosenkranz</td>
     </tr>
   </tbody>
 </table>

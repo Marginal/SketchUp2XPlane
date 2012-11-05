@@ -1,0 +1,56 @@
+# German localisation
+#  #  starts a comment
+#  %s is a value to be filled in by the program
+#  \n is a line break
+
+# Menu & dialog labels
+Component=Komponente
+DataRef value=DataRef-Wert
+Erase=Löschen
+Export X-Plane Object=Export X-Plane Objekt
+Hide=Ausblenden
+Highlight Untextured=Highlight Untextured
+Keyframe=Keyframe
+Position=Position
+Preview=Vorschau
+Recall=Anzeigen
+Set=Festlegen
+Show=Zeigen
+to=zu
+Untitled=Unbenannt
+when=wenn
+X-Plane Object=X-Plane-Objekt
+
+# Undo entries - will be prefixed by "Rückgängig" or "Wiederholen"
+Animate=Animate
+Animation value=Animation-Wert
+Erase Animation=Animation Löschen
+Erase Hide / Show=Ausblenden / Zeigen Löschen
+Erase Keyframe=Keyframe Löschen
+Hide / Show=Ausblenden / Zeigen
+Import=Importieren
+Preview Animation=Vorschau Animation
+Set Position=Position festlegen
+
+# Error messages
+All faces are textured=All faces are textured
+Can't import %s=Can't import %s
+Can't read %s=Can't read %s
+Can't read X-Plane version %s files=Can't read X-Plane version %s files
+Can't read texture file %s=Can't read texture file %s
+Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.=Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.
+Ignoring command %s=Ignoring command %s
+Ignoring lower level(s) of detail=Ignoring lower level(s) of detail
+Ignoring old-style lights=Ignoring old-style lights
+Ignoring old-style lines=Ignoring old-style lines
+Ignoring some geometry that couldn't be imported=Ignoring some geometry that couldn't be imported
+Import failed=Import failed
+Internal error=Internal error
+Nothing to export!=Nothing to export!
+Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.=Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.
+Saving your model, then quitting and restarting\nSketchUp might clear the problem=Saving your model, then quitting and restarting\nSketchUp might clear the problem
+This is not a valid X-Plane file=This is not a valid X-Plane file
+Warning: %s faces are untextured=Warnung: %s Flächen sind untexturiert
+Do you want to highlight the untextured faces?=Sollen die untexturierten Flächen angezeigt werden?
+Warning: You used multiple texture files. Using file %s=Warnung: Es wurden Mehrfach-Textur-Dateien verwendet. %s Dateien benutzt
+Wrote %s triangles to %s=%s Dreiecke geschrieben in Datei %s
