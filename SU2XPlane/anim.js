@@ -74,7 +74,7 @@ function addFrameInserter(keyframe)
     row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="+" onclick="window.location=\'skp:on_insert_frame@'+keyframe+'\'">'
 }
 
-function addKeyframe(keyframe, val, hasdeleter, l10n_set, l10n_recall)
+function addKeyframe(keyframe, val, hasdeleter, l10_keyframe, l10n_set, l10n_recall)
 {
     var table=document.getElementById("keyframes");
     var row=table.insertRow(-1)
@@ -83,19 +83,19 @@ function addKeyframe(keyframe, val, hasdeleter, l10n_set, l10n_recall)
     } else {
         row.insertCell(-1).innerHTML='<input type="button" class="addremovebutton" value="\u2212" disabled>'
     }
-    row.insertCell(-1).innerHTML="Keyframe #"+keyframe
+    row.insertCell(-1).innerHTML=l10_keyframe+" #"+keyframe
     row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_FRAME_+keyframe+'" value="'+val+'" size="6" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
     row.insertCell(-1).innerHTML='<input type="button" value="'+l10n_set+'" onclick="window.location=\'skp:on_set_transform@'+keyframe+'\'"> <input type="button" value="'+l10n_recall+'" onclick="window.location=\'skp:on_get_transform@'+keyframe+'\'">'
 }
 
-function addLoop(val)
+function addLoop(val, l10n_loop)
 {
     var keyframes=document.getElementById("keyframes");
     var row=keyframes.insertRow(-1)
     cell=row.insertCell(-1)
     cell.innerHTML='DataRef'
     cell.style.visibility='hidden'	// So that input boxes line up with dataref input boxes
-    row.insertCell(-1).innerHTML="Loop"
+    row.insertCell(-1).innerHTML=l10n_loop
     row.insertCell(-1).innerHTML='<input type="text" id="'+ANIM_LOOP+'" value="'+val+'" size="6" onchange="checkFloat(this)" onkeyup="checkFloat(this)" oncut="checkFloat(this)" onpaste="checkFloat(this)">'
 }
 

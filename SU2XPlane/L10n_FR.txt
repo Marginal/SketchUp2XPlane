@@ -1,37 +1,37 @@
-# German localisation
+# French localisation
 #  #  starts a comment
 #  %s is a value to be filled in by the program
 #  \n is a line break
 
 # Menu & dialog labels
-Component=Komponente
-DataRef value=DataRef-Wert
-Erase=Löschen
-Export X-Plane Object=Export X-Plane Objekt
-Hide=Ausblenden
-Highlight Untextured=Highlight Untextured
-Keyframe=Keyframe
-Loop=Loop
+Component=Composant
+DataRef value=Valeur du DataRef
+Erase=Effacer
+Export X-Plane Object=Exporter X-Plane objet
+Hide=Masquer
+Highlight Untextured=Mettez en surbrillance non texturés
+Keyframe=Image-clé
+Loop=Boucle
 Position=Position
-Preview=Vorschau
-Recall=Anzeigen
-Set=Festlegen
-Show=Zeigen
-to=zu
-Untitled=Unbenannt
-when=wenn
-X-Plane Object=X-Plane-Objekt
+Preview=Aperçu
+Recall=Rapeller
+Set=Définir
+Show=Afficher
+to=à
+Untitled=Sans titre
+when=quand
+X-Plane Object=X-Plane objet
 
-# Undo entries - will be prefixed by "Rückgängig" or "Wiederholen"
-Animate=Animate
-Animation value=Animation-Wert
-Erase Animation=Animation Löschen
-Erase Hide / Show=Ausblenden / Zeigen Löschen
-Erase Keyframe=Keyframe Löschen
-Hide / Show=Ausblenden / Zeigen
-Import=Importieren
-Preview Animation=Vorschau Animation
-Set Position=Position festlegen
+# Undo entries - will be prefixed by "Annuler" or "Rétablir"
+Animate=Animer
+Animation value=Valeur d'Animation
+Erase Animation=Effacer Animation
+Erase Hide / Show=Effacer Masquer / Afficher
+Erase Keyframe=Effacer Image-clé
+Hide / Show=Masquer / Afficher
+Import=Importation
+Preview Animation=Aperçu d'Animation
+Set Position=Définir la Position
 
 # Error messages
 All faces are textured=All faces are textured
@@ -51,7 +51,7 @@ Nothing to export!=Nothing to export!
 Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.=Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.
 Saving your model, then quitting and restarting\nSketchUp might clear the problem=Saving your model, then quitting and restarting\nSketchUp might clear the problem
 This is not a valid X-Plane file=This is not a valid X-Plane file
-Warning: %s faces are untextured=Warnung: %s Flächen sind untexturiert
-Do you want to highlight the untextured faces?=Sollen die untexturierten Flächen angezeigt werden?
-Warning: You used multiple texture files. Using file %s=Warnung: Es wurden Mehrfach-Textur-Dateien verwendet. %s Dateien benutzt
-Wrote %s triangles to %s=%s Dreiecke geschrieben in Datei %s
+Warning: %s faces are untextured=Avertissement: %s faces n'ont pas de texture
+Do you want to highlight the untextured faces?=Voulez-vous mettre les faces non texturées en surbrillance?
+Warning: You used multiple texture files. Using file %s=Attention: Vous avez utilisé plusieurs fichiers de texture. Fichier utilisé: %s
+Wrote %s triangles to %s=Écrit: triangles %s à %s

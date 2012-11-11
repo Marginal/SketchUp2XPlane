@@ -104,8 +104,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @lastaction=nil	# Record last change to the component for the purpose of merging Undo steps
     @myaction=false	# Record other changes made to the component so we don't merge those in to our Undo steps
     if Object::RUBY_PLATFORM =~ /darwin/i
-      @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 392, 398)
-      @dlg.min_width = 392
+      @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 396, 398)
+      @dlg.min_width = 396
     else
       @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 450, 528)
       @dlg.min_width = 450
@@ -198,13 +198,14 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
     numframes=count_frames()
     hasdeleter = numframes>2 ? "true" : "false"
-    l10n_set, l10n_recall = XPL10n.t('Set'), XPL10n.t('Recall')
+    l10n_keyframe, l10n_set, l10n_recall = XPL10n.t('Keyframe'), XPL10n.t('Set'), XPL10n.t('Recall')
     for frame in 0...numframes
       @dlg.execute_script("addFrameInserter(#{frame})")
-      @dlg.execute_script("addKeyframe(#{frame}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s).tr('.',DecimalSep)}', #{hasdeleter}, '#{l10n_set}', '#{l10n_recall}')")
+      @dlg.execute_script("addKeyframe(#{frame}, '#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s).tr('.',DecimalSep)}', #{hasdeleter}, '#{l10n_keyframe}', '#{l10n_set}', '#{l10n_recall}')")
     end
     @dlg.execute_script("addFrameInserter(#{numframes})")
-    @dlg.execute_script("addLoop('#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).tr('.',DecimalSep)}')")
+    l10n_loop = XPL10n.t('Loop')
+    @dlg.execute_script("addLoop('#{@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).tr('.',DecimalSep)}', '#{l10n_loop}')")
 
     hideshow=0
     l10n_hide, l10n_show, l10n_when, l10n_to = XPL10n.t('Hide'), XPL10n.t('Show'), XPL10n.t('when'), XPL10n.t('to')
