@@ -17,7 +17,7 @@ require_all Sketchup.find_support_file('SU2XPlane', 'Plugins')
 
 # Constants
 module SU2XPlane
-  Version="1.44"
+  Version="1.50"
 
   # X-Plane attributes
   ATTR_DICT="X-Plane"
