@@ -1,6 +1,5 @@
 class XPL10n
 
-  puts "here"
   @@table={}
   f=Sketchup.find_support_file('L10n_'+Sketchup.get_locale.upcase.split('-')[0]+'.txt', 'Plugins/SU2XPlane')
   if f

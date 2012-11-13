@@ -47,7 +47,7 @@ class XPlaneToolsObserver < Sketchup::ToolsObserver
   end
 
   def onActiveToolChanged(tools, tool_name, tool_id)
-    #puts "onActiveToolChanged #{tool_name}"
+    puts "onActiveToolChanged #{tool_name} #{tool_id} #{@model.selection.to_a}" if SU2XPlane::TraceEvents
     if !@model.valid?		# this can't happen
       @model.tools.remove_observer(self)
     elsif tool_id==21126
@@ -93,4 +93,9 @@ class XPlaneToolsObserver < Sketchup::ToolsObserver
     end
   end
 
+  if SU2XPlane::TraceEvents
+    def onToolStateChanged(tools, tool_name, tool_id, tool_state)
+      puts "onToolStateChanged #{tool_name} #{tool_id} #{tool_state}"
+    end
+  end
 end

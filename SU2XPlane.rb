@@ -13,11 +13,13 @@
 
 require 'sketchup.rb'
 require 'extensions.rb'
-require_all Sketchup.find_support_file('SU2XPlane', 'Plugins')
 
 # Constants
 module SU2XPlane
   Version="1.50"
+
+  # Debug
+  TraceEvents=false
 
   # X-Plane attributes
   ATTR_DICT="X-Plane"
@@ -52,7 +54,6 @@ module SU2XPlane
 
 end
 
-
 extension=SketchupExtension.new 'SketchUp2XPlane', 'SU2XPlane.rb'
 extension.description='Provides ability to import and export models in X-Plane v8/v9/v10 .obj format. See Help->X-Plane for instructions.'
 extension.version=SU2XPlane::Version
@@ -60,6 +61,7 @@ extension.creator='Jonathan Harris'
 extension.copyright='2007-2012'
 Sketchup.register_extension extension, true
 
+require_all Sketchup.find_support_file('SU2XPlane', 'Plugins')
 if !file_loaded?("SU2XPlane.rb")
   begin
     XPlaneAppObserver.new.onOpenModel(Sketchup.active_model)	# Not sent by SketchUp on initial model - see https://developers.google.com/sketchup/docs/ourdoc/appobserver#onOpenModel

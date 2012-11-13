@@ -225,6 +225,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def onChangeEntity(entity)	# from EntityObserver
+    puts "onChangeEntity #{entity} #{@myaction}" if SU2XPlane::TraceEvents
     if @myaction
       # This change was caused by me
       @myaction=false
@@ -235,6 +236,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def start_operation(op_name, action)
+    puts "start_operation #{action} #{@lastaction} #{@myaction}" if SU2XPlane::TraceEvents
     # Merge this operation into last if performing same action again. If action==false don't merge even if it is the same action.
     if !@model.valid?
       close()
