@@ -46,7 +46,7 @@
 # to store and/or set their component.transformation without causing edit bounding box weirdness).
 #
 
-class XPlaneModelObserver < Sketchup::ModelObserver
+class XPlaneAnimationModelObserver < Sketchup::ModelObserver
 
   def initialize(model, parent)
     @parent=parent
@@ -75,7 +75,7 @@ class XPlaneModelObserver < Sketchup::ModelObserver
 end
 
 
-class XPlaneSelectionObserver < Sketchup::SelectionObserver
+class XPlaneAnimationSelectionObserver < Sketchup::SelectionObserver
 
   def initialize(model, parent)
     @parent=parent
@@ -125,8 +125,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.add_action_callback("on_delete_hideshow") { |d,p| delete_hideshow(p) }
     @dlg.add_action_callback("on_preview") { |d,p| preview(p) }
     @component.add_observer(self)
-    @modelobserver=XPlaneModelObserver.new(@model, self)
-    @selectionobserver=XPlaneSelectionObserver.new(@model, self)
+    @modelobserver=XPlaneAnimationModelObserver.new(@model, self)
+    @selectionobserver=XPlaneAnimationSelectionObserver.new(@model, self)
     @dlg.set_on_close {	# Component or Model might be deleted, so use exception blocks
       begin @component.remove_observer(self) rescue TypeError end
       begin @model.remove_observer(@modelobserver) rescue TypeError end

@@ -64,7 +64,7 @@ Sketchup.register_extension extension, true
 require_all Sketchup.find_support_file('SU2XPlane', 'Plugins')
 if !file_loaded?("SU2XPlane.rb")
   begin
-    XPlaneAppObserver.new.onOpenModel(Sketchup.active_model)	# Not sent by SketchUp on initial model - see https://developers.google.com/sketchup/docs/ourdoc/appobserver#onOpenModel
+    XPlaneAppObserver.new
     Sketchup.register_importer(XPlaneImporter.new)
     UI.menu("File").add_item(XPL10n.t('Export X-Plane Object')) { XPlaneExport() }
     UI.menu("Tools").add_item(XPL10n.t('Highlight Untextured')) { XPlaneHighlight() }
