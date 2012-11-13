@@ -54,4 +54,4 @@ This is not a valid X-Plane file=This is not a valid X-Plane file
 Warning: %s faces are untextured=Avertissement: %s faces n'ont pas de texture
 Do you want to highlight the untextured faces?=Voulez-vous mettre les faces non texturées en surbrillance?
 Warning: You used multiple texture files. Using file %s=Attention: Vous avez utilisé plusieurs fichiers de texture. Fichier utilisé: %s
-Wrote %s triangles to %s=Écrit: triangles %s à %s
+Wrote %s triangles to %s=Écrit %s triangles dans %s
