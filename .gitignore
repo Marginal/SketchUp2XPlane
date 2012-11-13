@@ -1,4 +1,5 @@
 *.bak
+*.obj
 *.skb
 *~.skp
 *.rbz
