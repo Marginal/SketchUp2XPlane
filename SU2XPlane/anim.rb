@@ -45,49 +45,120 @@
 # hierarchies. For consistency of UI we also disable the WebDialog for these unrelated components (even though it would be safe
 # to store and/or set their component.transformation without causing edit bounding box weirdness).
 #
+#
+# Undo:
+#
+# Some operations, notably setting animation values and using the preview slider, generate multiple SketchUp Undo steps.
+# We want to merge these into a simple step to avoid making Undo unusable. We install an EntitiesObserver on each model
+# to detect other changes to the model, so as to avoid merging Undo steps with those other changes.
+#
+
+
+class Sketchup::Model
+  attr_accessor(:XPDoneModelObservers)
+  attr_accessor(:XPLastAction)		# Record last change to the component for the purpose of merging Undo steps
+  attr_accessor(:XPLastActionRef)
+end
+
+class XPlaneAppObserver < Sketchup::AppObserver
+
+  def initialize
+    Sketchup.add_observer(self)
+  end
+
+  def onNewModel(model)
+    onOpenModel(model)
+  end
+
+  def onOpenModel(model)
+    # Hack! onOpenModel can be called multiple times if the user opens the model multiple times.
+    # But we mustn't add multiple ToolsObservers otherwise we would erroneously apply the axes fix up multiple times.
+    if !model.XPDoneModelObservers
+      XPlaneEntitiesObserver.new(model)
+      model.XPDoneModelObservers=true
+    end
+  end
+
+end
+
+
+#
+# Monitor Entity changes to prevent merging of Undo steps with other edits.
+# Would be more natural to use a ModelObserver to monitor transactions, but it's bugged - http://www.thomthom.net/software/sketchup/observers/#note_onTransaction
+#
+class XPlaneEntitiesObserver < Sketchup::EntitiesObserver
+
+  def initialize(model)
+    @model=model
+    @model.active_entities.add_observer(self)
+  end
+
+  def onElementModified(entities, entity)
+    puts "onElementModified #{entities} #{entity} #{@model.XPLastAction} #{@model.XPLastActionRef}" if SU2XPlane::TraceEvents
+    if @model.XPLastActionRef
+      # This event was caused by this script
+      @model.XPLastActionRef=false
+    else
+      # This event was caused by other editing - don't merge later Undo steps with it
+      @model.XPLastAction=nil
+    end
+  end
+
+  if SU2XPlane::TraceEvents
+    def onElementAdded(entities, entity)
+      puts "onElementAdded #{entities} #{entity}"
+    end
+
+    def onElementRemoved(entities, entity)
+      puts "onElementRemoved #{entities} #{entity}"
+    end
+
+    def onEraseEntities(entities, entity)
+      puts "onEraseEntities #{entities}"
+    end
+  end
+
+end
+
+
+# Install Model observers
+XPlaneAppObserver.new.onOpenModel(Sketchup.active_model)	# on[Open|New]Model not sent by SketchUp on initial model - see https://developers.google.com/sketchup/docs/ourdoc/appobserver#onOpenModel
+
 
 class XPlaneAnimationModelObserver < Sketchup::ModelObserver
 
   def initialize(model, parent)
+    @model=model
     @parent=parent
-    model.add_observer(self)
+    @model.add_observer(self)
   end
 
   def onTransactionUndo(model)
+    puts "onTransactionUndo #{model} #{@parent}" if SU2XPlane::TraceEvents
+    @model.XPLastAction=nil	# Don't merge subsequent operations with the operation that was previous to this undone operation
     # Don't know what's being undone, so just always update dialog
     @parent.update_dialog()
   end
 
   def onTransactionRedo(model)
+    puts "onTransactionRedo #{model} #{@parent}" if SU2XPlane::TraceEvents
     # Don't know what's being redone, so just always update dialog
     @parent.update_dialog()
   end
 
   def onActivePathChanged(model)
+    puts "onActivePathChanged #{model} #{@parent}" if SU2XPlane::TraceEvents
     @parent.update_dialog()
   end
 
   def onDeleteModel(model)
+    puts "onDeleteModel #{model} #{@parent}" if SU2XPlane::TraceEvents
     # This doesn't fire on closing the model, so currently worthless. Maybe it will work in the future.
     @parent.close()
   end
 
 end
 
-
-class XPlaneAnimationSelectionObserver < Sketchup::SelectionObserver
-
-  def initialize(model, parent)
-    @parent=parent
-    model.selection.add_observer(self)
-  end
-
-  def onSelectionBulkChange(selection)
-    # Fake up an EntityObserver message to prevent merging of Undos
-    @parent.onChangeEntity(nil)
-  end
-
-end
 
 class XPlaneAnimation < Sketchup::EntityObserver
 
@@ -101,8 +172,6 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @component=component
     @model=model
     if @component.typename!='ComponentInstance' then fail end
-    @lastaction=nil	# Record last change to the component for the purpose of merging Undo steps
-    @myaction=false	# Record other changes made to the component so we don't merge those in to our Undo steps
     if Object::RUBY_PLATFORM =~ /darwin/i
       @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 396, 398)
       @dlg.min_width = 396
@@ -126,11 +195,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @dlg.add_action_callback("on_preview") { |d,p| preview(p) }
     @component.add_observer(self)
     @modelobserver=XPlaneAnimationModelObserver.new(@model, self)
-    @selectionobserver=XPlaneAnimationSelectionObserver.new(@model, self)
     @dlg.set_on_close {	# Component or Model might be deleted, so use exception blocks
       begin @component.remove_observer(self) rescue TypeError end
       begin @model.remove_observer(@modelobserver) rescue TypeError end
-      begin @model.selection.remove_observer(@selectionobserver) rescue NameError end
       @@instances.delete(@component)
     }
     @dlg.show
@@ -173,6 +240,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def update_dialog()
+    puts "update_dialog #{@component} #{dlg}" if SU2XPlane::TraceEvents
     # Remaining initialization, deferred 'til DOM is ready via window.onload
     begin
       if !@model.valid? || @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil
@@ -219,36 +287,21 @@ class XPlaneAnimation < Sketchup::EntityObserver
     end
     @dlg.execute_script("addHSInserter(#{hideshow})")
 
+    @dlg.execute_script("document.getElementById('preview-value').innerHTML=''")	# reset preview display since may no longer be accurate
     @dlg.execute_script("disable(#{disable}, #{disable or !can_preview()})")
     @dlg.execute_script("window.location='#top'")	# Force redisplay - required on Mac
-    @lastaction=nil
   end
 
-  def onChangeEntity(entity)	# from EntityObserver
-    puts "onChangeEntity #{entity} #{@myaction}" if SU2XPlane::TraceEvents
-    if @myaction
-      # This change was caused by me
-      @myaction=false
+  def merge_operation?(operation)
+    # is the last operation performed by Sketchup the same as the one we're about to do? in which case we should merge
+    puts "#{operation} #{@model.XPLastAction==operation}" if SU2XPlane::TraceEvents
+    @model.XPLastActionRef=true
+    if @model.XPLastAction==operation
+      return true
     else
-      # This change was caused by other editing - don't merge later Undo steps with it
-      @lastaction=nil
+      @model.XPLastAction=operation
+      return false
     end
-  end
-
-  def start_operation(op_name, action)
-    puts "start_operation #{action} #{@lastaction} #{@myaction}" if SU2XPlane::TraceEvents
-    # Merge this operation into last if performing same action again. If action==false don't merge even if it is the same action.
-    if !@model.valid?
-      close()
-      fail
-    end
-    @model.start_operation(op_name, true, false, action==@lastaction)
-    @lastaction = (action==false ? nil : action)
-  end
-
-  def commit_operation()
-    @myaction=true	# This change was caused by me
-    @model.commit_operation
   end
 
   def onEraseEntity(entity)	# from EntityObserver
@@ -257,9 +310,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def set_var(p)
-    start_operation(XPL10n.t('Animation value'), "#{@component.object_id}/#{p}")	# merge into last if setting same var again
-    @component.set_attribute(SU2XPlane::ATTR_DICT, p, @dlg.get_element_value(p).strip.tr(DecimalSep,'.'))
-    commit_operation
+    puts "set_var #{@component} #{p} #{@dlg.get_element_value(p)}" if SU2XPlane::TraceEvents
+    newval=@dlg.get_element_value(p).strip.tr(DecimalSep,'.')
+    return if @component.get_attribute(SU2XPlane::ATTR_DICT, p)==newval	# can get spurious call when update_dialog is called - e.g. on Undo, which messes up Undo merging
+    @model.start_operation(XPL10n.t('Animation value'), true, false, merge_operation?("#{@component.object_id}/#{p}"))	# merge into last if setting same var again
+    @component.set_attribute(SU2XPlane::ATTR_DICT, p, newval)
+    @model.commit_operation
     disable=!can_preview()
     @dlg.execute_script("document.getElementById('preview-slider').disabled=#{disable}")
     @dlg.execute_script("fdSlider."+(disable ? "disable" : "enable")+"('preview-slider')")
@@ -267,22 +323,25 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def set_transform(p)
-    start_operation(XPL10n.t('Set Position'), "#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p)	# merge into last if setting same transformation again
+    puts "set_transform #{@component} #{p} #{@component.transformation.to_a}" if SU2XPlane::TraceEvents
+    @model.start_operation(XPL10n.t('Set Position'), true, false, merge_operation?("#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p))	# merge into last if setting same transformation again
     # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
     trans=(@model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, trans.to_a)
-    commit_operation
+    @model.commit_operation
   end
 
   def get_transform(p)
-    start_operation(XPL10n.t('Preview Animation'), "#{@component.object_id}/preview")	# treat same as preview for the sake of Undo
+    puts "get_transform #{@component} #{p}" if SU2XPlane::TraceEvents
+    @model.start_operation(XPL10n.t('Preview Animation'), true, false, merge_operation?("#{@component.object_id}/preview"))	# treat same as preview for the sake of Undo
     @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
-    commit_operation
+    @model.commit_operation
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
   end
 
   def insert_frame(p)
-    start_operation(XPL10n.t("Keyframe"), false)
+    puts "insert_frame #{@component} #{p}" if SU2XPlane::TraceEvents
+    @model.start_operation(XPL10n.t("Keyframe"), true)
     newframe=p.to_i
     numframes=count_frames()
     # shift everything up
@@ -297,12 +356,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
     t=@component.transformation.to_a
     @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * @component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, @component.transformation.to_a)
-    commit_operation
+    @model.commit_operation
     update_dialog()
   end
 
   def delete_frame(p)
-    start_operation(XPL10n.t('Erase Keyframe'), false)
+    @model.start_operation(XPL10n.t('Erase Keyframe'), true)
     oldframe=p.to_i
     numframes=count_frames()-1
     # shift everything down
@@ -313,12 +372,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
     dict=@component.attribute_dictionary(SU2XPlane::ATTR_DICT)
     dict.delete_key(SU2XPlane::ANIM_FRAME_+numframes.to_s)
     dict.delete_key(SU2XPlane::ANIM_MATRIX_+numframes.to_s)
-    commit_operation
+    @model.commit_operation
     update_dialog()
   end
 
   def insert_hideshow(p)
-    start_operation(XPL10n.t('Hide / Show'), false)
+    @model.start_operation(XPL10n.t('Hide / Show'), true)
     newhs=p.to_i
     numhs=count_hideshow()
     # shift everything up
@@ -337,12 +396,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_INDEX,    '')
     @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_FROM,     '0.0')
     @component.set_attribute(SU2XPlane::ATTR_DICT, prefix+SU2XPlane::ANIM_HS_TO,       '1.0')
-    commit_operation
+    @model.commit_operation
     update_dialog()
   end
 
   def delete_hideshow(p)
-    start_operation(XPL10n.t('Erase Hide / Show'), false)
+    @model.start_operation(XPL10n.t('Erase Hide / Show'), true)
     oldhs=p.to_i
     numhs=count_hideshow()-1
     # shift everything down
@@ -362,7 +421,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     dict.delete_key(prefix+SU2XPlane::ANIM_HS_INDEX)
     dict.delete_key(prefix+SU2XPlane::ANIM_HS_FROM)
     dict.delete_key(prefix+SU2XPlane::ANIM_HS_TO)
-    commit_operation
+    @model.commit_operation
     update_dialog()
   end
 
@@ -386,7 +445,6 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def preview(p)
     if not can_preview() then return end
-    start_operation(XPL10n.t('Preview Animation'), "#{@component.object_id}/preview")	# merge into last if previewing again
     prop=p.to_f	# 0->1
     numframes=count_frames()
     loop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).to_f
@@ -415,17 +473,25 @@ class XPlaneAnimation < Sketchup::EntityObserver
     val_stop =@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s).to_f
     interp= (val - val_start) / (val_stop - val_start)
     t=@component.transformation.to_a
-    @component.transformation= (@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) *
+    trans = (@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) *
       Geom::Transformation.interpolate(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_start.to_s),
                                        @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
                                        interp) *
       Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
-    commit_operation
+    if merge_operation?("#{@component.object_id}/preview")
+      # even if we merge this operation with previous it still uses up the Undo stack. So use move! which doesn't affect the Undo stack
+      @component.move!(trans)
+      @model.active_view.refresh	# move! doesn't cause redraw
+    else
+      @model.start_operation(XPL10n.t('Preview Animation'), true)
+      @component.transform!(trans)
+      @model.commit_operation
+    end
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='#{('%.6g' % val).tr('.',DecimalSep)}'")
   end
 
   def erase()
-    start_operation(XPL10n.t('Erase Animation'), false)
+    @model.start_operation(XPL10n.t('Erase Animation'), true)
     # Tempting to just do attribute_dictionaries.delete(SU2XPlane::ATTR_DICT), but that woudld erase other attributes like Alpha etc
     dict=@component.attribute_dictionary(SU2XPlane::ATTR_DICT)
     0.upto(count_frames()) do |frame|
@@ -444,7 +510,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
       dict.delete_key(prefix+SU2XPlane::ANIM_HS_TO)
     end
     close()
-    commit_operation
+    @model.commit_operation
   end
 
 end
