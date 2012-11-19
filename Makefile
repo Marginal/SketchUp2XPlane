@@ -1,4 +1,5 @@
 VER=$(shell sed -nE 's/[[:space:]]+Version="([[:digit:]]+)(\.)([[:digit:]]+)"/\1\3/p' SU2XPlane.rb)
+PROJECT=SU2XPlane
 
 VPATH=examples:examples_DE
 
@@ -12,10 +13,10 @@ clean:
 	rm -f $(TARGETS)
 
 install:	$(TARGETS)
-	rm -rf $(INSTALLDIR)/SU2XPlane
+	rm -rf $(INSTALLDIR)/$(PROJECT)
 	unzip -o -d $(INSTALLDIR) SketchUp2XPlane_$(VER).zip
 
-SketchUp2XPlane_$(VER).zip:	*-SU2XPlane*.html SU2XPlane.rb SU2XPlane/*.css SU2XPlane/*.html SU2XPlane/*.js SU2XPlane/*.rb SU2XPlane/*.txt
+SketchUp2XPlane_$(VER).zip:	*-$(PROJECT)*.html $(PROJECT).rb $(PROJECT)/*.css $(PROJECT)/*.html $(PROJECT)/*.js $(PROJECT)/*.rb $(PROJECT)/*.txt
 	rm -f $@
 	zip -MM $@ $+
 
