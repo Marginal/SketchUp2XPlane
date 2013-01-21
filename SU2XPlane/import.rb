@@ -106,9 +106,10 @@ class XPlaneImporter < Sketchup::Importer
                 model.abort_operation
                 UI.messagebox XPL10n.t('Import failed') + ".\n" + XPL10n.t("Can't read texture file %s") % (texture+orig_ext), MB_OK, 'X-Plane import'
                 return 0	# Pretend we succeeded to suppress alert dialog
+              else
+                material.texture.size=10.m	# arbitrary
               end
             end
-            material.texture.size=10.m if material	# arbitrary
           when 'VT'
             vt << Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m)
             nm << Geom::Vector3d.new(c[3].to_f, -c[5].to_f, c[4].to_f)
@@ -126,15 +127,16 @@ class XPlaneImporter < Sketchup::Importer
               begin
                 face=entities.add_face thisvt
               rescue
-                msg[XPL10n.t("Ignoring some geometry that couldn't be imported")]=true if !(thisvt[0]==thisvt[1] || thisvt[0]==thisvt[2] || thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices
+                msg[XPL10n.t("Ignoring some geometry that couldn't be imported")]=true if !(thisvt[0]==thisvt[1] || thisvt[0]==thisvt[2] || thisvt[1]==thisvt[2])	# SketchUp doesn't like colocated vertices or colinear faces -> <ArgumentError: Points are not planar>
                 i+=3	# next tri
                 next
               end
+              thisnm=[nm[idx[i+2]],nm[idx[i+1]],nm[idx[i]]]
               if material && (uv[idx[i+2]]!=[0.0,0.0,1.0] || uv[idx[i+1]]!=[0.0,0.0,1.0] || uv[idx[i]]!=[0.0,0.0,1.0])
-                # SketchUp doesn't like colocated UVs
+                # SketchUp doesn't like colocated UVs - tolerance appears to be 0.0001
                 thisuv=[uv[idx[i+2]]]
-                thisuv << ((uv[idx[i+1]]!=uv[idx[i+2]]) ? uv[idx[i+1]] : uv[idx[i+1]]+Geom::Vector3d.new(1.0/2048,0,0))
-                thisuv << ((uv[idx[i  ]]!=uv[idx[i+2]]) ? uv[idx[i  ]] : uv[idx[i  ]]+Geom::Vector3d.new(0,1.0/2048,0))
+                thisuv << ((uv[idx[i+1]]!=uv[idx[i+2]]) ? uv[idx[i+1]] : uv[idx[i+1]]+Geom::Vector3d.new(1.0/1024,0,0))
+                thisuv << ((uv[idx[i  ]]!=uv[idx[i+2]]) ? uv[idx[i  ]] : uv[idx[i  ]]+Geom::Vector3d.new(0,1.0/1024,0))
                 pts=[thisvt[0],thisuv[0],thisvt[1],thisuv[1],thisvt[2],thisuv[2]]
                 begin
                   if face.material
@@ -150,7 +152,7 @@ class XPlaneImporter < Sketchup::Importer
                     end
                   end
                 rescue
-                  # SketchUp can't always compute texture layout
+                  # SketchUp can't always compute texture layout -> <ArgumentError: Could not compute valid matrix from points>
                 end
               end
               face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME,1) if alpha
@@ -158,7 +160,6 @@ class XPlaneImporter < Sketchup::Importer
               face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 1) if poly
 
               # smooth & soften edges
-              thisnm=[nm[idx[i+2]],nm[idx[i+1]],nm[idx[i]]]
               if thisnm[0]!=thisnm[1] || thisnm[0]!=thisnm[2] || thisnm[1]!=thisnm[2]
                 face.edges.each do |edge|
                   case edge.faces.length
