@@ -51,7 +51,14 @@ Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">To
 </ul>
 <p>Create your model in SketchUp out of Rectangles, Circles and Arcs. Save the SketchUp <code>.skp</code> file in the aircraft or scenery folder where you want the X-Plane <code>.obj</code> file to end up.</p>
 <p>In an image editor application create one texture file that is like a &ldquo;<a href="http://en.wikipedia.org/wiki/Collage" target="_blank">collage</a>&rdquo; of all of the textures that you need in your model. The height and width of the texture file must be powers of two (<i>eg</i> 128, 256, 512, 1024, 2048) but it doesn't have to be square. Save the texture file in 32 bit or 24 bit PNG format (<i>ie</i> with or without an &ldquo;Alpha&rdquo; channel) in the aircraft or scenery folder where you want the X-Plane <code>.obj</code> file to end up.</p>
-<p>Use the <samp>Paint Bucket</samp> tool to apply your one texture file to every face in your model. Use <samp>Context&nbsp;menu&nbsp;&rarr; Texture&nbsp;&rarr; Position</samp> to map the correct portion of this texture file to each face. (If you don't see the <samp>Texture</samp> entry in the context menu then choose <samp>Context&nbsp;menu&nbsp;&rarr; Reverse&nbsp;Faces</samp> and try again).</p>
+<p>In SketchUp, create a new &ldquo;Material&rdquo; for your texture file:<p>
+<ul>
+  <li>Choose <samp>Window&nbsp;&rarr; Materials</samp></li>
+  <li>Windows: Press the <samp>Create&nbsp;Material&#8230;</samp> button, then check <samp>Use&nbsp;texture&nbsp;image</samp> and select your texture file</li>
+  <li>Mac OS: Choose the <samp>Texture&nbsp;Palettes</samp> tab, then choose <samp>Colors&nbsp;In&nbsp;Model</samp> from the drop-down menu. At the bottom of the dialog choose <samp>Color&nbsp;&rarr; New&nbsp;Texture&#8230;</samp> and select your texture file</li>
+  <li>Specify an approximate width and height</li>
+</ul>
+<p>Use the <samp>Paint Bucket</samp> tool to apply your one texture file to every face in your model. Use <samp>Context&nbsp;menu&nbsp;&rarr; Texture&nbsp;&rarr; Position</samp> to map the correct portion of this texture file to each face. (If you don't see the <samp>Texture</samp> entry in the context menu choose <samp>Context&nbsp;menu&nbsp;&rarr; Reverse&nbsp;Faces</samp> and try again).</p>
 <p>See <a href="http://www.youtube.com/watch?v=HHsRRLCAOm8" target="_blank">this</a> tutorial for how to position a texture on a curved surface. Or you can enable <samp>View&nbsp;&rarr; Hidden&nbsp;Geometry</samp> and then select one face of the surface at a time and position the texture on each face.</p>
 <p>If you want both sides of a face to be displayed in X-Plane then apply the <samp>Paint Bucket</samp> tool twice; once on each side of the face. You can use the <samp>Window&nbsp;&rarr; Entity&nbsp;Info</samp> panel to see which texture(s) are currently assigned to the two sides of the currently selected face.</p>
 <p>You can use <samp>Tools&nbsp;&rarr; Highlight&nbsp;Untextured</samp> to help you with texturing. This doesn't change how your model will appear in X-Plane, but it does highlight in SketchUp any problems with your texturing:</p>
