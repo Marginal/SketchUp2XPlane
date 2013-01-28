@@ -222,18 +222,17 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
 
         if nomats or (material and material.alpha>0.0)
           if material and material.texture
-            tex=material.texture.filename
-            if not File.exists? tex
+            if not File.exists? material.texture.filename
               # Write embedded texture to filesystem, and update material to use it
-              newtex=File.dirname(Sketchup.active_model.path) + "/" + (tex.split(/[\/\\:]+/)[-1])[0...-3] + "png"
-              if tw.load(ent, front)!=0 and tw.write(ent, front, newtex)==0
+              newfile=File.dirname(Sketchup.active_model.path) + "/" + (material.texture.filename.split(/[\/\\:]+/)[-1])[0...-3] + "png"
+              if tw.load(ent, front)!=0 and tw.write(ent, front, newfile)==0
                 theight = material.texture.height
                 twidth  = material.texture.width
-                material.texture = newtex
+                material.texture = newfile
                 material.texture.size = [twidth,theight]	# don't know why this should be required but it is
-                tex=newtex
               end
             end
+            tex=material.texture
             # Get minimum uv co-oords
             us=[]
             vs=[]
@@ -348,19 +347,24 @@ def XPlaneExport()
     end
   end
 
-  # examine textures
+  # find most popular texture
   tex=nil
-  badtex=false
+  texcount={}
   vt.each do |v|
     if v[0]
-      if not tex
-        tex=v[0]
-      elsif tex!=v[0]
-        badtex=true
+      tex=v[0]
+      if texcount.has_key?(tex)
+        texcount[tex]+=1
+      else
+        texcount[tex]=1
       end
     end
   end
-  tex=tex.split(/[\/\\:]+/)[-1] if tex	# basename
+  multitex=(texcount.length>1)
+  if multitex
+    tex=texcount.index(texcount.values().sort()[-1])	# most popular
+  end
+  texfile=tex.filename.split(/[\/\\:]+/)[-1] if tex	# basename
 
   if notex[0]==0
     notex=false
@@ -373,7 +377,7 @@ def XPlaneExport()
   outfile=File.new(outpath, "w")
   outfile.write("I\n800\nOBJ\n\n")
   if tex
-    outfile.write("TEXTURE\t\t#{tex}\nTEXTURE_LIT\t#{tex[0..-5]}_LIT#{tex[-4..-1]}\n")
+    outfile.write("TEXTURE\t\t#{texfile}\nTEXTURE_LIT\t#{texfile[0..-5]}_LIT#{texfile[-4..-1]}\n")
   else
     outfile.write("TEXTURE\t\n")	# X-Plane requires a TEXTURE statement
   end
@@ -529,10 +533,12 @@ def XPlaneExport()
   outfile.write("\n# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{SU2XPlane::Version}.\n")
   outfile.close
 
-  msg=XPL10n.t('Wrote %s triangles to %s') % [allidx.length/3, outpath] + ".\n"
+  msg=XPL10n.t("Wrote %s triangles to") % (allidx.length/3) + "\n" + outpath + "\n"
   msg+="\n" + XPL10n.t('Warning: %s faces are untextured') % notex + '.' if notex
-  msg+="\n" + XPL10n.t('Warning: You used multiple texture files. Using file %s') % tex + '.' if badtex
-  if notex and not badtex and not model.materials["XPUntextured"]
+  msg+="\n" + XPL10n.t('Warning: You used multiple texture files; using file:') + "\n" + tex.filename if multitex
+  msg+="\n" + XPL10n.t('Warning: Texture width is not a power of two') + '.' if tex and (tex.image_width & tex.image_width-1)!=0
+  msg+="\n" + XPL10n.t('Warning: Texture height is not a power of two') + '.' if tex and (tex.image_height & tex.image_height-1)!=0
+  if notex and not multitex and not model.materials["XPUntextured"]
     yesno=UI.messagebox msg+"\n" + XPL10n.t('Do you want to highlight the untextured faces?'), MB_YESNO,"X-Plane export"
     XPlaneHighlight() if yesno==6
   else

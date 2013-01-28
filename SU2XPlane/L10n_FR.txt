@@ -53,5 +53,7 @@ Saving your model, then quitting and restarting\nSketchUp might clear the proble
 This is not a valid X-Plane file=This is not a valid X-Plane file
 Warning: %s faces are untextured=Avertissement: %s faces n'ont pas de texture
 Do you want to highlight the untextured faces?=Voulez-vous mettre les faces non texturées en surbrillance?
-Warning: You used multiple texture files. Using file %s=Attention: Vous avez utilisé plusieurs fichiers de texture. Fichier utilisé: %s
-Wrote %s triangles to %s=Écrit %s triangles dans %s
+Warning: You used multiple texture files; using file:=Attention: Vous avez utilisé plusieurs fichiers de texture. Fichier utilisé:
+Warning: Texture width is not a power of two=Attention: La largeur du fichier texture n'est pas une puissance de deux
+Warning: Texture height is not a power of two=Attention: La hauteur du fichier texture n'est pas une puissance de deux
+Wrote %s triangles to=Écrit %s triangles dans
