@@ -434,9 +434,9 @@ def XPlaneExport()
 
     # In priority order
     if current_attrs&XPPrim::NPOLY==0 && prim.attrs&XPPrim::NPOLY!=0
-      outfile.write("#{ins}ATTR_poly_os\t0\n")
+      outfile.write("#{ins}ATTR_layer_group\tobjects 0\n#{ins}ATTR_poly_os\t0\n")
     elsif current_attrs&XPPrim::NPOLY!=0 && prim.attrs&XPPrim::NPOLY==0
-      outfile.write("#{ins}ATTR_poly_os\t2\n")
+      outfile.write("#{ins}ATTR_layer_group\tobjects -5\n#{ins}ATTR_poly_os\t2\n")
     end
     if current_attrs&XPPrim::NDRAPED==0 && prim.attrs&XPPrim::NDRAPED!=0
       outfile.write("#{ins}ATTR_no_draped\n")
