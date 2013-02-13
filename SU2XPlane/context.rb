@@ -1,5 +1,19 @@
+# SketchUp's Menu API doesn't allow for tri-state menu items, so we fake it up in two parts:
+# - XPlaneValidateAttr is a conventional Menu validator, but just returns MF_GRAYED or not depending on whether the selection is valid (i.e. contains faces)
+# - XPlaneTestAttr returns the submenu name with a check mark or dash manually pre-pended
+
+# Sets the attribute if *any* of the selected Faces don't have it
 def XPlaneToggleAttr(attr)
-  newval = (XPlaneValidateAttr(attr)!=MF_CHECKED)
+  newval=nil
+  ss = Sketchup.active_model.selection
+  ss.each do |ent|
+    if ent.typename=="Face"
+      if ent.get_attribute(SU2XPlane::ATTR_DICT, attr, 0)==0
+        newval=true
+        break
+      end
+    end
+  end
   if newval
     Sketchup.active_model.selection.each do |ent|
       ent.set_attribute(SU2XPlane::ATTR_DICT, attr, 1) if ent.typename=="Face"	# 1 for backwards compatibility
@@ -11,16 +25,41 @@ def XPlaneToggleAttr(attr)
   end
 end
 
+# Return menu name with check mark pre-prended, or with dash if some elements have the attribute but others don't
+def XPlaneTestAttr(attr, name)
+  someactive=nil
+  someinactive=nil
+  Sketchup.active_model.selection.each do |ent|
+    if ent.typename=="Face"
+      if ent.get_attribute(SU2XPlane::ATTR_DICT, attr, 0)==0
+        someinactive=true
+      else
+        someactive=true
+      end
+    end
+  end
+  name=XPL10n.t(name)
+  if !someactive && !someinactive
+    return "\xE2\x80\x87\xE2\x80\x82"+name	# U+2007 figure space & U+2002 en space
+  elsif someactive && someinactive
+    return "\xE2\x88\x92 "+name			# U+2212 minus
+  elsif someactive
+    if Object::RUBY_PLATFORM =~ /darwin/i
+      return "\xE2\x9C\x93 "+name		# U+2713 check mark (not supported in Windows UI fonts)
+    else
+      return "\xE2\x97\x8f "+name		# U+25CF back circle
+    end
+  else
+    return "\xE2\x80\x87\xE2\x80\x82"+name	# U+2007 figure space & U+2002 en space
+  end
+end
+
 # Return MF_GRAYED if any Components/Groups selected (but ignore Edges)
-# Can't do anything useful/reasonable if only some faces have this attribute (used to return MF_GRAYED|MF_CHECKED),
-# so return MF_CHECKED if *all* selected Faces have this attribute, otherwise MF_UNCHECKED.
 def XPlaneValidateAttr(attr)
   ss = Sketchup.active_model.selection
   return MF_GRAYED if ss.empty?
   ss.each do |ent|
-    next if ent.typename=="Edge"
-    return MF_GRAYED if ent.typename!="Face"
-    return MF_UNCHECKED if ent.get_attribute(SU2XPlane::ATTR_DICT, attr, 0)==0
+    return MF_GRAYED if (ent.typename!="Face" && ent.typename!="Edge")
   end
-  return MF_CHECKED
+  return MF_ENABLED
 end

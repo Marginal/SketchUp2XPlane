@@ -73,15 +73,24 @@ if !file_loaded?("SU2XPlane.rb")
       if !Sketchup.active_model.selection.empty?
         menu.add_separator
         submenu = menu.add_submenu "X-Plane"
-        hard=submenu.add_item(XPL10n.t('Hard'))         { XPlaneToggleAttr(SU2XPlane::ATTR_HARD_NAME) }
-        submenu.set_validation_proc(hard)               { XPlaneValidateAttr(SU2XPlane::ATTR_HARD_NAME) }
-        poly=submenu.add_item(XPL10n.t('Ground'))       { XPlaneToggleAttr(SU2XPlane::ATTR_POLY_NAME) }
-        submenu.set_validation_proc(poly)               { XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
-        alpha=submenu.add_item(XPL10n.t('Alpha'))       { XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
-        submenu.set_validation_proc(alpha)              { XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
-        shiny=submenu.add_item(XPL10n.t('Shiny'))       { XPlaneToggleAttr(SU2XPlane::ATTR_SHINY_NAME) }
-        submenu.set_validation_proc(shiny)              { XPlaneValidateAttr(SU2XPlane::ATTR_SHINY_NAME) }
-        anim=submenu.add_item(XPL10n.t('Animation...')) { XPlaneMakeAnimation() }
+        hard=submenu.add_item(XPlaneTestAttr(SU2XPlane::ATTR_HARD_NAME, 'Hard')) {
+          XPlaneToggleAttr(SU2XPlane::ATTR_HARD_NAME) }
+        submenu.set_validation_proc(hard) {
+          XPlaneValidateAttr(SU2XPlane::ATTR_HARD_NAME) }
+        poly=submenu.add_item(XPlaneTestAttr(SU2XPlane::ATTR_POLY_NAME, 'Ground')) {
+          XPlaneToggleAttr(SU2XPlane::ATTR_POLY_NAME) }
+        submenu.set_validation_proc(poly) {
+          XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
+        alpha=submenu.add_item(XPlaneTestAttr(SU2XPlane::ATTR_ALPHA_NAME, 'Alpha')) {
+          XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+        submenu.set_validation_proc(alpha) {
+          XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+        shiny=submenu.add_item(XPlaneTestAttr(SU2XPlane::ATTR_SHINY_NAME, 'Shiny')) {
+          XPlaneToggleAttr(SU2XPlane::ATTR_SHINY_NAME) }
+        submenu.set_validation_proc(shiny) {
+          XPlaneValidateAttr(SU2XPlane::ATTR_SHINY_NAME) }
+        anim=submenu.add_item("\xE2\x80\x87\xE2\x80\x82"+XPL10n.t('Animation...')) {	# U+2007 figure space & U+2002 en space
+          XPlaneMakeAnimation() }
       end
     end
   rescue NameError => e
