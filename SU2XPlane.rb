@@ -26,6 +26,7 @@ module SU2XPlane
   ATTR_HARD_NAME="poly"	# incorrect dictionary key not fixed for compatibility
   ATTR_POLY_NAME="hard"	# ditto
   ATTR_ALPHA_NAME="alpha"
+  ATTR_SHINY_NAME="shiny"
 
   # Animation attributes. Must be consistent with anim.js
   ANIM_DATAREF='dataref'
@@ -78,6 +79,8 @@ if !file_loaded?("SU2XPlane.rb")
         submenu.set_validation_proc(poly)               { XPlaneValidateAttr(SU2XPlane::ATTR_POLY_NAME) }
         alpha=submenu.add_item(XPL10n.t('Alpha'))       { XPlaneToggleAttr(SU2XPlane::ATTR_ALPHA_NAME) }
         submenu.set_validation_proc(alpha)              { XPlaneValidateAttr(SU2XPlane::ATTR_ALPHA_NAME) }
+        shiny=submenu.add_item(XPL10n.t('Shiny'))       { XPlaneToggleAttr(SU2XPlane::ATTR_SHINY_NAME) }
+        submenu.set_validation_proc(shiny)              { XPlaneValidateAttr(SU2XPlane::ATTR_SHINY_NAME) }
         anim=submenu.add_item(XPL10n.t('Animation...')) { XPlaneMakeAnimation() }
       end
     end

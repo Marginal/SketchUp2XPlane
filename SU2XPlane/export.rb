@@ -10,9 +10,10 @@ class XPPrim
   # Flags for export in order of priority low->high. Attributes represented by lower bits are flipped more frequently on output.
   HARD=1
   # animation should come here
-  ALPHA=2
-  NDRAPED=4	# negated so ground polygons come first
-  NPOLY=8	# ditto
+  SHINY=2
+  ALPHA=4
+  NDRAPED=8	# negated so ground polygons come first
+  NPOLY=16	# ditto
 
   # Types
   TRIS='Tris'
@@ -30,7 +31,7 @@ class XPPrim
 
   def <=>(other)
     # For sorting primitives in order of priority
-    c = ((self.attrs&(NDRAPED|NPOLY|ALPHA)) <=> (other.attrs&(NDRAPED|NPOLY|ALPHA)))
+    c = ((self.attrs&(NDRAPED|NPOLY|ALPHA|SHINY)) <=> (other.attrs&(NDRAPED|NPOLY|ALPHA|SHINY)))
     return c if c!=0
     if self.anim && other.anim
       c = ((self.anim) <=> (other.anim))
@@ -196,15 +197,19 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
 
       uvHelp = ent.get_UVHelper(true, true, tw)
       attrs=0
-      # can't have poly_os or hard in animation
       if anim
+        # can't have poly_os or hard in animation
         attrs |= XPPrim::NPOLY|XPPrim::NDRAPED
       else
         attrs |= XPPrim::NPOLY   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)!=0
         attrs |= XPPrim::HARD    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
         attrs |= XPPrim::NDRAPED unless attrs&XPPrim::NPOLY==0 && attrs&XPPrim::HARD==0	# Can't be draped if hard
       end
-      attrs |= XPPrim::ALPHA if attrs&XPPrim::NPOLY!=0 && ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0	# poly_os implies ground level so no point in alpha
+      if attrs & (XPPrim::NPOLY|XPPrim::NDRAPED) == (XPPrim::NPOLY|XPPrim::NDRAPED)
+	# poly_os and/or draped implies ground level so no point in alpha
+        attrs |= XPPrim::ALPHA if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0
+        attrs |= XPPrim::SHINY if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_SHINY_NAME, 0)!=0
+      end
       if !prim or prim.attrs!=attrs
         prim=XPPrim.new(XPPrim::TRIS, anim, attrs)
         prims << prim
@@ -447,6 +452,11 @@ def XPlaneExport()
       outfile.write("#{ins}####_alpha\n")
     elsif current_attrs&XPPrim::ALPHA!=0 && prim.attrs&XPPrim::ALPHA==0
       outfile.write("#{ins}####_no_alpha\n")
+    end
+    if current_attrs&XPPrim::SHINY==0 && prim.attrs&XPPrim::SHINY!=0
+      outfile.write("#{ins}ATTR_shiny_rat\t1\n")
+    elsif current_attrs&XPPrim::SHINY!=0 && prim.attrs&XPPrim::SHINY==0
+      outfile.write("#{ins}ATTR_shiny_rat\t0\n")
     end
     if current_attrs&XPPrim::HARD==0 && prim.attrs&XPPrim::HARD!=0
       outfile.write("#{ins}ATTR_hard\n")
