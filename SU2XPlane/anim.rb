@@ -163,7 +163,7 @@ end
 class XPlaneAnimation < Sketchup::EntityObserver
 
   # DataRef values are stored as Strings - need to convert decimal separator to user's locale for display
-  DecimalSep=1.2.to_l.to_s.match(/\d(\D)\d/)[1]	# Hack! http://sketchucation.com/forums/viewtopic.php?f=180&t=28346
+  DecimalSep=Sketchup.format_degrees(1.2).match(/\d(\D)\d/)[1]	# Hack! http://sketchucation.com/forums/viewtopic.php?f=180&t=28346&start=15#p246363
 
   @@instances={}	# map components to instances
   attr_reader(:dlg)
