@@ -2,6 +2,7 @@
 # Fix up animations when the axes change due to:
 # - Use of the "Change Axes" tool
 # - Component is included into a new Group or component
+# - Component Instance is copied
 #
 
 class Sketchup::Model
@@ -30,6 +31,7 @@ class XPlaneAxesAppObserver < Sketchup::AppObserver
       XPlaneSelectionObserver.new(model)
       XPlaneDefinitionsObserver.new(model)
       XPlaneModelObserver.new(model)
+      XPlaneAnimEntitiesObserver.new(model)
       model.XPDoneAxesModelObservers=true
     end
   end
@@ -118,6 +120,7 @@ class XPlaneSelectionObserver < Sketchup::SelectionObserver
     puts "onSelectionBulkChange #{selection.to_a.inspect}" if SU2XPlane::TraceEvents
     selection.each do |e|
       if e.typename=='ComponentInstance'
+        puts "#{e} #{e.name}", "current: "+e.transformation.to_a.inspect if SU2XPlane::TraceEvents
         # Save transformations in case the user makes this selection into a Component or Group
         e.XPSavedTransformation=e.transformation if e.XPCountFrames>0
         # Save transformations of children in case the user explodes this Component
@@ -216,6 +219,53 @@ class XPlaneModelObserver < Sketchup::ModelObserver
         c.XPSavedTransformation=c.transformation	# in case the user re-Groups this entity without changing selection
         model.commit_operation
       end
+    end
+  end
+
+end
+
+
+#
+# Monitor new Instances of Components and fix up any animations contained in the new Component Instance
+#
+class XPlaneAnimEntitiesObserver < Sketchup::EntitiesObserver
+
+  def initialize(model)
+    @model=model
+    @model.active_entities.add_observer(self)
+  end
+
+  # This fails to fire when the new copy is inside a Component or Group. What a crock.
+  def onElementAdded(entities, e)
+    puts "onElementAdded #{entities} #{e}" if SU2XPlane::TraceEvents
+    if e.typename=='ComponentInstance'
+      # XPSavedTransformation holds the *new* location since we've already been selected before we're notified here!
+      puts "#{e} #{e.name}", "current: "+e.transformation.to_a.inspect if SU2XPlane::TraceEvents
+      @model.start_operation('Shift', true, false, true)
+      # So just do the fixup relative to frame 0 on the basis that this is probably better than nothing
+      if e.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')
+        shift=Geom::Transformation.translation(e.transformation.origin) * Geom::Transformation.translation(Geom::Transformation.new(e.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')).origin).inverse
+        (0...e.XPCountFrames).each do |frame|
+          puts "#{frame}: " + e.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s).inspect if SU2XPlane::TraceEvents
+          e.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s, (shift * Geom::Transformation.new(e.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).to_a)
+        end
+      end
+      e.XPSavedTransformation=e.transformation	# in case the user re-Groups this entity without changing selection
+      @model.commit_operation
+    end
+  end
+
+  if SU2XPlane::TraceEvents
+    def onElementModified(entities, entity)
+      puts "onElementModified #{entities} #{entity}" if SU2XPlane::TraceEvents
+    end
+
+    def onElementRemoved(entities, entity)
+      puts "onElementRemoved #{entities} #{entity}"
+    end
+
+    def onEraseEntities(entities, entity)
+      puts "onEraseEntities #{entities}"
     end
   end
 
