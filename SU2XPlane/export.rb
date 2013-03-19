@@ -228,9 +228,9 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
         if nomats or (material and material.alpha>0.0)
           if material and material.texture
             if not File.exists? material.texture.filename
-              # Write embedded texture to filesystem, and update material to use it
+              # Write embedded texture to filesystem (unless there's already a file of that name in the folder) and update material to use it
               newfile=File.dirname(Sketchup.active_model.path) + "/" + (material.texture.filename.split(/[\/\\:]+/)[-1])[0...-3] + "png"
-              if tw.load(ent, front)!=0 and tw.write(ent, front, newfile)==0
+              if (File.exists? newfile) || (tw.load(ent, front)!=0 && tw.write(ent, front, newfile)==0)
                 theight = material.texture.height
                 twidth  = material.texture.width
                 material.texture = newfile
