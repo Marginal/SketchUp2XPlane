@@ -688,14 +688,14 @@ class Sketchup::ComponentInstance
     # In order to handle rotations that cross 0/360 we assume that each rotation is within +/-180 from the last
     numframes=self.XPCountFrames
     return [] if !self.XPDataRef || numframes==0
-    lastval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0'.to_s))).XPEuler.map { |a| a.radians.round(SU2XPlane::P_A) }
+    lastval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0'.to_s))).XPEuler.map { |a| a.radians }
     retval = [lastval]
     (1...numframes).each do |frame|
-      thisval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).XPEuler.map { |a| a.radians.round(SU2XPlane::P_A) }
+      thisval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).XPEuler.map { |a| a.radians }
       lastval = (0..2).map { |i| (thisval[i]-lastval[i]+180) % 360 + lastval[i]-180 }
       retval << lastval
     end
-    return retval
+    return retval.map { |r| r.map { |a| a.round(SU2XPlane::P_A) } }	# round at end to prevent comparision differences
   end
 
   def XPRotateFrame(frame, v, a)
