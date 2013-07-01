@@ -9,11 +9,12 @@ class XPPrim
 
   # Flags for export in order of priority low->high. Attributes represented by lower bits are flipped more frequently on output.
   HARD=1
+  DECK=2
   # animation should come here
-  SHINY=2
-  ALPHA=4
-  NDRAPED=8	# negated so ground polygons come first
-  NPOLY=16	# ditto
+  SHINY=4
+  ALPHA=8
+  NDRAPED=16	# negated so ground polygons come first
+  NPOLY=32	# ditto
 
   # Types
   TRIS='Tris'
@@ -40,7 +41,7 @@ class XPPrim
       return -1 if !self.anim	# no animation precedes animation
       return 1 if !other.anim	# no animation precedes animation
     end
-    c = ((self.attrs&HARD) <=> (other.attrs&HARD))
+    c = ((self.attrs&(DECK|HARD)) <=> (other.attrs&(DECK|HARD)))
     return c if c!=0
     c = (self.typename <=> other.typename)
     return c
@@ -203,7 +204,8 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
       else
         attrs |= XPPrim::NPOLY   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)!=0
         attrs |= XPPrim::HARD    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
-        attrs |= XPPrim::NDRAPED unless attrs&XPPrim::NPOLY==0 && attrs&XPPrim::HARD==0	# Can't be draped if hard
+        attrs |= XPPrim::DECK    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_DECK_NAME, 0)!=0
+        attrs |= XPPrim::NDRAPED unless attrs&(XPPrim::NPOLY|XPPrim::DECK|XPPrim::HARD)==0	# Can't be draped if hard
       end
       if attrs & (XPPrim::NPOLY|XPPrim::NDRAPED) == (XPPrim::NPOLY|XPPrim::NDRAPED)
 	# poly_os and/or draped implies ground level so no point in alpha
@@ -461,6 +463,11 @@ def XPlaneExport()
     if current_attrs&XPPrim::HARD==0 && prim.attrs&XPPrim::HARD!=0
       outfile.write("#{ins}ATTR_hard\n")
     elsif current_attrs&XPPrim::HARD!=0 && prim.attrs&XPPrim::HARD==0
+      outfile.write("#{ins}ATTR_no_hard\n")
+    end
+    if current_attrs&XPPrim::DECK==0 && prim.attrs&XPPrim::DECK!=0
+      outfile.write("#{ins}ATTR_hard_deck\n")
+    elsif current_attrs&XPPrim::DECK!=0 && prim.attrs&XPPrim::DECK==0
       outfile.write("#{ins}ATTR_no_hard\n")
     end
 

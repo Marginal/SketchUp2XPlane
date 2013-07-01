@@ -4,21 +4,28 @@
 
 # Sets the attribute if *any* of the selected Faces don't have it
 def XPlaneToggleAttr(attr)
-  newval=nil
+  setting = nil
   ss = Sketchup.active_model.selection
   ss.each do |ent|
     if ent.typename=="Face"
       if ent.get_attribute(SU2XPlane::ATTR_DICT, attr, 0)==0
-        newval=true
+        setting=true
         break
       end
     end
   end
-  if newval
+  if setting
     Sketchup.active_model.selection.each do |ent|
-      ent.set_attribute(SU2XPlane::ATTR_DICT, attr, 1) if ent.typename=="Face"	# 1 for backwards compatibility
+      if ent.typename=="Face"
+        if attr==SU2XPlane::ATTR_HARD_NAME
+          ent.delete_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_DECK_NAME)	# mutually exclusive
+        elsif attr==SU2XPlane::ATTR_DECK_NAME
+          ent.delete_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME)	# mutually exclusive
+        end
+        ent.set_attribute(SU2XPlane::ATTR_DICT, attr, 1)	# 1 for backwards compatibility
+      end
     end
-  else
+  else	# clearing
     Sketchup.active_model.selection.each do |ent|
       ent.delete_attribute(SU2XPlane::ATTR_DICT, attr) if ent.typename=="Face"
     end

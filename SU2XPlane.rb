@@ -23,6 +23,7 @@ module SU2XPlane
 
   # X-Plane attributes
   ATTR_DICT="X-Plane"
+  ATTR_DECK_NAME="deck"
   ATTR_HARD_NAME="poly"	# incorrect dictionary key not fixed for compatibility
   ATTR_POLY_NAME="hard"	# ditto
   ATTR_ALPHA_NAME="alpha"
@@ -77,6 +78,10 @@ if !file_loaded?("SU2XPlane.rb")
           XPlaneToggleAttr(SU2XPlane::ATTR_HARD_NAME) }
         submenu.set_validation_proc(hard) {
           XPlaneValidateAttr(SU2XPlane::ATTR_HARD_NAME) }
+        deck=submenu.add_item(XPlaneTestAttr(SU2XPlane::ATTR_DECK_NAME, 'Hard Deck')) {
+          XPlaneToggleAttr(SU2XPlane::ATTR_DECK_NAME) }
+        submenu.set_validation_proc(deck) {
+          XPlaneValidateAttr(SU2XPlane::ATTR_DECK_NAME) }
         poly=submenu.add_item(XPlaneTestAttr(SU2XPlane::ATTR_POLY_NAME, 'Ground')) {
           XPlaneToggleAttr(SU2XPlane::ATTR_POLY_NAME) }
         submenu.set_validation_proc(poly) {
