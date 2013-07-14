@@ -53,6 +53,10 @@
 # to detect other changes to the model, so as to avoid merging Undo steps with those other changes.
 #
 
+if not defined? SU2XPlane
+  UI.messagebox("X-Plane plugin installed incorrectly!\nDelete SketchUp's plugin folder, then re-install SketchUp and plugins.")
+  exit
+end
 
 class Sketchup::Model
   attr_accessor(:XPDoneModelObservers)
