@@ -1,6 +1,15 @@
 #
 # X-Plane animation UI
 #
+# Copyright (c) 2012-2013 Jonathan Harris
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+
+#
 # An X-Plane animation is represented by attaching an AttributeDictionary named SU2XPlane::ATTR_DICT to a component.
 # (We use ComponentInstances rather than Groups because SketchUp by default doesn't display Group axes, and the axes' origin
 #  is obviously important for rotation animations).

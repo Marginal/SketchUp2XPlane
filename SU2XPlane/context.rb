@@ -1,3 +1,14 @@
+#
+# X-Plane context menu
+#
+# Copyright (c) 2006-2013 Jonathan Harris
+#
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
+#
+
 # SketchUp's Menu API doesn't allow for tri-state menu items, so we fake it up in two parts:
 # - XPlaneValidateAttr is a conventional Menu validator, but just returns MF_GRAYED or not depending on whether the selection is valid (i.e. contains faces)
 # - XPlaneTestAttr returns the submenu name with a check mark or dash manually pre-pended

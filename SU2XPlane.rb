@@ -1,14 +1,15 @@
 #
 # X-Plane importer/exporter for SketchUp
 #
-# Copyright (c) 2006-2012 Jonathan Harris
+# Copyright (c) 2006-2013 Jonathan Harris
 # 
 # Mail: <x-plane@marginal.org.uk>
 # Web:  http://marginal.org.uk/x-planescenery/
 #
-# This software is licensed under a Creative Commons
-#   Attribution-Noncommercial-ShareAlike license:
-#   http://creativecommons.org/licenses/by-nc-sa/3.0/
+# This program is free software; you can redistribute it and/or
+# modify it under the terms of the GNU General Public License
+# as published by the Free Software Foundation; either version 2
+# of the License, or (at your option) any later version.
 #
 
 require 'sketchup.rb'
@@ -60,7 +61,7 @@ extension=SketchupExtension.new 'SketchUp2XPlane', 'SU2XPlane.rb'
 extension.description='Provides ability to import and export models in X-Plane v8/v9/v10 .obj format. See Help->X-Plane for instructions.'
 extension.version=SU2XPlane::Version
 extension.creator='Jonathan Harris'
-extension.copyright='2007-2012'
+extension.copyright='2006-2013'
 Sketchup.register_extension extension, true
 
 require_all Sketchup.find_support_file('SU2XPlane', 'Plugins')
