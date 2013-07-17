@@ -5,20 +5,19 @@
 <head>
 
   <meta http-equiv="content-type" content="text/html; charset=ISO-8859-1">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta http-equiv="MSThemeCompatible" content="Yes">
 
   <!-- <script type="text/javascript" src="http://getfirebug.com/firebug-lite.js#startOpened"></script> -->
   <script type="text/javascript" src="anim.js"></script>
   <script type="text/javascript" src="fd-slider.js"></script>	<!-- from http://www.frequency-decoder.com/2010/11/18/unobtrusive-slider-control-html5-input-range-polyfill -->
   <script>
-    debugger;
     var oldonload = window.onload;
     window.onload=function() {
     if (typeof oldonload == 'function') { oldonload(); };
     window.location="skp:on_load";	<!-- kick-off remaining initialization -->
     }
   </script>
-
-  <meta http-equiv="MSThemeCompatible" content="Yes">
   
   <link href="fd-slider.css" rel="stylesheet" />
   <style>
@@ -38,6 +37,7 @@
     .fd-slider-handle { cursor: default; }
     .fd-slider-range, .oldie .fd-slider-range {
       background-color: #ddd;
+      background-image: -ms-linear-gradient(to bottom, #ececec, #ccc);
       background-image: -webkit-gradient(linear, left top, left bottom, from(#ececec), to(#ccc)); 
       background-image: -webkit-linear-gradient(top, #ececec, #ccc); 
       background-image: linear-gradient(to bottom, #ececec, #ccc);
