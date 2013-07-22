@@ -491,13 +491,14 @@ class XPlaneAnimation < Sketchup::EntityObserver
                                        @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
                                        interp) *
       Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
+    puts "preview #{p} #{interp} #{trans.to_a[12,3].inspect}" if SU2XPlane::TraceEvents
     if merge_operation?("#{@component.object_id}/preview")
       # even if we merge this operation with previous it still uses up the Undo stack. So use move! which doesn't affect the Undo stack
       @component.move!(trans)
       @model.active_view.refresh	# move! doesn't cause redraw
     else
       @model.start_operation(XPL10n.t('Preview Animation'), true)
-      @component.transform!(trans)
+      @component.transformation = trans
       @model.commit_operation
     end
     @dlg.execute_script("document.getElementById('preview-value').innerHTML='#{('%.6g' % val).tr('.',DecimalSep)}'")
