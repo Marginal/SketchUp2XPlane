@@ -131,7 +131,7 @@ class XPlaneSelectionObserver < Sketchup::SelectionObserver
     puts "onSelectionBulkChange #{selection.to_a.inspect}" if SU2XPlane::TraceEvents
     selection.each do |e|
       if e.typename=='ComponentInstance'
-        puts "#{e} #{e.name}", "current: "+e.transformation.to_a.inspect if SU2XPlane::TraceEvents
+        puts "#{e} #{e.name}",e.transformation.inspect if SU2XPlane::TraceEvents
         # Save transformations in case the user makes this selection into a Component or Group
         e.XPSavedTransformation=e.transformation if e.XPCountFrames>0
         # Save transformations of children in case the user explodes this Component
@@ -157,13 +157,13 @@ class XPlaneDefinitionsObserver < Sketchup::DefinitionsObserver
   end
 
   def onComponentAdded(definitions, definition)
-    puts "onComponentAdded #{definitions} #{definition}", "active:  #{@model.active_entities.to_a.inspect}", "trans:   #{@model.edit_transform.to_a.inspect}" if SU2XPlane::TraceEvents
+    puts "onComponentAdded #{definitions} #{definition}", "active:  #{@model.active_entities.to_a.inspect}", @model.edit_transform.inspect if SU2XPlane::TraceEvents
     # adjust immediate children for axes shift
     # @model.start_operation('Make Component/Group', true, false, true)	# Don't need to do this - we're still in the middle of the operation
     definition.entities.each do |c|
       # WTF? sometimes Sketchup refuses to make the requested new Component - in which case the sub-Components are new and don't have a saved Transformation
       if c.typename=='ComponentInstance' && c.XPSavedTransformation
-        puts "#{c} #{c.name}", "current: "+c.transformation.to_a.inspect, "saved:   "+c.XPSavedTransformation.to_a.inspect if SU2XPlane::TraceEvents
+        puts "#{c} #{c.name}", "current:", c.transformation.inspect, "saved:", c.XPSavedTransformation.inspect if SU2XPlane::TraceEvents
         shift=@model.edit_transform * c.transformation * c.XPSavedTransformation.inverse
         (0...c.XPCountFrames).each do |frame|
           puts "#{frame}: " + c.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s).inspect if SU2XPlane::TraceEvents
@@ -217,11 +217,11 @@ class XPlaneModelObserver < Sketchup::ModelObserver
   end
 
   def onExplode(model)
-    puts "onExplode #{model} #{model.selection.to_a}", "trans:   #{model.edit_transform.to_a.inspect}" if SU2XPlane::TraceEvents
+    puts "onExplode #{model} #{model.selection.to_a}", model.edit_transform.inspect if SU2XPlane::TraceEvents
     model.selection.each do |c|
       if c.typename=='ComponentInstance' && c.XPSavedTransformation
         model.start_operation('Explode', true, false, true)
-        puts "#{c} #{c.name}", "current: "+c.transformation.to_a.inspect, "saved:   "+c.XPSavedTransformation.to_a.inspect if SU2XPlane::TraceEvents
+        puts "#{c} #{c.name}", "current:", c.transformation.inspect, "saved:", c.XPSavedTransformation.inspect if SU2XPlane::TraceEvents
         shift=model.edit_transform.inverse * c.transformation * c.XPSavedTransformation.inverse
         (0...c.XPCountFrames).each do |frame|
           puts "#{frame}: " + c.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s).inspect if SU2XPlane::TraceEvents
@@ -251,7 +251,7 @@ class XPlaneAnimEntitiesObserver < Sketchup::EntitiesObserver
     puts "onElementAdded #{entities} #{e}" if SU2XPlane::TraceEvents
     if e.typename=='ComponentInstance'
       # XPSavedTransformation holds the *new* location since we've already been selected before we're notified here!
-      puts "#{e} #{e.name}", "current: "+e.transformation.to_a.inspect if SU2XPlane::TraceEvents
+      puts "#{e} #{e.name}", e.transformation.inspect if SU2XPlane::TraceEvents
       @model.start_operation('Shift', true, false, true)
       # So just do the fixup relative to frame 0 on the basis that this is probably better than nothing
       if e.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')

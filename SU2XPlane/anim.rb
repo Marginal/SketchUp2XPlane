@@ -336,7 +336,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def set_transform(p)
-    puts "set_transform #{@component} #{p} #{@component.transformation.to_a}" if SU2XPlane::TraceEvents
+    puts "set_transform #{@component} #{p}", #{@component.transformation.inspect} if SU2XPlane::TraceEvents
     @model.start_operation(XPL10n.t('Set Position'), true, false, merge_operation?("#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p))	# merge into last if setting same transformation again
     # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
     trans=(@model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
@@ -491,7 +491,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
                                        @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
                                        interp) *
       Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
-    puts "preview #{p} #{interp} #{trans.to_a[12,3].inspect}" if SU2XPlane::TraceEvents
+    puts "preview #{p} #{interp}", trans.inspect if SU2XPlane::TraceEvents
     if merge_operation?("#{@component.object_id}/preview")
       # even if we merge this operation with previous it still uses up the Undo stack. So use move! which doesn't affect the Undo stack
       @component.move!(trans)
@@ -639,6 +639,12 @@ class Geom::Transformation
       fail if t[3]!=0 or t[7]!=0 or t[11]!=0	# Assume transformation has no projection, so only need to calculate top left 3x3 portion
       t[0]*t[5]*t[10] - t[0]*t[6]*t[9] - t[1]*t[4]*t[10] + t[1]*t[6]*t[8] + t[2]*t[4]*t[9] - t[2]*t[5]*t[8]
     end
+  end
+
+  def inspect
+    # pretty print, converting translation to m
+    t=self.to_a
+    return "[%10.6f %10.6f %10.6f %5.1f\n %10.6f %10.6f %10.6f %5.1f\n %10.6f %10.6f %10.6f %5.1f\n %10.6f %10.6f %10.6f %5.1f ]" % (t[0,12] + t[12,3].map { |d| d.to_m } + [t[15]])
   end
 
 end
