@@ -17,10 +17,10 @@ require 'extensions.rb'
 
 # Constants
 module SU2XPlane
-  Version="1.56"
+  Version="1.57"
 
   # Debug
-  TraceEvents=false
+  TraceEvents=true
 
   # X-Plane attributes
   ATTR_DICT="X-Plane"
