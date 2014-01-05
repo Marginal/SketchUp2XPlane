@@ -182,7 +182,7 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
         end
       rescue ArgumentError
         # This component is not an animation
-        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, notex) if ent.definition.name!="Susan"	# Silently skip Susan
+        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, notex) unless ['Susan','Derrick'].include? ent.definition.name	# Silently skip figures
       end
 
     when "Group"

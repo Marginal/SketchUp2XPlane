@@ -20,7 +20,7 @@ module SU2XPlane
   Version="1.57"
 
   # Debug
-  TraceEvents=true
+  TraceEvents=false
 
   # X-Plane attributes
   ATTR_DICT="X-Plane"
@@ -65,6 +65,8 @@ extension.copyright='2006-2013'
 Sketchup.register_extension extension, true
 
 require_all Sketchup.find_support_file('SU2XPlane', 'Plugins')
+
+# Add UI
 if !file_loaded?("SU2XPlane.rb")
   begin
     Sketchup.register_importer(XPlaneImporter.new)
@@ -104,12 +106,9 @@ if !file_loaded?("SU2XPlane.rb")
     UI.menu("File").add_item('SU2XPlane plugin folder is missing!') {}
   end
 
-  help=Dir.glob(File.join(Sketchup.find_support_file("Plugins"), '*-SU2XPlane_'+Sketchup.get_locale.upcase.split('-')[0]+'.html'))
-  if help.empty?
-    help=Dir.glob(File.join(Sketchup.find_support_file("Plugins"), '*-SU2XPlane.html'))
-  end
-  if help.first
-    UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help.first) }
+  help = XPL10n.resource_file('SU2XPlane.html')
+  if help
+    UI.menu("Help").add_item("X-Plane") { UI.openURL("file://" + help) }
   else
     UI.menu("Help").add_item("X-Plane") { UI.messagebox('X-Plane help files are missing!') }
   end

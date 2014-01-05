@@ -186,15 +186,15 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @model=model
     if @component.typename!='ComponentInstance' then fail end
     if Object::RUBY_PLATFORM =~ /darwin/i
-      @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 396, 398)
+      @dlg = UI::WebDialog.new(XPL10n.t('X-Plane Animation'), true, nil, 396, 398)
       @dlg.min_width = 396
     else
-      @dlg = UI::WebDialog.new("X-Plane Animation", true, nil, 450, 528)
+      @dlg = UI::WebDialog.new(XPL10n.t('X-Plane Animation'), true, nil, 450, 528)
       @dlg.min_width = 450
     end
     @@instances[@component]=self
     @dlg.allow_actions_from_host("getfirebug.com")	# for debugging on Windows
-    @dlg.set_file(Sketchup.find_support_file('SU2XPlane', 'Plugins') + "/anim.html")
+    @dlg.set_file(Sketchup.find_support_file('anim.html', 'Plugins/SU2XPlane/Resources'))
     @dlg.add_action_callback("on_load") { |d,p| update_dialog }
     @dlg.add_action_callback("on_close") {|d,p| close }
     @dlg.add_action_callback("on_erase") { |d,p| erase }

@@ -16,7 +16,7 @@ install:	$(TARGETS)
 	rm -rf $(INSTALLDIR)/$(PROJECT)
 	unzip -o -d $(INSTALLDIR) SketchUp2XPlane_$(VER).zip
 
-SketchUp2XPlane_$(VER).zip:	*-$(PROJECT)*.html $(PROJECT).rb $(PROJECT)/*.css $(PROJECT)/*.html $(PROJECT)/*.js $(PROJECT)/*.rb $(PROJECT)/*.txt
+SketchUp2XPlane_$(VER).zip:	$(PROJECT).rb $(PROJECT)/*.rb $(PROJECT)/Resources/*.html $(PROJECT)/Resources/*.js $(PROJECT)/Resources/*.css $(PROJECT)/Resources/??/*.html $(PROJECT)/Resources/??/*.strings
 	rm -f $@
 	zip -MM $@ $+
 
