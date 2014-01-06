@@ -1,59 +1,60 @@
-# French localisation
-#  #  starts a comment
-#  %s is a value to be filled in by the program
-#  \n is a line break
+/* French localisation */
 
-# Menu & dialog labels
-Component=Composant
-DataRef value=Valeur du DataRef
-Erase=Effacer
-Export X-Plane Object=Exporter X-Plane objet
-Hide=Masquer
-Highlight Untextured=Mettez en surbrillance non texturés
-Keyframe=Image-clé
-Loop=Boucle
-Position=Position
-Preview=Aperçu
-Recall=Rapeller
-Set=Définir
-Show=Afficher
-to=à
-Untitled=Sans titre
-when=quand
-X-Plane Object=X-Plane objet
+/* this is a comment line */
+/* %s is a value to be filled in by the program */
+/* \n is a line break */
 
-# Undo entries - will be prefixed by "Annuler" or "Rétablir"
-Animate=Animer
-Animation value=Valeur d'Animation
-Erase Animation=Effacer Animation
-Erase Hide / Show=Effacer Masquer / Afficher
-Erase Keyframe=Effacer Image-clé
-Hide / Show=Masquer / Afficher
-Import=Importation
-Preview Animation=Aperçu d'Animation
-Set Position=Définir la Position
+/* Menu & dialog labels */
+"Component" = "Composant";
+"DataRef value" = "Valeur du DataRef";
+"Erase" = "Effacer";
+"Export X-Plane Object" = "Exporter X-Plane objet";
+"Hide" = "Masquer"
+"Highlight Untextured" = "Mettez en surbrillance non texturés";
+"Keyframe" = "Image-clé";
+"Loop" = "Boucle";
+"Position" = "Position";
+"Preview" = "Aperçu";
+"Recall" = "Rapeller";
+"Set" = "Définir";
+"Show" = "Afficher";
+"to" = "à";
+"Untitled" = "Sans titre";
+"when" = "quand";
+"X-Plane Object" = "X-Plane objet";
 
-# Error messages
-All faces are textured=All faces are textured
-Can't import %s=Can't import %s
-Can't read %s=Can't read %s
-Can't read X-Plane version %s files=Can't read X-Plane version %s files
-Can't read texture file %s=Can't read texture file %s
-Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.=Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.
-Ignoring command %s=Ignoring command %s
-Ignoring lower level(s) of detail=Ignoring lower level(s) of detail
-Ignoring old-style lights=Ignoring old-style lights
-Ignoring old-style lines=Ignoring old-style lines
-Ignoring some geometry that couldn't be imported=Ignoring some geometry that couldn't be imported
-Import failed=Import failed
-Internal error=Internal error
-Nothing to export!=Nothing to export!
-Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.=Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.
-Saving your model, then quitting and restarting\nSketchUp might clear the problem=Saving your model, then quitting and restarting\nSketchUp might clear the problem
-This is not a valid X-Plane file=This is not a valid X-Plane file
-Warning: %s faces are untextured=Avertissement: %s faces n'ont pas de texture
-Do you want to highlight the untextured faces?=Voulez-vous mettre les faces non texturées en surbrillance?
-Warning: You used multiple texture files; using file:=Attention: Vous avez utilisé plusieurs fichiers de texture. Fichier utilisé:
-Warning: Texture width is not a power of two=Attention: La largeur du fichier texture n'est pas une puissance de deux
-Warning: Texture height is not a power of two=Attention: La hauteur du fichier texture n'est pas une puissance de deux
-Wrote %s triangles to=Écrit %s triangles dans
+/* Undo entries - will be prefixed by "Annuler" or "Rétablir" */
+"Animate" = "Animer";
+"Animation value" = "Valeur d'Animation";
+"Erase Animation" = "Effacer Animation";
+"Erase Hide / Show" = "Effacer Masquer / Afficher";
+"Erase Keyframe" = "Effacer Image-clé";
+"Hide / Show" = "Masquer / Afficher";
+"Import" = "Importation";
+"Preview Animation" = "Aperçu d'Animation";
+"Set Position" = "Définir la Position";
+
+/* Error messages */
+"All faces are textured" = "All faces are textured";
+"Can't import %s" = "Can't import %s";
+"Can't read %s" = "Can't read %s";
+"Can't read X-Plane version %s files" = "Can't read X-Plane version %s files";
+"Can't read texture file %s" = "Can't read texture file %s";
+"Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing." = "Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.";
+"Ignoring command %s" = "Ignoring command %s";
+"Ignoring lower level(s) of detail" = "Ignoring lower level(s) of detail";
+"Ignoring old-style lights" = "Ignoring old-style lights";
+"Ignoring old-style lines" = "Ignoring old-style lines";
+"Ignoring some geometry that couldn't be imported" = "Ignoring some geometry that couldn't be imported";
+"Import failed" = "Import failed";
+"Internal error" = "Internal error";
+"Nothing to export!" = "Nothing to export!";
+"Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model." = "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.";
+"Saving your model, then quitting and restarting\nSketchUp might clear the problem" = "Saving your model, then quitting and restarting\nSketchUp might clear the problem";
+"This is not a valid X-Plane file" = "This is not a valid X-Plane file";
+"Warning: %s faces are untextured" = "Avertissement: %s faces n'ont pas de texture";
+"Do you want to highlight the untextured faces?" = "Voulez-vous mettre les faces non texturées en surbrillance?";
+"Warning: You used multiple texture files; using file:" = "Attention: Vous avez utilisé plusieurs fichiers de texture. Fichier utilisé:";
+"Warning: Texture width is not a power of two" = "Attention: La largeur du fichier texture n'est pas une puissance de deux";
+"Warning: Texture height is not a power of two" = "Attention: La hauteur du fichier texture n'est pas une puissance de deux";
+"Wrote %s triangles to" = "Écrit %s triangles dans";

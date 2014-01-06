@@ -16,13 +16,15 @@ class XPL10n
     @@table[string] || string
   end
 
+  # load string table. Assumes comments are whole-line, and that text doesn't contain '='.
   @@table={}
   f = self.resource_file('Localizable.strings')
   if f
     File.open(f) do |h|
       h.each do |line|
-        tokens=line.strip.split('=')
-        @@table[tokens[0]]=tokens[1] if tokens.length==2
+        line = line.split('//')[0].split('/*')[0]
+        tokens = line.strip.split(%r{"\s*=\s*"})
+        @@table[tokens[0][1..-1]] = tokens[1].split(%r{"\s*;})[0] if (tokens.length==2 && tokens[0][0...1]=='"' && tokens[1][-1..-1]==';')
       end
     end
   end
