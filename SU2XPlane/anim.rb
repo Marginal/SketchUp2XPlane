@@ -365,10 +365,10 @@ class XPlaneAnimation < Sketchup::EntityObserver
     if newframe==numframes
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+newframe.to_s, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(newframe-1).to_s))
     end
-    # use current transformation for inserted frame
+    # strip out scale
     t=@component.transformation.to_a
-    @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * @component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
-    @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, @component.transformation.to_a)
+    trans=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * @component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, trans.to_a)
     @model.commit_operation
     update_dialog()
   end
