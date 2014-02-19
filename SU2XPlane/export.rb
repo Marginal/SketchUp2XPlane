@@ -395,7 +395,16 @@ def XPlaneExport()
   outfile=File.new(outpath, "w")
   outfile.write("I\n800\nOBJ\n\n")
   if tex
-    outfile.write("TEXTURE\t\t#{texfile}\nTEXTURE_LIT\t#{texfile[0..-5]}_LIT#{texfile[-4..-1]}\n")
+    outfile.write("TEXTURE\t\t#{texfile}\n")
+    if File.exists? "#{tex.filename[0..-5]}_LIT#{texfile[-4..-1]}"
+      outfile.write("TEXTURE_LIT\t#{texfile[0..-5]}_LIT#{texfile[-4..-1]}\n")
+    end
+    prims.each do |prim|
+      if prim.attrs&XPPrim::NDRAPED==0
+        outfile.write("TEXTURE_DRAPED\t#{texfile}\n")
+        break
+      end
+    end
   else
     outfile.write("TEXTURE\t\n")	# X-Plane requires a TEXTURE statement
   end
