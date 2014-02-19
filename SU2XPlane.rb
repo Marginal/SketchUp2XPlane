@@ -17,7 +17,7 @@ require 'extensions.rb'
 
 # Constants
 module SU2XPlane
-  Version="1.58"
+  Version="1.59"
 
   # Debug
   TraceEvents=false
