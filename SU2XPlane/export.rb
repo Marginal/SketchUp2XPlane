@@ -344,7 +344,7 @@ def XPlaneExport()
     XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {}, notex)	# coords always returned in inches!
   rescue => e
     puts "Error: #{e.inspect}", e.backtrace	# Report to console
-    UI.messagebox XPL10n.t('Internal error!') + "\n\n" + XPL10n.t('Saving your model, then quitting and restarting\nSketchUp might clear the problem.'), MB_OK, 'X-Plane export'
+    UI.messagebox XPL10n.t('Internal error!') + "\n\n" + XPL10n.t("Saving your model, then quitting and restarting\nSketchUp might clear the problem."), MB_OK, 'X-Plane export'
     return
   end
   if prims.empty?

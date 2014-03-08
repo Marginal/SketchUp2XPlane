@@ -13,7 +13,7 @@ def XPlaneHighlight()
 
   model=Sketchup.active_model
   materials=model.materials
-  model.start_operation("Highlight Untextured", true)
+  model.start_operation(XPL10n.t('Highlight Untextured'), true)
   begin
     untextured=materials["XPUntextured"]
     if (not untextured) or (untextured.texture and untextured.texture.filename)

@@ -24,7 +24,7 @@ class XPL10n
       h.each do |line|
         line = line.split('//')[0].split('/*')[0]
         tokens = line.strip.split(%r{"\s*=\s*"})
-        @@table[tokens[0][1..-1]] = tokens[1].split(%r{"\s*;})[0] if (tokens.length==2 && tokens[0][0...1]=='"' && tokens[1][-1..-1]==';')
+        @@table[tokens[0][1..-1].gsub('\n',"\n")] = tokens[1].split(%r{"\s*;})[0].gsub('\n',"\n") if (tokens.length==2 && tokens[0][0...1]=='"' && tokens[1][-1..-1]==';')
       end
     end
   end
