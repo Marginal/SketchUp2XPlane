@@ -143,7 +143,7 @@ end
 
 
 # Accumulate vertices and indices into vt and idx
-def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
+def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache)
 
   base=vt.length
   prim=nil	# keep adding to the same XPPrim until attributes change
@@ -178,15 +178,15 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
             prims << prim
           end
         else
-          XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, primcache, notex)
+          XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, primcache)
         end
       rescue ArgumentError
         # This component is not an animation
-        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, notex) unless ['Susan','Derrick'].include? ent.definition.name	# Silently skip figures
+        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache) unless ['Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
       end
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, notex)
+      XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache)
 
     when "Text"
       light=ent.text[/\S*/]
@@ -201,11 +201,6 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
       # if neither side has material then output both sides,
       # otherwise outout the side(s) with materials
       nomats = (not ent.material and not ent.back_material)
-
-      if not (ent.material and ent.material.texture and ent.material.texture.filename) and not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
-        notex[0]+=1	# Only count once per surface (but still cylinders=24)
-      end
-      notex[1]+=1
 
       uvHelp = ent.get_UVHelper(true, true, tw)
       attrs=0
@@ -240,16 +235,6 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, notex)
 
         if nomats or (material and material.alpha>0.0)
           if material and material.texture
-            if not File.exists? material.texture.filename
-              # Write embedded texture to filesystem (unless there's already a file of that name in the folder) and update material to use it
-              newfile=File.dirname(Sketchup.active_model.path) + "/" + (material.texture.filename.split(/[\/\\:]+/)[-1])[0...-3] + "png"
-              if (File.exists? newfile) || (tw.load(ent, front)!=0 && tw.write(ent, front, newfile)==0)
-                theight = material.texture.height
-                twidth  = material.texture.width
-                material.texture = newfile
-                material.texture.size = [twidth,theight]	# don't know why this should be required but it is
-              end
-            end
             tex=material.texture
             # Get minimum uv co-oords
             us=[]
@@ -336,12 +321,14 @@ def XPlaneExport()
     return
   end
 
+  # Refresh / write textures and get info
+  stats = XPlaneRefreshMaterials()
+
   vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
   prims=[]	# arrays of XPPrim
-  notex=[0,0]	# num not textured, num surfaces
   lights=[]	# array of [freetext, vx, vy, vz]
   begin
-    XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {}, notex)	# coords always returned in inches!
+    XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {})	# coords always returned in inches!
   rescue => e
     puts "Error: #{e.inspect}", e.backtrace	# Report to console
     UI.messagebox XPL10n.t('Internal error!') + "\n\n" + XPL10n.t("Saving your model, then quitting and restarting\nSketchUp might clear the problem."), MB_OK, 'X-Plane export'
@@ -365,33 +352,8 @@ def XPlaneExport()
     end
   end
 
-  # find most popular texture
-  tex=nil
-  texcount={}
-  vt.each do |v|
-    if v[0]
-      tex=v[0]
-      if texcount.has_key?(tex)
-        texcount[tex]+=1
-      else
-        texcount[tex]=1
-      end
-    end
-  end
-  multitex=(texcount.length>1)
-  if multitex
-    tex=texcount.index(texcount.values().sort()[-1])	# most popular
-  end
-  texfile=tex.filename.split(/[\/\\:]+/)[-1] if tex	# basename
-
-  if notex[0]==0
-    notex=false
-  elsif notex[0]==notex[1]
-    notex="All"
-  else
-    notex=notex[0]
-  end
-
+  tex = stats.material && stats.material.texture
+  texfile = stats.material && tex.filename.split(/[\/\\:]+/)[-1]	# basename
   outfile=File.new(outpath, "w")
   outfile.write("I\n800\nOBJ\n\n")
   if tex
@@ -571,12 +533,12 @@ def XPlaneExport()
   outfile.close
 
   msg=XPL10n.t("Wrote %s triangles to") % (allidx.length/3) + "\n" + outpath + "\n"
-  msg+="\n" + XPL10n.t('Warning: %s faces are untextured') % notex + '.' if notex
-  msg+="\n" + XPL10n.t('Warning: You used multiple texture files; using file:') + "\n" + tex.filename if multitex
-  msg+="\n" + XPL10n.t('Warning: Texture width is not a power of two') + '.' if tex and (tex.image_width & tex.image_width-1)!=0
-  msg+="\n" + XPL10n.t('Warning: Texture height is not a power of two') + '.' if tex and (tex.image_height & tex.image_height-1)!=0
-  if notex and not multitex and not model.materials["XPUntextured"]
-    yesno=UI.messagebox msg+"\n" + XPL10n.t('Do you want to highlight the untextured faces?'), MB_YESNO,"X-Plane export"
+  msg+="\n" + XPL10n.t('Warning: You used multiple texture files; using file:') + "\n" + tex.filename + "\n" + XPL10n.t('from material') + ' "' + stats.material.display_name + "\".\n" if  stats.n_textures>1
+  msg+="\n" + XPL10n.t('Warning: Texture width is not a power of two') + ".\n" if tex and (tex.image_width & tex.image_width-1)!=0
+  msg+="\n" + XPL10n.t('Warning: Texture height is not a power of two') + ".\n" if tex and (tex.image_height & tex.image_height-1)!=0
+  msg+="\n" + (stats.material and (XPL10n.t('Warning: %s faces are untextured') % stats.material) or XPL10n.t('Warning: All faces are untextured')) + ".\n" if stats.n_untextured>0
+  if stats.n_untextured>0 && stats.n_textures<=1 && !model.materials["XPUntextured"]
+    yesno=UI.messagebox msg + XPL10n.t('Do you want to highlight the untextured faces?'), MB_YESNO,"X-Plane export"
     XPlaneHighlight() if yesno==6
   else
     UI.messagebox msg, MB_OK,"X-Plane export"

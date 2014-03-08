@@ -72,6 +72,7 @@ if !file_loaded?("SU2XPlane.rb")
     Sketchup.register_importer(XPlaneImporter.new)
     UI.menu("File").add_item(XPL10n.t('Export X-Plane Object')) { XPlaneExport() }
     UI.menu("Tools").add_item(XPL10n.t('Highlight Untextured')) { XPlaneHighlight() }
+    UI.menu("Tools").add_item(XPL10n.t('Reload Textures')) { XPlaneRefreshMaterials() }
 
     UI.add_context_menu_handler do |menu|
       if !Sketchup.active_model.selection.empty?

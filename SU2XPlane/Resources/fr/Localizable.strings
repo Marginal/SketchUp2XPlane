@@ -16,6 +16,7 @@
 "Position" = "Position";
 "Preview" = "Aperçu";
 "Recall" = "Rapeller";
+"Reload Textures" = "Recharger les textures";
 "Set" = "Définir";
 "Show" = "Afficher";
 "to" = "à";
@@ -41,6 +42,7 @@
 "Can't read X-Plane version %s files" = "Can't read X-Plane version %s files";
 "Can't read texture file %s" = "Can't read texture file %s";
 "Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing." = "Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.";
+"from material" = "à partir de matière";
 "Ignoring command %s" = "Ignoring command %s";
 "Ignoring lower level(s) of detail" = "Ignoring lower level(s) of detail";
 "Ignoring old-style lights" = "Ignoring old-style lights";
@@ -52,6 +54,7 @@
 "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model." = "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.";
 "Saving your model, then quitting and restarting\nSketchUp might clear the problem" = "Saving your model, then quitting and restarting\nSketchUp might clear the problem";
 "This is not a valid X-Plane file" = "This is not a valid X-Plane file";
+"Warning: All faces are untextured" = "Avertissement: Tous les faces n'ont pas de texture";
 "Warning: %s faces are untextured" = "Avertissement: %s faces n'ont pas de texture";
 "Do you want to highlight the untextured faces?" = "Voulez-vous mettre les faces non texturées en surbrillance?";
 "Warning: You used multiple texture files; using file:" = "Attention: Vous avez utilisé plusieurs fichiers de texture. Fichier utilisé:";
