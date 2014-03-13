@@ -22,33 +22,44 @@
   <link href="fd-slider.css" rel="stylesheet" />
   <style>
     * { margin: 0px; }
-    body { font-family: sans-serif; }
-    input[type=text] { border: 1px inset; }	/* workaround for Safari bug */
+    html, body { font-family: sans-serif; height: 100%; background-color: white; }
+    input[type="text"] { border: 1px inset; }	/* workaround for Safari bug */
     table { font-size: small; text-align: center; }
     th { font-weight: normal; font-size: smaller; }
+    .wrapper { height: 100%; min-height: 100%; height: auto !important; margin: 0 auto -2em; }
     .addremovebutton { width: 32px; font-weight: bold; }
-    .header { padding: 8px; background: #e2ded7; }
+    .header { padding: 8px; background: #e2ded7; background-image: -webkit-gradient(linear, left top, left bottom, from(#e7e4dc), to(#e2ded7)); background-image: linear-gradient(to bottom, #e7e4dc 0%, #e2ded7 100%); filter: progid:dximagetransform.microsoft.gradient(gradienttype=0,startcolorstr='#ffe7e4dc',endcolorstr='#ffe2ded7'); }
     .description { padding: 8px; font-size: x-small; }
     .data { padding: 8px; }
     .panel { border: 1px inset; padding: 4px; background: #e2ded7; }
     .preview { padding: 12px; font-size: small; }
-    .footer { background: #e2ded7; text-align: center;
-    }
+    .push { height: 2em; }
+    .footer { background: #e2ded7; text-align: center; height: 2em; }
+
+    /* Slider styling for IE<=9 */
     .fd-slider-handle { cursor: default; }
     .fd-slider-range, .oldie .fd-slider-range {
       background-color: #ddd;
-      background-image: -ms-linear-gradient(to bottom, #ececec, #ccc);
       background-image: -webkit-gradient(linear, left top, left bottom, from(#ececec), to(#ccc)); 
-      background-image: -webkit-linear-gradient(top, #ececec, #ccc); 
-      background-image: linear-gradient(to bottom, #ececec, #ccc);
       filter: progid:DXImageTransform.Microsoft.gradient(GradientType=1,startColorstr='#ffececec',endColorstr='#ffcccccc');
     }
     body.fd-slider-drag-horizontal, body.fd-slider-drag-horizontal * { cursor: default; }
+
+    /* Slider styling for IE>=10 - http://dev.bowdenweb.com/html/e/form/ie10-form-controls/scenario7_1.html */
+    input[type="range"]::-ms-track { width: auto; height: 16px; border-style: none; color: transparent; }
+    input[type="range"]::-ms-ticks-after{ display: block; color: ThreeDShadow; }
+    input[type="range"]::-ms-fill-lower, input[type="range"]::-ms-fill-upper { background-image: -ms-linear-gradient(top, #e2ded7 0%, #e2ded7 37%, ThreeDShadow 37%, #e2ded7 45%, #e2ded7 55%, ThreeDHighlight 63%, #e2ded7 63%, #e2ded7 100%); }
+    input[type="range"]::-ms-tooltip { display: none; }
+    input[type="range"]::-ms-thumb { width: 7px; height: 14px; border-color: #707070; border-style: solid;  border-radius: 2px; background-image: -ms-linear-gradient(top, #FFFFFF 0%, #E4E4E4 45%, #DFDFDF 55%, #CFCFCF 100%); }
+    input[type="range"]:hover:enabled::-ms-thumb { border-color: #3c7fb1; border-radius: 2px; background-image: -ms-linear-gradient(top, #e7f7ff 0%, #d8effc 45%, #bde6fd 55%, #98dcf7 100%); }
+    input[type="range"]:active:enabled::-ms-thumb { border-color: #2c628b; border-radius: 1px; background-image: -ms-linear-gradient(top, #e4f3fc 0%, #c7e6f7 45%, #98d1ef 55%, #6bb5dc 100%); }
+    input[type="range"]:disabled::-ms-thumb { border-color: ButtonShadow; border-radius: 1px; background-color: ButtonFace }
   </style>
-<!--[if lte IE 8]>
+<!--[if lte IE 7]>
   <style>
     hr { margin: -7px; }
-    .footer { margin: -12px 0 0; }
+    .wrapper { margin: -13px auto -2em; }
+    .footer { margin: -13px 0 0; }
   </style>
 <![endif]-->
 
@@ -56,6 +67,9 @@
 
 <body>
   
+  <div class="wrapper">
+  <hr>
+
   <a name="top"></a>
 
   <div class="header">
@@ -95,10 +109,11 @@
       </table>
       <hr>
       <table>
+        <tr></tr>
         <tr>
           <td id="preview">Preview</td><td></td>
           <td style="width: 200px;">
-            <input id="preview-slider" type="range" min="0" max="200" step="1" value="0" onchange="previewCallback(this)" style="width: 200px; padding: 0px;">
+            <input id="preview-slider" type="range" min="0" max="200" step="1" value="0" onchange="previewCallback(this)" style="width: 201px; padding: 0px;">
           </td><td></td>
           <td id="preview-value"></td>
         </tr>
@@ -122,9 +137,12 @@
     </form>
   </div>
 
-  <hr>
+  <div class="push"></div>
+
+  </div>
 
   <div class="footer">
+    <hr>
     <table style="width: 100%;">
       <tr>
         <td style="height: 22px;"><input type="button" id="erase" value="Erase" onclick="window.location='skp:on_erase'"></td>

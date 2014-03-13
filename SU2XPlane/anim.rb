@@ -186,10 +186,10 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @model=model
     if @component.typename!='ComponentInstance' then fail end
     if Object::RUBY_PLATFORM =~ /darwin/i
-      @dlg = UI::WebDialog.new(XPL10n.t('X-Plane Animation'), true, nil, 396, 398)
+      @dlg = UI::WebDialog.new(XPL10n.t('X-Plane Animation'), true, nil, 396, 402)
       @dlg.min_width = 396
     else
-      @dlg = UI::WebDialog.new(XPL10n.t('X-Plane Animation'), true, nil, 450, 528)
+      @dlg = UI::WebDialog.new(XPL10n.t('X-Plane Animation'), true, nil, 450, 532)
       @dlg.min_width = 450
     end
     @@instances[@component]=self
@@ -449,7 +449,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     while inorder
       val=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s)
       if val==nil then break end
-      if val.to_f < @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(frame-1).to_s).to_f then inorder=false end
+      if val.to_f <= @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(frame-1).to_s).to_f then inorder=false end
       frame+=1
     end
     loop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP)
