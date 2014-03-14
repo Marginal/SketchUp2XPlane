@@ -40,6 +40,8 @@ class XPlaneImporter < Sketchup::Importer
     planarangle=0.00002	# normals at angles less than this considered coplanar
 
     return 2 if not file_path
+    model=Sketchup.active_model
+
     begin
       file=File.new(file_path, 'r')
       line=file.readline.split(/\/\/|#/)[0].strip()
@@ -61,7 +63,6 @@ class XPlaneImporter < Sketchup::Importer
         raise XPlaneImporterError, XPL10n.t('This is not a valid X-Plane file')
       end
 
-      model=Sketchup.active_model
       model.start_operation("#{XPL10n.t('Import')} #{File.basename(file_path)}", true)
       begin
         entities=model.active_entities	# Open component, else top level
@@ -76,8 +77,10 @@ class XPlaneImporter < Sketchup::Importer
         tw = Sketchup.create_texture_writer
         cull=true
         hard=false
+        deck=false
         poly=false
         alpha=false
+        shiny=false
         vt=[]
         nm=[]
         uv=[]
@@ -87,7 +90,8 @@ class XPlaneImporter < Sketchup::Importer
         anim_context=[]			# Stack of animation ComponentInstances
         anim_off=[Geom::Vector3d.new]	# stack of compensating offsets for children of animations
         anim_axes=Geom::Vector3d.new
-        anim_frame=0
+        anim_t=[]			# Stack of translations {value => Point3d}
+        anim_r=[]			# Stack of rotations    {value => [Vector3d, angle]}
 
         while true
           line=file.gets(linesep)
@@ -168,7 +172,9 @@ class XPlaneImporter < Sketchup::Importer
               end
               face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME,1) if alpha
               face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 1) if hard
+              face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_DECK_NAME, 1) if deck
               face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 1) if poly
+              face.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_SHINY_NAME,1) if shiny
 
               # smooth & soften edges
               if thisnm[0]!=thisnm[1] || thisnm[0]!=thisnm[2] || thisnm[1]!=thisnm[2]
@@ -233,14 +239,27 @@ class XPlaneImporter < Sketchup::Importer
               msg[XPL10n.t('Ignoring lower level(s) of detail')]=true
               break
             end
+
+          when 'ATTR_reset'
+            cull=true
+            hard=false
+            deck=false
+            poly=false
+            alpha=false
+            shiny=false
           when 'ATTR_cull'
             cull=true
           when 'ATTR_nocull', 'ATTR_no_cull'
             cull=false
           when 'ATTR_hard'
             hard=true
+            deck=false
+          when 'ATTR_hard_deck'
+            hard=false
+            deck=true
           when 'ATTR_no_hard'
             hard=false
+            deck=false
           when 'ATTR_poly_os'
             poly=c[0].to_f > 0.0
           when 'ATTR_draped'
@@ -251,20 +270,40 @@ class XPlaneImporter < Sketchup::Importer
             alpha=true
           when '####_no_alpha'
             alpha=false
+          when 'ATTR_shiny_rat'
+            shiny = c[0].to_f > 0.0
 
           when 'ANIM_begin'
             anim_context.push(entities.add_group.to_component)
             anim_context.last.definition.name=XPL10n.t('Component')+'#1'	# Otherwise has name Group#n. SketchUp will uniquify.
             anim_context.last.XPLoop=''				# may not be set below
             anim_off.push(anim_off.last.clone)			# inherit parent offset
+            anim_t.push({})
+            anim_r.push({})
             entities=anim_context.last.definition.entities	# To hold child geometry
           when 'ANIM_end'
+            # Values may be specified out of sequence (eg by 3dsMax plugin) so sort and apply
+            # Assumes that if both translation and rotation animations exist, that number of frames and values match
+            frame = 0
+            t = anim_t.pop
+            t.keys.sort.each do |v|
+              anim_context.last.XPSetValue(frame, v)
+              anim_context.last.XPTranslateFrame(frame, t[v])
+              frame+=1
+            end
+            frame = 0
+            r = anim_r.pop
+            r.keys.sort.each do |v|
+              anim_context.last.XPSetValue(frame, v)
+              anim_context.last.XPRotateFrame(frame, r[v][0], r[v][1])
+              frame+=1
+            end
             anim_context.last.transformation = Geom::Transformation.new(anim_context.last.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')) if anim_context.last.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')	# set current position to first keyframe position
             anim_context.pop
             anim_off.pop
             entities=(anim_context.empty? ? model.active_entities : anim_context.last.definition.entities)
           when 'ANIM_trans'
-            if [c[0], c[1], c[2]]==[c[3], c[4], c[5]]
+            if [c[0].to_f, c[1].to_f, c[2].to_f] == [c[3].to_f, c[4].to_f, c[5].to_f]
               # special form for just shifting rotation origin
               if anim_context.last.transformation.origin==[0,0,0]
                 anim_context.last.transformation=Geom::Transformation.translation(Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m).offset(anim_off.last))
@@ -276,43 +315,38 @@ class XPlaneImporter < Sketchup::Importer
               end
             else
               # v8-style translation
-              anim_context.last.XPTranslateFrame(0, Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m).offset(anim_off.last))
-              anim_context.last.XPTranslateFrame(1, Geom::Point3d.new(c[3].to_f.m, -c[5].to_f.m, c[4].to_f.m).offset(anim_off.last))
-              anim_context.last.XPSetValue(0, c[6].to_f)
-              anim_context.last.XPSetValue(1, c[7].to_f)
               anim_context.last.XPDataRef=c[8]
+              anim_t.last[c[6].to_f] = Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m).offset(anim_off.last)
+              anim_t.last[c[7].to_f] = Geom::Point3d.new(c[3].to_f.m, -c[5].to_f.m, c[4].to_f.m).offset(anim_off.last)
               anim_off[-1]=Geom::Vector3d.new	# We've applied this offset
             end
           when 'ANIM_trans_begin'
             anim_context.last.XPDataRef=c[0]
-            anim_frame=0
           when 'ANIM_trans_key'
-            anim_context.last.XPSetValue(anim_frame, c.shift.to_f)
-            anim_context.last.XPTranslateFrame(anim_frame, Geom::Point3d.new(c[0].to_f.m, -c[2].to_f.m, c[1].to_f.m).offset(anim_off.last))
-            anim_frame+=1
+            anim_t.last[c[0].to_f] = Geom::Point3d.new(c[1].to_f.m, -c[3].to_f.m, c[2].to_f.m).offset(anim_off.last)
           when 'ANIM_trans_end'
             anim_off[-1]=Geom::Vector3d.new	# We've applied this offset
           when 'ANIM_rotate'
-            anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
-            anim_context.last.XPRotateFrame(0, anim_axes, c[3].to_f.degrees)
-            anim_context.last.XPRotateFrame(1, anim_axes, c[4].to_f.degrees)
-            anim_context.last.XPSetValue(0, c[5].to_f)
-            anim_context.last.XPSetValue(1, c[6].to_f)
-            anim_context.last.XPDataRef=c[7]
+            if c[3].to_f==c[4].to_f || c[5].to_f==c[6].to_f
+              # 3dsMax exporter does this to rotate component
+              anim_context.last.transformation = Geom::Transformation.rotation(anim_context.last.transformation.origin, Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f), c[3].to_f.degrees) * anim_context.last.transformation
+            else
+              anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
+              anim_r.last[c[5].to_f] = [anim_axes, c[3].to_f.degrees]
+              anim_r.last[c[6].to_f] = [anim_axes, c[4].to_f.degrees]
+              anim_context.last.XPDataRef=c[7]
+            end
           when 'ANIM_rotate_begin'
             anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
             anim_context.last.XPDataRef=c[3]
-            anim_frame=0
           when 'ANIM_rotate_key'
-            anim_context.last.XPSetValue(anim_frame, c[0].to_f)
-            anim_context.last.XPRotateFrame(anim_frame, anim_axes, c[1].to_f.degrees)
-            anim_frame+=1
+            anim_r.last[c[0].to_f] = [anim_axes, c[1].to_f.degrees]
           when 'ANIM_keyframe_loop'
             anim_context.last.XPLoop=c[0].to_f
           when 'ANIM_hide', 'ANIM_show'
             anim_context.last.XPAddHideShow(cmd[5..-1], c[2], c[0].to_f, c[1].to_f)
 
-          when 'POINT_COUNTS', 'TEXTURE_LIT', 'ATTR_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ANIM_trans_end', 'ANIM_rotate_end'
+          when 'POINT_COUNTS', 'TEXTURE_LIT', 'TEXTURE_NORMAL', 'TEXTURE_NORMAL_LIT', 'ATTR_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ANIM_trans_end', 'ANIM_rotate_end'
             # suppress error message
           when 'VLINE', 'LINES'
             msg[XPL10n.t('Ignoring old-style lines')]=true

@@ -758,6 +758,7 @@ class Sketchup::ComponentInstance
   end
 
   def XPAddHideShow(hs, dataref, from, to)
+    self.name = dataref.split('/').last if self.name.empty?
     numhs=0
     prefix=''
     while true
