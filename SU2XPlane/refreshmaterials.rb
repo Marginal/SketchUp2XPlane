@@ -12,19 +12,15 @@
 def XPlaneRefreshMaterials()
 
   model = Sketchup.active_model
-  mymaterial = nil
 
   begin
     model.start_operation(XPL10n.t('Reload Textures'), true)
 
     usedmaterials = XPlaneMaterialsAccumulate(model.entities, Hash.new(0))
-    n_faces = n_untextured = usedmaterials.delete(nil){|k|0}	# Ruby 1.8 returns nil not default_value if not found
+    usedmaterials.delete(nil)
 
-    if usedmaterials.empty?
-      mymaterial = nil
-    else
+    if !usedmaterials.empty?
       byuse = usedmaterials.invert
-      n_faces += byuse.keys.inject { |sum,n| sum+n }
       mymaterial = byuse[byuse.keys.sort[-1]]	# most popular material
 
       # Refesh the texture in the most popular material first so that this is the one that writes to the filesystem if necessary
@@ -60,13 +56,9 @@ def XPlaneRefreshMaterials()
 
     model.commit_operation
 
-    thing = Struct.new(:material, :n_textures, :n_faces, :n_untextured)
-    return thing.new(mymaterial, usedmaterials.length, n_faces, n_untextured)
-
   rescue => e
     puts "Error: #{e.inspect}", e.backtrace	# Report to console
     model.abort_operation
-    return nil
 
   end
 
@@ -120,10 +112,10 @@ def XPlaneMaterialsRefreshOne(model, material)
     newfile = material.texture.filename
   else
     raise "Save this SketchUp model first" if model.path==''
-    newfile = File.dirname(Sketchup.active_model.path) + "/" + (material.texture.filename.split(/[\/\\:]+/)[-1])[0...-3] + "png"
+    newfile = File.dirname(Sketchup.active_model.path) + "/" + material.texture.filename.split(/[\/\\:]+/)[-1].split(/\.([^.]*)$/)[0] + ".png"
     # Write embedded texture to filesystem (unless there's already a file of that name in the folder)
     if (!File.file? newfile)
-      raise "Can't find Entity for #{newfile}" if !XPlaneMaterialsWrite(model, material, newfile)	# TextureWriter needs an Entity that uses the material, not the material itself
+      raise "Can't find Entity for #{newfile}" if !XPlaneMaterialsWrite(model, Sketchup.create_texture_writer, material, newfile)	# TextureWriter needs an Entity that uses the material, not the material itself
     end
   end
   theight = material.texture.height
@@ -138,9 +130,7 @@ end
 
 
 # Find an entity in the model that uses this material, and write it out
-def XPlaneMaterialsWrite(model, material, newfile)
-
-  tw = Sketchup.create_texture_writer
+def XPlaneMaterialsWrite(model, tw, material, newfile)
 
   model.entities.each do |e|
     if ['Face', 'Group', 'ComponentInstance'].include?(e.typename)	# TextureWriter only operates on a limited set of Entities

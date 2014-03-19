@@ -143,7 +143,7 @@ end
 
 
 # Accumulate vertices and indices into vt and idx
-def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache)
+def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, usedmaterials)
 
   base=vt.length
   prim=nil	# keep adding to the same XPPrim until attributes change
@@ -178,15 +178,15 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache)
             prims << prim
           end
         else
-          XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, primcache)
+          XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, primcache, usedmaterials)
         end
       rescue ArgumentError
         # This component is not an animation
-        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache) unless ['Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
+        XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials) unless ['Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
       end
 
     when "Group"
-      XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache)
+      XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials)
 
     when "Text"
       light=ent.text[/\S*/]
@@ -225,6 +225,9 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache)
       end
 
       mesh=ent.mesh(7)	# vertex, uvs & normal
+      n_polys = ent.mesh(7).count_polygons
+      usedmaterials[nil] += n_polys if nomats	# count one side only
+
       [true,false].each do |front|
         if front
           material=ent.material
@@ -235,6 +238,7 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache)
 
         if nomats or (material and material.alpha>0.0)
           if material and material.texture
+            usedmaterials[material] += n_polys
             tex=material.texture
             # Get minimum uv co-oords
             us=[]
@@ -251,6 +255,7 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache)
             minu=us.min
             minv=vs.min
           else
+            usedmaterials[nil] += n_polys if not nomats
             tex=nil
             minu=minv=0
           end
@@ -266,7 +271,7 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache)
             n=(ntrans * mesh.normal_at(i)).normalize
             n.reverse! if not front
             # round to export precision to increase chance of detecting dupes
-            thisvt << [tex] + v.to_a.map { |j| j.round(SU2XPlane::P_V) } + n.to_a.map { |j| j.round(SU2XPlane::P_N) } + [(u.x/u.z-minu).round(SU2XPlane::P_UV), (u.y/u.z-minv).round(SU2XPlane::P_UV)]
+            thisvt << v.to_a.map { |j| j.round(SU2XPlane::P_V) } + n.to_a.map { |j| j.round(SU2XPlane::P_N) } + [(u.x/u.z-minu).round(SU2XPlane::P_UV), (u.y/u.z-minv).round(SU2XPlane::P_UV)]
           end
 
           for i in (1..mesh.count_polygons)
@@ -321,14 +326,12 @@ def XPlaneExport()
     return
   end
 
-  # Refresh / write textures and get info
-  stats = XPlaneRefreshMaterials()
-
-  vt=[]		# array of [tex, vx, vy, vz, nx, ny, nz, u, v]
+  tw = Sketchup.create_texture_writer
+  vt=[]		# array of [vx, vy, vz, nx, ny, nz, u, v]
   prims=[]	# arrays of XPPrim
-  lights=[]	# array of [freetext, vx, vy, vz]
+  usedmaterials = Hash.new(0)
   begin
-    XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), Sketchup.create_texture_writer, vt, prims, {})	# coords always returned in inches!
+    XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), tw, vt, prims, {}, usedmaterials)	# coords always returned in inches!
   rescue => e
     puts "Error: #{e.inspect}", e.backtrace	# Report to console
     UI.messagebox XPL10n.t('Internal error!') + "\n\n" + XPL10n.t("Saving your model, then quitting and restarting\nSketchUp might clear the problem."), MB_OK, 'X-Plane export'
@@ -337,6 +340,40 @@ def XPlaneExport()
   if prims.empty?
     UI.messagebox XPL10n.t('Nothing to export!'), MB_OK,"X-Plane export"
     return
+  end
+
+  # Determine most used material
+  n_faces = n_untextured = usedmaterials.delete(nil){|k|0}	# Ruby 1.8 returns nil not default_value if not found
+  if usedmaterials.empty?
+    mymaterial = nil
+    n_textures = 0
+  else
+    byuse = usedmaterials.invert
+    n_faces += byuse.keys.inject { |sum,n| sum+n }
+    mymaterial = byuse[byuse.keys.sort[-1]]	# most popular material
+
+    # Write out the texture in the most popular material first if missing
+    basename = mymaterial.texture.filename.split(/[\/\\:]+/)[-1]
+    if !File.file? mymaterial.texture.filename
+      newfile = File.dirname(model.path) + "/" + basename.split(/\.([^.]*)$/)[0] + ".png"
+      XPlaneMaterialsWrite(model, tw, mymaterial, newfile) if !File.file? newfile	# TextureWriter needs an Entity that uses the material, not the material itself
+    end
+
+    # Write out missing textures in remaining materials
+    usedmaterials.each_key do |material|
+      if material!=mymaterial && material.texture && material.texture.filename
+        if basename.casecmp(material.texture.filename.split(/[\/\\:]+/)[-1])==0
+          # it uses the same texture as our material
+          usedmaterials[mymaterial] += usedmaterials.delete(material){|k|0}
+        elsif !File.file? material.texture.filename
+          # it uses a different texture than our material - write it anyway
+          newfile = File.dirname(model.path) + "/" + material.texture.filename.split(/[\/\\:]+/)[-1].split(/\.([^.]*)$/)[0] + ".png"
+          XPlaneMaterialsWrite(model, tw, material, newfile) if !File.file? newfile	# TextureWriter needs an Entity that uses the material, not the material itself
+        end
+      end
+    end
+
+    n_textures = usedmaterials.length
   end
 
   # Sort to minimise state changes
@@ -352,8 +389,8 @@ def XPlaneExport()
     end
   end
 
-  tex = stats.material && stats.material.texture
-  texfile = stats.material && tex.filename.split(/[\/\\:]+/)[-1]	# basename
+  tex = mymaterial && mymaterial.texture
+  texfile = tex && tex.filename.split(/[\/\\:]+/)[-1]	# basename
   outfile=File.new(outpath, "w")
   outfile.write("I\n800\nOBJ\n\n")
   if tex
@@ -373,8 +410,7 @@ def XPlaneExport()
   outfile.write("POINT_COUNTS\t#{vt.length} 0 0 #{allidx.length}\n\n")
 
   vt.each do |v|
-    outfile.printf("VT\t%9.4f %9.4f %9.4f\t%6.3f %6.3f %6.3f\t%7.4f %7.4f\n",
-                   v[1], v[3], -v[2], v[4], v[6], -v[5], v[7], v[8])
+    outfile.printf("VT\t%9.4f %9.4f %9.4f\t%6.3f %6.3f %6.3f\t%7.4f %7.4f\n", v[0], v[2], -v[1], v[3], v[5], -v[4], v[6], v[7])
   end
   outfile.write("\n")
   for i in (0...allidx.length/10)
@@ -533,11 +569,11 @@ def XPlaneExport()
   outfile.close
 
   msg=XPL10n.t("Wrote %s triangles to") % (allidx.length/3) + "\n" + outpath + "\n"
-  msg+="\n" + XPL10n.t('Warning: You used multiple texture files; using file:') + "\n" + tex.filename + "\n" + XPL10n.t('from material') + ' "' + stats.material.display_name + "\".\n" if  stats.n_textures>1
+  msg+="\n" + XPL10n.t('Warning: You used multiple texture files; using file:') + "\n" + tex.filename + "\n" + XPL10n.t('from material') + ' "' + mymaterial.display_name + "\".\n" if  n_textures>1
   msg+="\n" + XPL10n.t('Warning: Texture width is not a power of two') + ".\n" if tex and (tex.image_width & tex.image_width-1)!=0
   msg+="\n" + XPL10n.t('Warning: Texture height is not a power of two') + ".\n" if tex and (tex.image_height & tex.image_height-1)!=0
-  msg+="\n" + (stats.material and (XPL10n.t('Warning: %s faces are untextured') % stats.material) or XPL10n.t('Warning: All faces are untextured')) + ".\n" if stats.n_untextured>0
-  if stats.n_untextured>0 && stats.n_textures<=1 && !model.materials["XPUntextured"]
+  msg+="\n" + (mymaterial and (XPL10n.t('Warning: %s faces are untextured') % n_untextured) or XPL10n.t('Warning: All faces are untextured')) + ".\n" if n_untextured>0
+  if n_untextured>0 && n_textures<=1 && !model.materials["XPUntextured"]
     yesno=UI.messagebox msg + XPL10n.t('Do you want to highlight the untextured faces?'), MB_YESNO,"X-Plane export"
     XPlaneHighlight() if yesno==6
   else
