@@ -349,7 +349,17 @@ class XPlaneAnimation < Sketchup::EntityObserver
     @model.start_operation(XPL10n.t('Preview Animation'), true, false, merge_operation?("#{@component.object_id}/preview"))	# treat same as preview for the sake of Undo
     @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
     @model.commit_operation
-    @dlg.execute_script("document.getElementById('preview-value').innerHTML='%.6g'" % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p))
+    if can_preview()
+      @dlg.execute_script("document.getElementById('preview-value').innerHTML='#{('%.6g' % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p).to_f).tr('.',DecimalSep)}'")
+      loop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).to_f
+      if loop>0.0
+        range_start, range_stop = 0.0, loop
+      else
+        range_start, range_stop = @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+'0').to_f, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(count_frames()-1).to_s).to_f
+      end
+      @dlg.execute_script("document.getElementById('preview-slider').value=#{(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p).to_f-range_start)*200/(range_stop-range_start)}")
+      @dlg.execute_script("fdSlider.updateSlider('preview-slider')")
+    end
   end
 
   def insert_frame(p)
