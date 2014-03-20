@@ -38,7 +38,7 @@
 /* Error messages */
 "All faces are textured" = "All faces are textured";
 "Can't import %s" = "Can't import %s";
-"Can't read %s" = "Can't read %s";
+"Can't read DDS files. Convert %s to PNG format" = "Can't read DDS files. Convert %s to PNG format";
 "Can't read X-Plane version %s files" = "Can't read X-Plane version %s files";
 "Can't read texture file %s" = "Can't read texture file %s";
 "Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing." = "Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing.";
@@ -48,7 +48,7 @@
 "Ignoring old-style lights" = "Ignoring old-style lights";
 "Ignoring old-style lines" = "Ignoring old-style lines";
 "Ignoring some geometry that couldn't be imported" = "Ignoring some geometry that couldn't be imported";
-"Import failed" = "Import failed";
+"Imported %s triangles" = "%s triangles importés";
 "Internal error" = "Internal error";
 "Nothing to export!" = "Nothing to export!";
 "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model." = "Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model.";

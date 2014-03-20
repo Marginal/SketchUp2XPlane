@@ -119,7 +119,11 @@ class XPlaneImporter < Sketchup::Importer
               if not material.texture
                 # lack of material crashes SketchUp somewhere
                 model.abort_operation
-                UI.messagebox XPL10n.t('Import failed') + ".\n" + XPL10n.t("Can't read texture file %s") % (texture+orig_ext), MB_OK, 'X-Plane import'
+                if File.file?(texdir.join('/')+'/'+texture+orig_ext) && orig_ext.casecmp('.dds')==0
+                  raise XPlaneImporterError, XPL10n.t("Can't read DDS files. Convert %s to PNG format") % (texdir.join('/')+'/'+texture+orig_ext)
+                else
+                  raise XPlaneImporterError, XPL10n.t("Can't read texture file %s") % (texdir.join('/')+'/'+texture+orig_ext)
+                end
                 return 0	# Pretend we succeeded to suppress alert dialog
               else
                 material.texture.size=10.m	# arbitrary
@@ -380,8 +384,10 @@ class XPlaneImporter < Sketchup::Importer
           when 'ANIM_hide', 'ANIM_show'
             anim_context.last.XPAddHideShow(cmd[5..-1], c[2], c[0].to_f, c[1].to_f)
 
-          when 'POINT_COUNTS', 'TEXTURE_LIT', 'TEXTURE_NORMAL', 'TEXTURE_NORMAL_LIT', 'ATTR_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ANIM_trans_end', 'ANIM_rotate_end'
+          when 'TEXTURE_LIT', 'TEXTURE_NORMAL', 'TEXTURE_NORMAL_LIT', 'ATTR_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ATTR_light_level_reset', 'ANIM_trans_end', 'ANIM_rotate_end'
             # suppress error message
+          when 'POINT_COUNTS'
+            tricount = c[3].to_i / 3
           when 'VLINE', 'LINES'
             msg[XPL10n.t('Ignoring old-style lines')]=true
           when 'VLIGHT', 'LIGHTS'
@@ -402,8 +408,12 @@ class XPlaneImporter < Sketchup::Importer
           end
         end
         model.commit_operation
-        UI.messagebox(msg.keys.sort.join("\n"), MB_OK, 'X-Plane import') if !msg.empty?
+        UI.messagebox(XPL10n.t("Imported %s triangles") % tricount + ".\n\n" + msg.keys.sort.join("\n"), MB_OK, 'X-Plane import')
         return 0	# Success
+
+      rescue XPlaneImporterError => e
+        model.abort_operation			# Otherwise SketchUp crashes on half-imported stuff
+        UI.messagebox XPL10n.t("Can't import %s") % file_path.split(/\/|\\/)[-1] + ":\n#{e.message}.", MB_OK, 'X-Plane import'
 
       rescue => e
         puts "Error: #{e.inspect}", e.backtrace	# Report to console
@@ -412,7 +422,7 @@ class XPlaneImporter < Sketchup::Importer
       end
 
     rescue XPlaneImporterError => e
-      UI.messagebox XPL10n.t("Can't read %s") % file_path.split(/\/|\\/)[-1] + ":\n#{e.message}.", MB_OK, 'X-Plane import'
+      UI.messagebox XPL10n.t("Can't import %s") % file_path.split(/\/|\\/)[-1] + ":\n#{e.message}.", MB_OK, 'X-Plane import'
     ensure
       file.close unless !file
     end
