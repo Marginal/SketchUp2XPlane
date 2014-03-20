@@ -479,29 +479,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
       range_stop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(numframes-1).to_s).to_f
     end
     val=range_start+(range_stop-range_start)*prop	# dataref value
-    key_stop=0
-    while true
-      key=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s)
-      if key==nil
-        key_stop-=1	# extrapolate after
-        break
-      elsif key.to_f > val
-        break
-      end
-      key_stop+=1
-    end
-    if key_stop==0 then key_stop=1 end	# extrapolate before
-    key_start=key_stop-1
-    val_start=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_start).to_s).to_f
-    val_stop =@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s).to_f
-    interp= (val - val_start) / (val_stop - val_start)
-    t=@component.transformation.to_a
-    trans = (@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) *
-      Geom::Transformation.interpolate(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_start.to_s),
-                                       @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
-                                       interp) *
-      Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
-    puts "preview #{p} #{interp}", trans.inspect if SU2XPlane::TraceEvents
+    trans = @component.XPInterpolated(val)
     if merge_operation?("#{@component.object_id}/preview")
       # even if we merge this operation with previous it still uses up the Undo stack. So use move! which doesn't affect the Undo stack
       @component.move!(trans)
@@ -747,6 +725,35 @@ class Sketchup::ComponentInstance
   def XPTranslateFrame(frame, v)
     # Assumes that no transformation exists for this frame (or can be overwritten).
     set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s, Geom::Transformation.translation(v).to_a)
+  end
+
+  def XPInterpolated(val)
+    # Retun interpolated transformation for val. Assumes that component has at least two frames.
+    model=Sketchup.active_model
+    key_stop=0
+    while true
+      key=get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s)
+      if key==nil
+        key_stop-=1	# extrapolate after
+        break
+      elsif key.to_f > val
+        break
+      end
+      key_stop+=1
+    end
+    if key_stop==0 then key_stop=1 end	# extrapolate before
+    key_start=key_stop-1
+    val_start=get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_start).to_s).to_f
+    val_stop =get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s).to_f
+    interp= (val - val_start) / (val_stop - val_start)
+    t=transformation.to_a
+    trans = (model.active_entities.include?(self) ? model.edit_transform : Geom::Transformation.new) *
+      Geom::Transformation.interpolate(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_start.to_s),
+                                       get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
+                                       interp) *
+      Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
+    puts "preview #{val} #{interp}", trans.inspect if SU2XPlane::TraceEvents
+    return trans
   end
 
   def XPHideShow

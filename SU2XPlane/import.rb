@@ -91,7 +91,7 @@ class XPlaneImporter < Sketchup::Importer
         anim_off=[Geom::Vector3d.new]	# stack of compensating offsets for children of animations
         anim_axes=Geom::Vector3d.new
         anim_t=[]			# Stack of translations {value => Point3d}
-        anim_r=[]			# Stack of rotations    {value => [Vector3d, angle]}
+        anim_r=[]			# Stack of rotations    {value => [[Vector3d, angle]]}
 
         while true
           line=file.gets(linesep)
@@ -279,24 +279,58 @@ class XPlaneImporter < Sketchup::Importer
             anim_context.last.XPLoop=''				# may not be set below
             anim_off.push(anim_off.last.clone)			# inherit parent offset
             anim_t.push({})
-            anim_r.push({})
+            anim_r.push(Hash.new{|h,k|h[k]=[]})
             entities=anim_context.last.definition.entities	# To hold child geometry
           when 'ANIM_end'
-            # Values may be specified out of sequence (eg by 3dsMax plugin) so sort and apply
-            # Assumes that if both translation and rotation animations exist, that number of frames and values match
-            frame = 0
+            # Values may be specified out of sequence (eg by 3dsMax plugin) and number of translation and rotation
+            # keyframes may not match, so sort frames and interpolate any missing keyframe info
             t = anim_t.pop
-            t.keys.sort.each do |v|
-              anim_context.last.XPSetValue(frame, v)
-              anim_context.last.XPTranslateFrame(frame, t[v])
-              frame+=1
-            end
-            frame = 0
             r = anim_r.pop
-            r.keys.sort.each do |v|
-              anim_context.last.XPSetValue(frame, v)
-              anim_context.last.XPRotateFrame(frame, r[v][0], r[v][1])
-              frame+=1
+            # What frames do we have?
+            frames = {}
+            frame = 0
+            keys = (t.keys + r.keys).uniq.sort
+            keys.each do |v|
+              frames[v] = frame
+              frame += 1
+            end
+            # Add translations, and interpolated translations for any missing frames
+            if not t.empty?
+              t.each do |v,tt|
+                anim_context.last.XPTranslateFrame(frames[v], tt)
+                anim_context.last.XPSetValue(frames[v], v)
+              end
+              keys.each do |v|
+                if not t.has_key?(v)
+                  anim_context.last.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frames[v].to_s, XPInterpolated(v).to_a)
+                  anim_context.last.XPSetValue(frames[v], v)
+                end
+              end
+            end
+            # Add rotations, and derive any missing frames (can't just interpolate because missing frames will have translations).
+            if not r.empty?
+              rkeys = r.keys.sort
+              keys.each_index do |frame|
+                v = keys[frame]
+                if r.has_key? v
+                  r[v].each { |rot| anim_context.last.XPRotateFrame(frame, rot[0], rot[1]) }
+                else
+                  if frame==0
+                    val_start, val_stop = rkeys[0..1]	# extrapolate before
+                  elsif frame==keys.length-1
+                    val_start, val_stop = rkeys[-2..-1]	# extrapolate after
+                  else
+                    rkeys.each { |val_stop| break if val_stop > v }
+                    val_start  = rkeys[rkeys.index(val_stop)-1]
+                  end
+                  interp = (v - val_start) / (val_stop - val_start)
+                  r[val_start].each_index do |i|
+                    a_start,a_stop = r[val_start][i][1], r[val_stop][i][1]
+                    anim_context.last.XPRotateFrame(frame, r[val_start][i][0], a_start + interp * (a_stop - a_start))
+                  end
+                end
+                anim_context.last.XPSetValue(frame, v)
+              end
             end
             anim_context.last.transformation = Geom::Transformation.new(anim_context.last.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')) if anim_context.last.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0')	# set current position to first keyframe position
             anim_context.pop
@@ -332,15 +366,15 @@ class XPlaneImporter < Sketchup::Importer
               anim_context.last.transformation = Geom::Transformation.rotation(anim_context.last.transformation.origin, Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f), c[3].to_f.degrees) * anim_context.last.transformation
             else
               anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
-              anim_r.last[c[5].to_f] = [anim_axes, c[3].to_f.degrees]
-              anim_r.last[c[6].to_f] = [anim_axes, c[4].to_f.degrees]
+              anim_r.last[c[5].to_f].push([anim_axes, c[3].to_f.degrees])
+              anim_r.last[c[6].to_f].push([anim_axes, c[4].to_f.degrees])
               anim_context.last.XPDataRef=c[7]
             end
           when 'ANIM_rotate_begin'
             anim_axes=Geom::Vector3d.new(c[0].to_f, -c[2].to_f, c[1].to_f)
             anim_context.last.XPDataRef=c[3]
           when 'ANIM_rotate_key'
-            anim_r.last[c[0].to_f] = [anim_axes, c[1].to_f.degrees]
+            anim_r.last[c[0].to_f].push([anim_axes, c[1].to_f.degrees])
           when 'ANIM_keyframe_loop'
             anim_context.last.XPLoop=c[0].to_f
           when 'ANIM_hide', 'ANIM_show'
