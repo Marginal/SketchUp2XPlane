@@ -112,7 +112,7 @@ def XPlaneMaterialsRefreshOne(model, material)
     newfile = material.texture.filename
   else
     raise "Save this SketchUp model first" if model.path==''
-    newfile = File.dirname(Sketchup.active_model.path) + "/" + material.texture.filename.split(/[\/\\:]+/)[-1].split(/\.([^.]*)$/)[0] + ".png"
+    newfile = File.dirname(Sketchup.active_model.path) + (File::ALT_SEPARATOR || File::SEPARATOR) + material.texture.filename.split(/[\/\\:]+/)[-1].split(/\.([^.]*)$/)[0] + ".png"
     # Write embedded texture to filesystem (unless there's already a file of that name in the folder)
     if (!File.file? newfile)
       raise "Can't find Entity for #{newfile}" if !XPlaneMaterialsWrite(model, Sketchup.create_texture_writer, material, newfile)	# TextureWriter needs an Entity that uses the material, not the material itself
@@ -146,7 +146,7 @@ def XPlaneMaterialsWrite(model, tw, material, newfile)
 
   if model.respond_to?(:definitions)
     model.definitions.each do |d|
-      return true if XPlaneMaterialsWrite(d, material, newfile)
+      return true if XPlaneMaterialsWrite(d, tw, material, newfile)
     end
   end
 
