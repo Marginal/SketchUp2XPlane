@@ -315,11 +315,15 @@ end
 def XPlaneExport()
 
   model=Sketchup.active_model
-  if model.path==''
+  if model.path=='' || !model.path
     UI.messagebox XPL10n.t("Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model."), MB_OK, "X-Plane export"
     return
   else
     outpath=model.path[0...-3]+'obj'
+  end
+  if model.path.split(/[\/\\:]+/)[-1].unpack('C*').inject(false) { |memo,c| memo || c<32 || c>=128 }
+    UI.messagebox XPL10n.t("Object name must only use ASCII characters.\n\nPlease re-save this SketchUp model with a new file name that does not contain accented letters, or non-Western characters."), MB_OK, "X-Plane export"
+    return
   end
   if model.active_path!=nil
     UI.messagebox XPL10n.t("Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing."), MB_OK, "X-Plane export"
@@ -372,6 +376,11 @@ def XPlaneExport()
           XPlaneMaterialsWrite(model, tw, material, newfile) if !File.file? newfile	# TextureWriter needs an Entity that uses the material, not the material itself
         end
       end
+    end
+
+    if basename.unpack('C*').inject(false) { |memo,c| memo || c<=32 || c>=128 }
+      UI.messagebox XPL10n.t("Texture file name must only use ASCII characters.\n\nPlease re-name the file \"#{basename}\" with a file name that does not contain spaces, accented letters, or non-Western characters."), MB_OK, "X-Plane export"
+      return
     end
 
     n_textures = usedmaterials.length
