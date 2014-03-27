@@ -343,6 +343,7 @@ def XPlaneExport()
   end
 
   # Determine most used material
+  sep = File::ALT_SEPARATOR || File::SEPARATOR
   n_faces = n_untextured = usedmaterials.delete(nil){|k|0}	# Ruby 1.8 returns nil not default_value if not found
   if usedmaterials.empty?
     mymaterial = nil
@@ -355,7 +356,7 @@ def XPlaneExport()
     # Write out the texture in the most popular material first if missing
     basename = mymaterial.texture.filename.split(/[\/\\:]+/)[-1]
     if !File.file? mymaterial.texture.filename
-      newfile = File.dirname(model.path) + "/" + basename.split(/\.([^.]*)$/)[0] + ".png"
+      newfile = File.dirname(model.path) + sep + basename.split(/\.([^.]*)$/)[0] + ".png"
       XPlaneMaterialsWrite(model, tw, mymaterial, newfile) if !File.file? newfile	# TextureWriter needs an Entity that uses the material, not the material itself
     end
 
@@ -367,7 +368,7 @@ def XPlaneExport()
           usedmaterials[mymaterial] += usedmaterials.delete(material){|k|0}
         elsif !File.file? material.texture.filename
           # it uses a different texture than our material - write it anyway
-          newfile = File.dirname(model.path) + "/" + material.texture.filename.split(/[\/\\:]+/)[-1].split(/\.([^.]*)$/)[0] + ".png"
+          newfile = File.dirname(model.path) + sep + material.texture.filename.split(/[\/\\:]+/)[-1].split(/\.([^.]*)$/)[0] + ".png"
           XPlaneMaterialsWrite(model, tw, material, newfile) if !File.file? newfile	# TextureWriter needs an Entity that uses the material, not the material itself
         end
       end
@@ -569,7 +570,7 @@ def XPlaneExport()
   outfile.close
 
   msg=XPL10n.t("Wrote %s triangles to") % (allidx.length/3) + "\n" + outpath + "\n"
-  msg+="\n" + XPL10n.t('Warning: You used multiple texture files; using file:') + "\n" + tex.filename + "\n" + XPL10n.t('from material') + ' "' + mymaterial.display_name + "\".\n" if  n_textures>1
+  msg+="\n" + XPL10n.t('Warning: You used multiple texture files; using file:') + "\n" + (File.file? tex.filename and tex.filename + "\n" + XPL10n.t('from material') + ' "' + mymaterial.display_name + '".' or File.dirname(model.path) + sep + texfile) + "\n" if  n_textures>1
   msg+="\n" + XPL10n.t('Warning: Texture width is not a power of two') + ".\n" if tex and (tex.image_width & tex.image_width-1)!=0
   msg+="\n" + XPL10n.t('Warning: Texture height is not a power of two') + ".\n" if tex and (tex.image_height & tex.image_height-1)!=0
   msg+="\n" + (mymaterial and (XPL10n.t('Warning: %s faces are untextured') % n_untextured) or XPL10n.t('Warning: All faces are untextured')) + ".\n" if n_untextured>0
