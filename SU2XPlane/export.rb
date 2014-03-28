@@ -69,47 +69,51 @@ class XPAnim
   def initialize(component, parent, trans)
     @parent=parent	# parent XPAnim, or nil if parent is top-level - i.e. not animated
     @cachekey=component.definition.object_id
-    @transformation=trans*component.transformation	# transformation to be applied to sub-geometry
+    @transformation = trans * component.transformation
+    @transformation = Geom::Transformation.scaling(@transformation.xscale, @transformation.yscale, @transformation.zscale)		# transformation to be applied to sub-geometry - just scale
     @dataref=component.XPDataRef	# DataRef, w/ index if any
     @v=component.XPValues		# 0 or n keyframe dataref values. Note: stored as String
     @loop=component.XPLoop		# loop dataref value. Note: stored as String
-    @t=component.XPTranslations(trans)	# translation, 0, 1 or n translations (0=just hide/show, 1=rotation w/ no translation)
-    @rx=@ry=@rz=[]			# 0 or n rotation angles
+    @t=component.XPTranslations(trans)	# 0, 1 or n set of translation coordinates (0=just hide/show, 1=rotation w/ no translation)
+    @rx=@ry=@rz=[]			# 0, 1 or n rotation angles in degrees
     @hideshow=component.XPHideShow	# show/hide values [show/hide, dataref, from, to]
     @label=(component.name!='' ? component.name : "<#{component.definition.name}>")	# tag in output file
 
-    @t=[@t[0]] if (@t.inject({}) { |h,v| h.store(v,true) && h }).length == 1	# if translation constant across keyframes reduce to one entry
+    # if translation constant across keyframes reduce to one entry
+    @t=[@t[0]] if (@t.inject({}) { |h,v| h.store(v,true) && h }).length == 1
+
+    if !(0...component.XPCountFrames).inject(nil){|memo,frame| memo||(trans * component.XPTransformation(frame)).XPEuler}
+      # rotation just about y axis - adjust to avoid gimbal lock
+      trans = Geom::Transformation.rotation(Geom::Point3d.new(0,0,0), Geom::Vector3d.new(0,1,0), Math::PI/2) * trans
+      @ry = [-90]
+    end
+
     rot=component.XPRotations(trans)
     if (rot.inject({}) { |h,v| h.store(v,true) && h }).length <= 1
       # rotation constant across all keyframes - just use current rotation
-      if @t.length > 1
-        # strip out translation from children's transformation
-        @transformation=trans * Geom::Transformation.translation(Geom::Point3d.new - component.transformation.origin) * component.transformation
-      else
+      if @t.length <= 1
         # no animation of any kind
-        @t=[]
-        raise ArgumentError if @hideshow==[]	# and no Hide/Show either
+        raise ArgumentError if @hideshow==[]	# no Hide/Show either - this is just a vanilla component
+        @transformation = trans*component.transformation	# apply this component's transformation to sub-geometry
+        @t0=[]
       end
     else
-      # we have rotation keyframes, so untranslate and unrotate to obtain children's transformation (i.e. just scale)
-      currentangles=component.transformation.XPEuler()
-      @transformation = Geom::Transformation.translation(Geom::Point3d.new - component.transformation.origin) * component.transformation
-      if (rot.inject({}) { |h,v| h.store(v[0],true) && h }).length > 1
-        # We have rotation about x axis, so unrotate about x
-        @transformation = Geom::Transformation.rotation([0,0,0], [1,0,0], -currentangles[0]) * @transformation
-        @rx = rot.map { |v| v[0] }
+      # we have rotation keyframes
+      if (rot.inject({}) { |h,v| h.store(v[2],true) && h }).length > 1
+        @rz = rot.map { |v| v[2] }
+      elsif rot[0][2]!=0
+        @rz = [rot[0][2]]	# rotation is constant
       end
       if (rot.inject({}) { |h,v| h.store(v[1],true) && h }).length > 1
-        # We have rotation about y axis, so unrotate about y
-        @transformation = Geom::Transformation.rotation([0,0,0], [0,1,0], -currentangles[1]) * @transformation
         @ry = rot.map { |v| v[1] }
+      elsif rot[0][1]!=0
+        @ry = [rot[0][1]]	# rotation is constant
       end
-      if (rot.inject({}) { |h,v| h.store(v[2],true) && h }).length > 1
-        # We have rotation about z axis, so unrotate about z
-        @transformation = Geom::Transformation.rotation([0,0,0], [0,0,1], -currentangles[2]) * @transformation
-        @rz = rot.map { |v| v[2] }
+      if (rot.inject({}) { |h,v| h.store(v[0],true) && h }).length > 1
+        @rx = rot.map { |v| v[0] }
+      elsif rot[0][0]!=0
+        @rx = [rot[0][0]]	# rotation is constant
       end
-      @transformation = trans * @transformation
     end
   end
 
@@ -318,8 +322,6 @@ def XPlaneExport()
   if model.path=='' || !model.path
     UI.messagebox XPL10n.t("Save this SketchUp model first.\n\nI don't know where to create the X-Plane object file\nbecause you have never saved this SketchUp model."), MB_OK, "X-Plane export"
     return
-  else
-    outpath=model.path[0...-3]+'obj'
   end
   if model.path.split(/[\/\\:]+/)[-1].unpack('C*').inject(false) { |memo,c| memo || c<32 || c>=128 }
     UI.messagebox XPL10n.t("Object name must only use ASCII characters.\n\nPlease re-save this SketchUp model with a new file name that does not contain accented letters, or non-Western characters."), MB_OK, "X-Plane export"
@@ -329,18 +331,26 @@ def XPlaneExport()
     UI.messagebox XPL10n.t("Close all open Components and Groups first.\n\nI can't export while you have Components and/or\nGroups open for editing."), MB_OK, "X-Plane export"
     return
   end
-
-  tw = Sketchup.create_texture_writer
-  vt=[]		# array of [vx, vy, vz, nx, ny, nz, u, v]
-  prims=[]	# arrays of XPPrim
-  usedmaterials = Hash.new(0)
   begin
-    XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), tw, vt, prims, {}, usedmaterials)	# coords always returned in inches!
+    XPlaneDoExport()
   rescue => e
     puts "Error: #{e.inspect}", e.backtrace	# Report to console
     UI.messagebox XPL10n.t('Internal error!') + "\n\n" + XPL10n.t("Saving your model, then quitting and restarting\nSketchUp might clear the problem."), MB_OK, 'X-Plane export'
     return
   end
+
+end
+
+
+def XPlaneDoExport()
+
+  model=Sketchup.active_model
+  outpath=model.path[0...-3]+'obj'
+  tw = Sketchup.create_texture_writer
+  vt=[]		# array of [vx, vy, vz, nx, ny, nz, u, v]
+  prims=[]	# arrays of XPPrim
+  usedmaterials = Hash.new(0)
+  XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), tw, vt, prims, {}, usedmaterials)	# coords always returned in inches!
   if prims.empty?
     UI.messagebox XPL10n.t('Nothing to export!'), MB_OK,"X-Plane export"
     return
@@ -511,24 +521,21 @@ def XPlaneExport()
 
       if anim.t.length==1
         # not moving - save a potential accessor callback
-        outfile.printf("#{ins}ANIM_trans\t%9.4f %9.4f %9.4f\t%9.4f %9.4f %9.4f\t0 0\tnone\n",
-                       anim.t[0][0], anim.t[0][2], -anim.t[0][1], anim.t[0][0], anim.t[0][2], -anim.t[0][1])
+        outfile.printf("#{ins}ANIM_trans\t%9.4f %9.4f %9.4f\t%9.4f %9.4f %9.4f\t0 0\tnone\n", anim.t[0][0], anim.t[0][2], -anim.t[0][1], anim.t[0][0], anim.t[0][2], -anim.t[0][1])
       elsif anim.t.length!=0
         outfile.write("#{ins}ANIM_trans_begin\t#{anim.dataref}\n")
-
         0.upto(anim.t.length-1) do |i|
-          outfile.printf("#{ins}\tANIM_trans_key\t\t#{anim.v[i]}\t%9.4f %9.4f %9.4f\n",
-                         anim.t[i][0], anim.t[i][2], -anim.t[i][1])
+          outfile.printf("#{ins}\tANIM_trans_key\t\t#{anim.v[i]}\t%9.4f %9.4f %9.4f\n", anim.t[i][0], anim.t[i][2], -anim.t[i][1])
         end
         outfile.write("#{ins}\tANIM_keyframe_loop\t#{anim.loop}\n") if anim.loop.to_f!=0.0
         outfile.write("#{ins}ANIM_trans_end\n")
       end
 
       [[anim.rx,[1,0,0]], [anim.ry,[0,1,0]], [anim.rz,[0,0,1]]].each do |r,axis|
-        if r.length!=0
-          outfile.printf("#{ins}ANIM_rotate_begin\t%d %d %d\t#{anim.dataref}\n",
-                         axis[0], axis[2], -axis[1])
-
+        if r.length==1
+          outfile.printf("#{ins}ANIM_rotate\t\t%d %d %d\t%7.2f %7.2f\t0 0\tnone\n", axis[0], axis[2], -axis[1], r[0], r[0])
+        elsif r.length!=0
+          outfile.printf("#{ins}ANIM_rotate_begin\t%d %d %d\t#{anim.dataref}\n", axis[0], axis[2], -axis[1])
           0.upto(r.length-1) do |i|
             outfile.printf("#{ins}\tANIM_rotate_key\t\t#{anim.v[i]}\t%7.2f\n", r[i])
           end

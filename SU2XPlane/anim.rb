@@ -240,16 +240,12 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def count_frames()
     # Recalculate frame count very time we need the value in case component has been modified elsewhere
-    numframes=0
-    while @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+numframes.to_s) != nil do numframes+=1 end
-    return numframes
+    return @component.XPCountFrames
   end
 
   def count_hideshow()
     # Recalculate hideshow count very time we need the value in case component has been modified elsewhere
-    numhs=0
-    while @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_HS_+numhs.to_s+SU2XPlane::ANIM_HS_HIDESHOW) != nil do numhs+=1 end
-    return numhs
+    return @component.XPCountHideShow
   end
 
   def update_dialog()
@@ -604,21 +600,28 @@ end
 #
 class Geom::Transformation
 
-  def XPEuler
+  def XPEuler(forceme = false)
     # returns same as [rotx, roty, rotz], but returns Float radians not Integer degrees
     # http://www.soi.city.ac.uk/~sbbh653/publications/euler.pdf
-    t = (self * Geom::Transformation.scaling(1/xscale, 1/yscale, 1/zscale)).to_a		# rescaled to identity
-    if (t[2]!=1) && (t[2]!=-1)
-      ry = -Math.asin(t[2])
-      cry= Math.cos(ry)
-      rx = Math.atan2(t[6]/cry,t[10]/cry)
-      rz = Math.atan2(t[1]/cry, t[0]/cry)
+    # http://sketchucation.com/forums/viewtopic.php?t=22639
+    m = self.xaxis.to_a + self.yaxis.to_a + self.zaxis.to_a		# 3x3 rotation matrix, rescaled to identity
+    if m[6].abs==1 && !forceme	# gimbal lock
+      return nil		# don't know which of the two possible solutions to use
+    elsif m[6] == -1
+      rz = 0			# arbitrary
+      ry = Math::PI/2
+      rx = rz + Math.atan2(m[1],m[2])
+    elsif m[6] == 1
+      rz = 0			# arbitrary
+      ry = -Math::PI/2
+      rx = -rz + Math.atan2(-m[1],-m[2])
     else
-      ry = (0 <=> t[2]) * Math::PI/2
-      rx = Math.atan2(t[4],t[8])
-      rz = 0
+      ry = -Math.asin(m[6])	# solution 1 in above pdf
+      cry= Math.cos(ry)
+      rx = Math.atan2(m[7]/cry, m[8]/cry)
+      rz = Math.atan2(m[3]/cry, m[0]/cry)
     end
-    return [rx, ry, rz]
+    return [-rx, -ry, -rz]	# X-Plane is CCW
   end
 
   if not Geom::Transformation.method_defined? :determinant
@@ -665,8 +668,12 @@ class Sketchup::ComponentInstance
 
   def XPCountFrames
     numframes=0
-    while get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+numframes.to_s) != nil do numframes+=1 end
+    while get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+numframes.to_s) do numframes+=1 end
     return numframes
+  end
+
+  def XPTransformation(frame)
+    return Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))
   end
 
   def XPValues
@@ -693,14 +700,35 @@ class Sketchup::ComponentInstance
 
   def XPRotations(trans=Geom::Transformation.new)
     # Returns Array of transformations converted to rotations about x, y, z axis
-    # In order to handle rotations that cross 0/360 we assume that each rotation is within +/-180 from the last
+    # SketchUp returns squirrely transformations for rotations >= 180, so work out each rotation relative to previous
     numframes=self.XPCountFrames
     return [] if !self.XPDataRef || numframes==0
-    lastval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+'0'.to_s))).XPEuler.map { |a| a.radians }
+    lasttrans = trans * XPTransformation(0)
+    if lasttrans.XPEuler
+      lastval = lasttrans.XPEuler.map{ |a| a.radians }
+    else	# gimbal lock - need to interpolate if we can
+      v = (trans * Geom::Transformation.interpolate(XPTransformation(0), XPTransformation(1), 0.5)).XPEuler
+      if v
+        lastval = v.map{ |a| a.radians * 2 }
+      else
+        lastval = lasttrans.XPEuler(true).map{ |a| a.radians }
+      end
+    end
     retval = [lastval]
     (1...numframes).each do |frame|
-      thisval = (trans * Geom::Transformation.new(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+frame.to_s))).XPEuler.map { |a| a.radians }
-      lastval = (0..2).map { |i| (thisval[i]-lastval[i]+180) % 360 + lastval[i]-180 }
+      thistrans = lasttrans.inverse * (trans * XPTransformation(frame))	# rotation since previous frame
+      if thistrans.XPEuler
+        thisval = thistrans.XPEuler.map{ |a| a.radians }
+      elsif	# gimbal lock - need to interpolate if we can
+        v = (trans * Geom::Transformation.interpolate(XPTransformation(frame-1), XPTransformation(frame), 0.5)).XPEuler
+        if v
+          thisval = v.map{ |a| a.radians * 2 }
+        else
+          thisval = thistrans.XPEuler(true).map{ |a| a.radians }
+        end
+      end
+      lasttrans = thistrans
+      lastval = lastval.zip(thisval).map{ |p| p[0] + (p[1]+180)%360 - 180 }	# cumulative with previous frame, no more than 180
       retval << lastval
     end
     return retval.map { |r| r.map { |a| a.round(SU2XPlane::P_A) } }	# round at end to prevent comparision differences
@@ -754,6 +782,12 @@ class Sketchup::ComponentInstance
       Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
     puts "preview #{val} #{interp}", trans.inspect if SU2XPlane::TraceEvents
     return trans
+  end
+
+  def XPCountHideShow()
+    numhs=0
+    while get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_HS_+numhs.to_s+SU2XPlane::ANIM_HS_HIDESHOW) do numhs+=1 end
+    return numhs
   end
 
   def XPHideShow
