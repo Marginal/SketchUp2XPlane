@@ -113,7 +113,7 @@ Note: For lights of type <code>LIGHT_NAMED</code> and <code>LIGHT_PARAM</code> t
 <ul style="list-style-type: circle">
   <li>DataRefs of type &ldquo;int&rdquo; give whole number values, usually representing yes/no or on/off states, and so tend to be suitable for hiding/showing type animations.</li>
   <li>DataRefs of type &ldquo;float&rdquo; and &ldquo;double&rdquo; give fractional values and can be suitable for both types of animation.</li>
-  <li>DataRef listed with &ldquo;[<i>n</i>]&rdquo; after their type are &ldquo;arrays&rdquo; which contain multiple values, the meaning of which depends on the DataRef. You will need to choose which of the <i>n</i> values that you want to use for your animation.<br>
+  <li>DataRefs listed with &ldquo;[<i>n</i>]&rdquo; after their type are &ldquo;arrays&rdquo; which contain multiple values, the meaning of which depends on the DataRef. You will need to choose which of the <i>n</i> values that you want to use for your animation.<br>
 e.g. sim/flightmodel2/doors/angle_now_deg is listed as being of type &ldquo;float[<i>doors</i>]&rdquo; - for this DataRef each array value represents the rotation angle of one landing gear door.</li>
 </ul>
 <p>The DataRefs are grouped logically by name. Some examples:</p>
@@ -160,13 +160,16 @@ SketchUp shows the current location and orientation of the Component's axes.</li
 
 <p>In the &ldquo;X-Plane Animation&rdquo; dialog specify:</p>
 <ul>
-  <li>The name of the DataRef that drives the animation - one of the DataRefs of type &ldquo;int&rdquo;, &ldquo;float&rdquo; or &ldquo;double&rdquo; listed <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">here</a> - and, if the DataRef is listed with &ldquo;[<i>n</i>]&rdquo; after its type, the array index number.</li>
+  <li>The name of the DataRef that drives the animation -<br>
+    one of the DataRefs of type &ldquo;int&rdquo;, &ldquo;float&rdquo; or &ldquo;double&rdquo; listed <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">here</a>.</li>
+  <li>If the DataRef is listed with &ldquo;[<i>n</i>]&rdquo; after its type, the array index number.</li>
   <li>The DataRef values for each Keyframe.<br>
-You must specify DataRef values in ascending order. (It's OK to use the same DataRef value in adjacent Keyframes - this can be useful if you want the animated object(s) to jump between positions).</li>
-  <li>The animated object(s) position in each Keyframe; use the SketchUp <samp>Move</samp> and/or <samp>Rotate</samp> tools to change the position of the Component that contains your objects, then press one of the <samp>(Set)</samp> buttons to specify that position.<br>
-When using the <samp>Rotate</samp> tool you are unlikely to get the results that you expect in X-Plane unless you rotate the Component about its precise axes' origin; so use the Guide Point that you created above.  Avoid rotations of 180&deg; or greater between Keyframes - either SketchUp or this plugin will often go the short way round.</li>
+    You must specify DataRef values in ascending order.</li>
+  <li>The animated object(s) position in each Keyframe.<br>
+    Use the SketchUp <samp>Move</samp> and/or <samp>Rotate</samp> tools to change the position of the Component that contains your objects, then press one of the <samp>(Set)</samp> buttons to specify that position.<br>
+    When using the <samp>Rotate</samp> tool you are unlikely to get the results that you expect in X-Plane unless you rotate the Component about its precise axes' origin; so use the Guide Point that you created above.  Avoid rotations of 180&deg; or greater between Keyframes - either SketchUp or this plugin will often go the short way round.</li>
   <li>A &ldquo;Loop&rdquo; value, if required.<br>
-When you specify a Loop value the DataRef's value in X-Plane is divided by the Loop value, and the remainder is used to drive the animation.</li>
+    When you specify a Loop value the DataRef's value in X-Plane is divided by the Loop value, and the remainder is used to drive the animation.</li>
 </ul>
 <p>You can use the <samp>(+)</samp> and <samp>(&#8722;)</samp> buttons to add or delete Keyframes if required. Use the <samp>Recall</samp> buttons to recall the position associated with a Keyframe.</p>
 <p>Drag the <samp>Preview</samp> slider to visualise how the animated object(s) will move between Keyframe positions in X-Plane. The number to the right of the slider is the DataRef value that corresponds to the animated object(s)' current position. If the Preview slider is disabled this means you haven't correctly specified some of the required information in this dialog. If your object(s) don't animate as you expected then review your Component's axes, Keyframe positions and/or DataRef values.</p>
@@ -174,7 +177,9 @@ When you specify a Loop value the DataRef's value in X-Plane is divided by the L
 <h4>Hiding / Showing</h4>
 <p>You can selectively hide objects based on a DataRef's value in X-Plane. In the &ldquo;X-Plane Animation&rdquo; dialog press the bottom <samp>(+)</samp> button and specify:</p>
 <ul>
-  <li>The name of the DataRef that drives the animation - one of the DataRefs of type &ldquo;int&rdquo;, &ldquo;float&rdquo; or &ldquo;double&rdquo; listed <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">here</a> - and, if the DataRef is listed with &ldquo;[<i>n</i>]&rdquo; after its type, the array index number.</li>
+  <li>The name of the DataRef that drives the animation -<br>
+    Use one of the DataRefs of type &ldquo;int&rdquo;, &ldquo;float&rdquo; or &ldquo;double&rdquo; listed <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">here</a>.</li>
+  <li>If the DataRef is listed with &ldquo;[<i>n</i>]&rdquo; after its type, the array index number.</li>
   <li>The range of DataRef values that should cause your object(s) to be hidden.</li>
 </ul>
 <p>You can specify multiple conditions - use the <samp>(+)</samp> and <samp>(&#8722;)</samp> buttons to add or delete conditions. You can also specify that a previously hidden object be shown. The last condition that is active &ldquo;wins&rdquo; (<i>i.e.</i> conditions don't &ldquo;stack up&rdquo;) so the order of conditions is significant.</p>

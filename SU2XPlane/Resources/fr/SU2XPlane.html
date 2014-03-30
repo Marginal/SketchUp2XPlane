@@ -161,13 +161,16 @@ par exemple sim/flightmodel2/doors/angle_now_deg est mentionné comme étant de ty
 <p>Les animations Déplacement/Rotation utilisent le concept d'une &ldquo;<a href="http://en.wikipedia.org/wiki/Key_frame#As_applied_to_motion" target="_blank">Image-clé</a>&rdquo; (Keyframe) qui est une position et une valeur dataref correspondante. Vous devez spécifier deux ou plusieurs images-clés et X-Plane interpolera ou extrapolera pour créer une transition en douceur entre les positions basées sur la valeur actuelle de la dataref (c'est ce qu'on appelle &ldquo;<a href="http://fr.wikipedia.org/wiki/Tweening" target="_blank">tweening</a>&rdquo;).</p>
 <p>Dans la boîte de dialogue «X-Plane Animation», précisez:</p>
 <ul>
-  <li>Le nom de la Dataref qui conduit l'animation - l'une des datarefs de type &ldquo;int&rdquo;, &ldquo;float&rdquo; ou &ldquo;double&rdquo; énumérées <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">ici</a> - et, si la Dataref est répertoriée avec «[<i>n</i>]» après son type, le nombre de l'index de tableau.</li>
+  <li>Le nom de la Dataref qui conduit l'animation - <br>
+    l'une des datarefs de type &ldquo;int&rdquo;, &ldquo;float&rdquo; ou &ldquo;double&rdquo; énumérées <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">ici</a>.</li>
+  <li>Si la Dataref est répertoriée avec «[<i>n</i>]» après son type, le nombre de l'index de tableau.</li>
   <li>Les valeurs de Dataref pour chaque Image-clé.<br>
-Vous devez spécifier des valeurs de Dataref en ordre croissant. (C'est OK pour utiliser la même valeur de Dataref pour des images-clés adjacentes - ce qui peut être utile si vous voulez que le ou les objet(s) animé(s) saute(nt) d'une position à une autre).</li>
-  <li>La position du ou des objet(s) animé(s) de chaque image-clé; utilisez les outils <samp>Déplacement</samp> et <samp>Faire pivoter</samp> de SketchUp pour changer la position du Composante qu contient vos objets, puis appuyez sur une des touches «<samp>Définir</samp>» pour spécifier cette position.<br>
-Lorsque vous utilisez l'outil <samp>Faire pivoter</samp>, vous êtes susceptibles d'obtenir les résultats que vous attendez dans X-Plane, sauf si vous tournez le Composant autour de l'origine de ses axes précis; utilisez alors le Point de guidage que vous avez créé ci-dessus. Évitez les rotations de 180° ou plus entre les images-clés - SketchUp ou ce plugin vont souvent au plus court.</li>
+    Vous devez spécifier des valeurs de Dataref en ordre croissant.</li>
+  <li>La position du ou des objet(s) animé(s) de chaque image-clé.
+    <br>Utilisez les outils <samp>Déplacement</samp> et <samp>Faire pivoter</samp> de SketchUp pour changer la position du Composante qu contient vos objets, puis appuyez sur une des touches «<samp>Définir</samp>» pour spécifier cette position.<br>
+    Lorsque vous utilisez l'outil <samp>Faire pivoter</samp>, vous êtes susceptibles d'obtenir les résultats que vous attendez dans X-Plane, sauf si vous tournez le Composant autour de l'origine de ses axes précis; utilisez alors le Point de guidage que vous avez créé ci-dessus. Évitez les rotations de 180° ou plus entre les images-clés - SketchUp ou ce plugin vont souvent au plus court.</li>
   <li>Une valeur de «Boucle», le cas échéant.<br>
-Lorsque vous spécifiez une valeur de Boucle, la valeur de la Dataref dans X-Plane est divisée par la valeur de Boucle, et le reste est utilisé pour conduire l'animation.</li>
+    Lorsque vous spécifiez une valeur de Boucle, la valeur de la Dataref dans X-Plane est divisée par la valeur de Boucle, et le reste est utilisé pour conduire l'animation.</li>
 </ul>
 <p>Vous pouvez utiliser les boutons «<samp>+</samp>» et «<samp>&#8722;</samp>» pour ajouter ou supprimer des images-clés, si nécessaire. Utilisez les boutons de «<samp>Rappel</samp>» pour rappeler la position associée à une image-clé.<p>
 <p>Faites glisser le curseur sur «<samp>Aperçu</samp>» pour visualiser la façon dont le ou les objet(s) animé(s) se déplace(nt) entre les positions des images-clés dans X-Plane. Le nombre de la droite du curseur est la valeur Dataref qui correspond à le ou les objet(s) animé(s) de position actuelle. Si le curseur Aperçu est désactivé, cela signifie que vous n'avez pas spécifié correctement certains des renseignements requis dans cette boîte de dialogue. Si votre ou vos objet(s) ne s'anime(nt) pas comme vous l'espériez que votre revue, alors revoyez vos axes de Composant, les positions des images-clés et/ou des valeurs dataref.</p>
@@ -175,7 +178,9 @@ Lorsque vous spécifiez une valeur de Boucle, la valeur de la Dataref dans X-Plan
 <h4>Masquage / Affichage</h4>
 <p>Vous pouvez choisir de masquer des objets sur la base d'une valeur de Dataref dans X-Plane. Dans la boîte de dialogue &ldquo;X-Plane Animation&rdquo;, appuyez sur le bouton du bas «<samp>+</samp>» et précisez:</p>
 <ul>
-  <li>Le nom de la Dataref qui conduit l'animation - l'une des datarefs de type &ldquo;int&rdquo;, &ldquo;float&rdquo; ou &ldquo;double&rdquo; énumérées <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">ici</a> - et, si la Dataref est répertoriée avec «[<i>n</i>]» après son type, le nombre de l'index de tableau.</li>
+  <li>Le nom de la Dataref qui conduit l'animation -<br>
+    l'une des datarefs de type &ldquo;int&rdquo;, &ldquo;float&rdquo; ou &ldquo;double&rdquo; énumérées <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">ici</a>.</li>
+  <li>Si la Dataref est répertoriée avec «[<i>n</i>]» après son type, le nombre de l'index de tableau.</li>
   <li>La plage des valeurs de la Dataref qui devrait cacher votre ou vos objet(s).</li>
 </ul>
 <p>Vous pouvez spécifier plusieurs conditions - utiliser les boutons «<samp>+</samp>» et «<samp>&#8722;</samp>» pour ajouter ou supprimer des conditions. Vous pouvez également spécifier qu'un objet précédemment caché peut être affiché. La dernière condition active &ldquo;gagne&rdquo; (c'est-à-dire que les conditions ne sont pas &ldquo;empilées&rdquo;), l'ordre des conditions est significatif.</p>

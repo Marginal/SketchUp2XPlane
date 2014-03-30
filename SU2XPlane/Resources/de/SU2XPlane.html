@@ -161,12 +161,14 @@ Ein Beispiel: &ldquo;sim/flightmodel2/doors/angle_now_deg&rdquo; ist aufgelistet
 
 <p>Im &ldquo;X-Plane Animation&rdquo; Dialog ist festgelegt:</p>
 <ul>
-  <li>Der Name des DataRef, der die Animation steuert - einer der DataRef-Typen &ldquo;int&rdquo;, &ldquo;float&rdquo; oder &ldquo;double&rdquo;, die <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">HIER</a> aufgelistet sind - und, wenn DataRef mit einem &ldquo;[<i>n</i>]&rdquo; hinter dem Typnamen gelistet ist, auch die Feld-Index-Nummer.</li>
-  <li>Array-Index-Nummer wenn DataRef mit &ldquo;[<i>n</i>]&rdquo; aufgeführt ist hinter seinem Typ.</li>
+  <li>Der Name des DataRef, der die Animation steuert -<br>
+    einer der DataRef-Typen &ldquo;int&rdquo;, &ldquo;float&rdquo; oder &ldquo;double&rdquo;, die <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">HIER</a> aufgelistet sind.</li>
+  <li>Wenn DataRef mit einem &ldquo;[<i>n</i>]&rdquo; hinter dem Typnamen gelistet ist, auch die Feld-Index-Nummer.</li>
   <li>Der DataRef-Wert für jeden Keyframe.<br>
-Du musst die DataRef-Werte in aufsteigender Reihenfolge festlegen. (Es ist OK denselben DataRef-Wert zu benutzen wie die entsprechenden Keyframes - das kann  nützlich sein, wenn du das/die animierten Objekt/e zwischen den Positionen springen lassen willst).</li>
-  <li>Die Position jedes animierten Objekts/Objekte in jedem Keyframe. Benutze SketchUps <samp>Verschieben</samp> oder <samp>Drehen</samp> Werkzeug, um die Position  deiner Komponente (die deine Objekte beinhaltet) zu verändern. Dann drücke einen von den <samp>Festlegen</samp> Buttons, um die Position festzulegen.<br>
-Wenn du das <samp>Drehen</samp>-Werkzeug benutzt, wirst du das erwartete Ergebnis in X-Plane nur bekommen, wenn du die Komponente um ihrn Achsennullpunkt drehst. (s.o). Vermeide Drehungen von 180 Grad oder höher zwischen den einzelnen Keyframes, sonst nimmt entweder SketchUp oder dieses Plugin das kürzere Kreissegment.</li>
+    Du musst die DataRef-Werte in aufsteigender Reihenfolge festlegen.</li>
+  <li>Die Position jedes animierten Objekts/Objekte in jedem Keyframe.<br>
+    Benutze SketchUps <samp>Verschieben</samp> oder <samp>Drehen</samp> Werkzeug, um die Position  deiner Komponente (die deine Objekte beinhaltet) zu verändern. Dann drücke einen von den <samp>Festlegen</samp> Buttons, um die Position festzulegen.<br>
+    Wenn du das <samp>Drehen</samp>-Werkzeug benutzt, wirst du das erwartete Ergebnis in X-Plane nur bekommen, wenn du die Komponente um ihrn Achsennullpunkt drehst. (s.o). Vermeide Drehungen von 180 Grad oder höher zwischen den einzelnen Keyframes, sonst nimmt entweder SketchUp oder dieses Plugin das kürzere Kreissegment.</li>
   <li>Ein &ldquo;Loop&rdquo;-Wert, falls gefordert.<br>
     Wenn du einen &ldquo;Loop&rdquo;-Wert festlegst, dann wird der DataRef-Wert in X-Plane durch diesen (Loop)-Wert geteilt und das Ergebnis steuert die Animation.</li>
 </ul>
@@ -176,7 +178,9 @@ Wenn du das <samp>Drehen</samp>-Werkzeug benutzt, wirst du das erwartete Ergebni
 <h4>Ausblenden/Zeigen</h4>
 <p>Du kannst ausgewählte Objekte auf der Basis von DataRef-Werten in X-Plane erscheinen und verschwinden lassen. Im &ldquo;X-Plane Animation&rdquo; Dialogfeld drücke unten den <samp>(+)</samp> Button und bestimmen:</p>
 <ul>
-  <li>Der Name des DataRef, der die Animation steuert - einer der DataRef-Typen &ldquo;int&rdquo;, &ldquo;float&rdquo; oder &ldquo;double&rdquo;, die <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">HIER</a> aufgelistet sind - und, wenn DataRef mit einem &ldquo;[<i>n</i>]&rdquo; hinter dem Typnamen gelistet ist, auch die Feld-Index-Nummer.</li>
+  <li>Der Name des DataRef, der die Animation steuert -<br>
+    einer der DataRef-Typen &ldquo;int&rdquo;, &ldquo;float&rdquo; oder &ldquo;double&rdquo;, die <a href="http://www.xsquawkbox.net/xpsdk/docs/DataRefs.html" target="_blank">HIER</a> aufgelistet sind.</li>
+  <li>Wenn DataRef mit einem &ldquo;[<i>n</i>]&rdquo; hinter dem Typnamen gelistet ist, auch die Feld-Index-Nummer.</li>
   <li>Die Reichweite des DataRef-Wertes, der deine Objekte veranlassen soll zu verschwinden.</li>
 </ul>
 <p>Du kannst mehrfache Bedingungen festlegen - benutze die <samp>(+)</samp> and <samp>(&#8722;)</samp> Buttons um Bedingungen hinzuzufügen oder zu löschen. Du kannst auch festlegen, dass ein vorher verborgenes Objekt gezeigt wird. Die letzte Bedingung, die aktiv ist, &ldquo;gewinnt&rdquo; (das heißt: Bedingungen &ldquo;stapeln&rdquo; nicht, daher ist deren Reihenfolge wichtig.</p>
