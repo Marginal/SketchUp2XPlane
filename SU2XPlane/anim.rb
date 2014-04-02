@@ -338,8 +338,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
     puts "set_transform #{@component} #{p} #{@component.transformation.inspect}" if SU2XPlane::TraceEvents
     return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t('Set Position'), true, false, merge_operation?("#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p))	# merge into last if setting same transformation again
+    trans = @model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation
     # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
-    trans=(@model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
+    trans *= Geom::Transformation.scaling(1/trans.xscale, 1/trans.yscale, 1/trans.zscale)
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p, trans.to_a)
     @model.commit_operation
   end
@@ -348,17 +349,18 @@ class XPlaneAnimation < Sketchup::EntityObserver
     puts "get_transform #{@component} #{p}" if SU2XPlane::TraceEvents
     return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t('Preview Animation'), true, false, merge_operation?("#{@component.object_id}/preview"))	# treat same as preview for the sake of Undo
-    @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
+    trans = @model.active_entities.include?(@component) ? @model.edit_transform * @component.XPTransformation(p) : @component.XPTransformation(p)	# may not be unit scale if (grand)parent scaled
+    @component.transformation = trans * Geom::Transformation.scaling(@component.transformation.xscale/trans.xscale, @component.transformation.yscale/trans.yscale, @component.transformation.zscale/trans.zscale)	# preserve scale
     @model.commit_operation
     if can_preview()
-      @dlg.execute_script("document.getElementById('preview-value').innerHTML='#{('%.6g' % @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p).to_f).tr('.',DecimalSep)}'")
+      @dlg.execute_script("document.getElementById('preview-value').innerHTML='#{('%.6g' % @component.XPGetValue(p).to_f).tr('.',DecimalSep)}'")
       loop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).to_f
       if loop>0.0
         range_start, range_stop = 0.0, loop
       else
-        range_start, range_stop = @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+'0').to_f, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(count_frames()-1).to_s).to_f
+        range_start, range_stop = @component.XPGetValue(0).to_f, @component.XPGetValue(count_frames()-1).to_f
       end
-      @dlg.execute_script("document.getElementById('preview-slider').value=#{(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+p).to_f-range_start)*200/(range_stop-range_start)}")
+      @dlg.execute_script("document.getElementById('preview-slider').value=#{(@component.XPGetValue(p).to_f-range_start)*200/(range_stop-range_start)}")
       @dlg.execute_script("fdSlider.updateSlider('preview-slider')")
     end
   end
@@ -377,9 +379,9 @@ class XPlaneAnimation < Sketchup::EntityObserver
     if newframe==numframes
       @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+newframe.to_s, @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(newframe-1).to_s))
     end
-    # strip out scale
-    t=@component.transformation.to_a
-    trans=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * @component.transformation * Geom::Transformation.scaling(1/Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), 1/Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), 1/Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))
+    trans = @model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation
+    # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
+    trans *= Geom::Transformation.scaling(1/trans.xscale, 1/trans.yscale, 1/trans.zscale)
     @component.set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+newframe.to_s, trans.to_a)
     @model.commit_operation
     update_dialog()
@@ -693,6 +695,10 @@ class Sketchup::ComponentInstance
     return retval
   end
 
+  def XPGetValue(frame)
+    get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s)
+  end
+
   def XPSetValue(frame, value)
     set_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+frame.to_s, value.to_s)
   end
@@ -711,20 +717,11 @@ class Sketchup::ComponentInstance
     # SketchUp returns squirrely transformations for rotations >= 180, so work out each rotation relative to previous
     numframes=self.XPCountFrames
     return [] if !self.XPDataRef || numframes==0
-    lasttrans = trans * XPTransformation(0)
-    if lasttrans.XPEuler
-      lastval = lasttrans.XPEuler.map{ |a| a.radians }
-    else	# gimbal lock - need to interpolate if we can
-      v = (trans * Geom::Transformation.interpolate(XPTransformation(0), XPTransformation(1), 0.5)).XPEuler
-      if v
-        lastval = v.map{ |a| a.radians * 2 }
-      else
-        lastval = lasttrans.XPEuler(true).map{ |a| a.radians }
-      end
-    end
+    lastval = (trans * XPTransformation(0)).XPEuler(true).map{ |a| a.radians }
+    # p "0 #{lastval.map{|a|a.round(SU2XPlane::P_A)}.inspect}"
     retval = [lastval]
     (1...numframes).each do |frame|
-      thistrans = lasttrans.inverse * (trans * XPTransformation(frame))	# rotation since previous frame
+      thistrans = trans * XPTransformation(frame-1).inverse * XPTransformation(frame)	# rotation since previous frame
       if thistrans.XPEuler
         thisval = thistrans.XPEuler.map{ |a| a.radians }
       elsif	# gimbal lock - need to interpolate if we can
@@ -735,10 +732,11 @@ class Sketchup::ComponentInstance
           thisval = thistrans.XPEuler(true).map{ |a| a.radians }
         end
       end
-      lasttrans = thistrans
       lastval = lastval.zip(thisval).map{ |p| p[0] + (p[1]+180)%360 - 180 }	# cumulative with previous frame, no more than 180
+      # p "#{frame} #{(trans*XPTransformation(frame)).XPEuler(true).map{|a|a.radians.round(SU2XPlane::P_A)}.inspect} #{thisval.map{|a|a.round(SU2XPlane::P_A)}.inspect} #{lastval.map{|a|a.round(SU2XPlane::P_A)}.inspect}"
       retval << lastval
     end
+    # p retval.map { |r| r.map { |a| a.round(SU2XPlane::P_A) } }
     return retval.map { |r| r.map { |a| a.round(SU2XPlane::P_A) } }	# round at end to prevent comparision differences
   end
 
@@ -782,12 +780,11 @@ class Sketchup::ComponentInstance
     val_start=get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_start).to_s).to_f
     val_stop =get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_FRAME_+(key_stop).to_s).to_f
     interp= (val - val_start) / (val_stop - val_start)
-    t=transformation.to_a
     trans = (model.active_entities.include?(self) ? model.edit_transform : Geom::Transformation.new) *
       Geom::Transformation.interpolate(get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_start.to_s),
                                        get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+key_stop.to_s),
-                                       interp) *
-      Geom::Transformation.scaling(Math::sqrt(t[0]*t[0]+t[1]*t[1]+t[2]*t[2]), Math::sqrt(t[4]*t[4]+t[5]*t[5]+t[6]*t[6]), Math::sqrt(t[8]*t[8]+t[9]*t[9]+t[10]*t[10]))	# preserve scale
+                                       interp)	# may not be unit scale if (grand)parent scaled
+    trans *= Geom::Transformation.scaling(transformation.xscale/trans.xscale, transformation.yscale/trans.yscale, transformation.zscale/trans.zscale)	# preserve scale
     puts "preview #{val} #{interp}", trans.inspect if SU2XPlane::TraceEvents
     return trans
   end
