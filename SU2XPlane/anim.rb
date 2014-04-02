@@ -170,6 +170,12 @@ class XPlaneAnimationModelObserver < Sketchup::ModelObserver
     @parent.close()
   end
 
+  def onEraseAll(model)
+    puts "onEraseAll #{model} #{@parent}" if SU2XPlane::TraceEvents
+    # Currently only works on Windows.
+    @parent.close()
+  end
+
 end
 
 
@@ -252,11 +258,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
     puts "update_dialog #{@component} #{dlg}" if SU2XPlane::TraceEvents
     # Remaining initialization, deferred 'til DOM is ready via window.onload
     begin
-      if !@model.valid? || @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil
-        # User has closed the window on Mac, or undone creation of animation attributes
-        close()
-        return
-      end
+      return close() if !@model.valid? || @component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF)==nil	# User has closed the window on Mac, or undone creation of animation attributes
     rescue TypeError
       # User has undone creation of animation component -> underlying @component object has been deleted.
       return	#  Ignore and wait for onEraseEntity
@@ -320,6 +322,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def set_var(p)
     puts "set_var #{@component} #{p} #{@dlg.get_element_value(p)}" if SU2XPlane::TraceEvents
+    return close() if !@model.valid?	# model was closed on Mac
     newval=@dlg.get_element_value(p).strip.tr(DecimalSep,'.')
     return if @component.get_attribute(SU2XPlane::ATTR_DICT, p)==newval	# can get spurious call when update_dialog is called - e.g. on Undo, which messes up Undo merging
     @model.start_operation(XPL10n.t('Animation value'), true, false, merge_operation?("#{@component.object_id}/#{p}"))	# merge into last if setting same var again
@@ -332,7 +335,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def set_transform(p)
-    puts "set_transform #{@component} #{p}", #{@component.transformation.inspect} if SU2XPlane::TraceEvents
+    puts "set_transform #{@component} #{p} #{@component.transformation.inspect}" if SU2XPlane::TraceEvents
+    return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t('Set Position'), true, false, merge_operation?("#{@component.object_id}/"+SU2XPlane::ANIM_MATRIX_+p))	# merge into last if setting same transformation again
     # X-Plane doesn't allow scaling, and SketchUp doesn't handle it in interpolation. So save transformation with identity (not current) scale
     trans=(@model.active_entities.include?(@component) ? @model.edit_transform.inverse * @component.transformation : @component.transformation) * Geom::Transformation.scaling(1/@component.transformation.xscale, 1/@component.transformation.yscale, 1/@component.transformation.zscale)
@@ -342,6 +346,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def get_transform(p)
     puts "get_transform #{@component} #{p}" if SU2XPlane::TraceEvents
+    return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t('Preview Animation'), true, false, merge_operation?("#{@component.object_id}/preview"))	# treat same as preview for the sake of Undo
     @component.transformation=(@model.active_entities.include?(@component) ? @model.edit_transform : Geom::Transformation.new) * Geom::Transformation.new(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_MATRIX_+p)) * Geom::Transformation.scaling(@component.transformation.xscale, @component.transformation.yscale, @component.transformation.zscale)	# preserve scale
     @model.commit_operation
@@ -360,6 +365,7 @@ class XPlaneAnimation < Sketchup::EntityObserver
 
   def insert_frame(p)
     puts "insert_frame #{@component} #{p}" if SU2XPlane::TraceEvents
+    return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t("Keyframe"), true)
     newframe=p.to_i
     numframes=count_frames()
@@ -380,6 +386,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def delete_frame(p)
+    puts "delete_frame #{@component} #{p}" if SU2XPlane::TraceEvents
+    return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t('Erase Keyframe'), true)
     oldframe=p.to_i
     numframes=count_frames()-1
@@ -396,6 +404,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def insert_hideshow(p)
+    puts "insert_hideshow #{@component} #{p}" if SU2XPlane::TraceEvents
+    return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t('Hide / Show'), true)
     newhs=p.to_i
     numhs=count_hideshow()
@@ -420,6 +430,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def delete_hideshow(p)
+    puts "delete_hideshow #{@component} #{p}" if SU2XPlane::TraceEvents
+    return close() if !@model.valid?	# model was closed on Mac
     @model.start_operation(XPL10n.t('Erase Hide / Show'), true)
     oldhs=p.to_i
     numhs=count_hideshow()-1
@@ -445,11 +457,6 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def can_preview()
-    # determine if previewable - i.e. dataref values are in order
-    if !@model.valid?
-      close()
-      fail
-    end
     inorder=(@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_DATAREF) != '')
     frame=1
     while inorder
@@ -463,7 +470,8 @@ class XPlaneAnimation < Sketchup::EntityObserver
   end
 
   def preview(p)
-    if not can_preview() then return end
+    return close() if !@model.valid?	# model was closed on Mac
+    return if not can_preview()
     prop=p.to_f	# 0->1
     numframes=count_frames()
     loop=@component.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ANIM_LOOP).to_f
