@@ -2,7 +2,7 @@
 #
 # X-Plane export
 #
-# Copyright (c) 2006-2013 Jonathan Harris
+# Copyright (c) 2006-2014 Jonathan Harris
 #
 # This program is free software; you can redistribute it and/or
 # modify it under the terms of the GNU General Public License
@@ -229,7 +229,7 @@ def XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, usedmateri
       end
 
       mesh=ent.mesh(7)	# vertex, uvs & normal
-      n_polys = ent.mesh(7).count_polygons
+      n_polys = mesh.count_polygons
       usedmaterials[nil] += n_polys if nomats	# count one side only
 
       [true,false].each do |front|
