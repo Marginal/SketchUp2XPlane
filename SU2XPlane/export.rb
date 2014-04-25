@@ -24,11 +24,11 @@ module Marginal
       # Flags for export in order of priority low->high. Attributes represented by lower bits are flipped more frequently on output.
       HARD=1
       DECK=2
-      # animation should come here
       SHINY=4
-      ALPHA=8
-      NDRAPED=16	# negated so ground polygons come first
-      NPOLY=32	# ditto
+      # animation should come here
+      ALPHA=8		# must be last for correctness
+      NDRAPED=16	# negated so ground polygons come first (don't care about alpha for ground polygons)
+      NPOLY=32		# ditto
 
       # Types
       TRIS='Tris'
@@ -46,7 +46,7 @@ module Marginal
 
       def <=>(other)
         # For sorting primitives in order of priority
-        c = ((self.attrs&(NDRAPED|NPOLY|ALPHA|SHINY)) <=> (other.attrs&(NDRAPED|NPOLY|ALPHA|SHINY)))
+        c = ((self.attrs&(NDRAPED|NPOLY|ALPHA)) <=> (other.attrs&(NDRAPED|NPOLY|ALPHA)))
         return c if c!=0
         if self.anim && other.anim
           c = ((self.anim) <=> (other.anim))
@@ -55,7 +55,7 @@ module Marginal
           return -1 if !self.anim	# no animation precedes animation
           return 1 if !other.anim	# no animation precedes animation
         end
-        c = ((self.attrs&(DECK|HARD)) <=> (other.attrs&(DECK|HARD)))
+        c = ((self.attrs&(SHINY|DECK|HARD)) <=> (other.attrs&(SHINY|DECK|HARD)))
         return c if c!=0
         c = (self.typename <=> other.typename)
         return c
