@@ -78,10 +78,10 @@ module Marginal
         elsif tool_id==21126
           # Change Axes tool
           c=@model.selection.first	# can be nil if the user is changing global axes
-          if c && c.typename=='ComponentInstance' && c.XPCountFrames>0
+          if c && c.is_a?(Sketchup::ComponentInstance) && c.XPCountFrames>0
             @definition=c.definition
             @definition.instances.each { |c| c.XPSavedTransformation=c.transformation }
-            @definition.entities.each  { |c| c.XPSavedTransformation=c.transformation if c.typename=='ComponentInstance' && c.XPCountFrames>0 }
+            @definition.entities.each  { |c| c.XPSavedTransformation=c.transformation if c.is_a?(Sketchup::ComponentInstance) && c.XPCountFrames>0 }
           else
             @definition=nil
           end
@@ -97,7 +97,7 @@ module Marginal
           end
           # shift immediate childrens' stored keyframe positions too
           @definition.entities.each do |c|
-            if c.typename=='ComponentInstance' && c.XPCountFrames>0
+            if c.is_a?(Sketchup::ComponentInstance) && c.XPCountFrames>0
               shift=c.transformation * c.XPSavedTransformation.inverse
               (0...c.XPCountFrames).each do |frame|
                 c.set_attribute(ATTR_DICT, ANIM_MATRIX_+frame.to_s, (shift * Geom::Transformation.new(c.get_attribute(ATTR_DICT, ANIM_MATRIX_+frame.to_s))).to_a)
@@ -134,15 +134,15 @@ module Marginal
       def onSelectionBulkChange(selection)
         puts "onSelectionBulkChange #{selection.to_a.inspect}" if TraceEvents
         selection.each do |e|
-          if e.typename=='ComponentInstance'
+          if e.is_a?(Sketchup::ComponentInstance)
             puts "#{e} #{e.name}",e.transformation.inspect if TraceEvents
             # Save transformations in case the user makes this selection into a Component or Group
             e.XPSavedTransformation=e.transformation if e.XPCountFrames>0
             # Save transformations of children in case the user explodes this Component
-            e.definition.entities.each { |c| c.XPSavedTransformation=c.transformation if c.typename=='ComponentInstance' && c.XPCountFrames>0 }
-          elsif e.typename=='Group'
+            e.definition.entities.each { |c| c.XPSavedTransformation=c.transformation if c.is_a?(Sketchup::ComponentInstance) && c.XPCountFrames>0 }
+          elsif e.is_a?(Sketchup::Group)
             # Save transformations of children in case the user explodes this Group
-            e.entities.each { |c| c.XPSavedTransformation=c.transformation if c.typename=='ComponentInstance' && c.XPCountFrames>0 }
+            e.entities.each { |c| c.XPSavedTransformation=c.transformation if c.is_a?(Sketchup::ComponentInstance) && c.XPCountFrames>0 }
           end
         end
       end
@@ -166,7 +166,7 @@ module Marginal
         # @model.start_operation('Make Component/Group', true, false, true)	# Don't need to do this - we're still in the middle of the operation
         definition.entities.each do |c|
           # WTF? sometimes Sketchup refuses to make the requested new Component - in which case the sub-Components are new and don't have a saved Transformation
-          if c.typename=='ComponentInstance' && c.XPSavedTransformation
+          if c.is_a?(Sketchup::ComponentInstance) && c.XPSavedTransformation
             puts "#{c} #{c.name}", "current:", c.transformation.inspect, "saved:", c.XPSavedTransformation.inspect if TraceEvents
             shift=@model.edit_transform * c.transformation * c.XPSavedTransformation.inverse
             (0...c.XPCountFrames).each do |frame|
@@ -223,7 +223,7 @@ module Marginal
       def onExplode(model)
         puts "onExplode #{model} #{model.selection.to_a}", model.edit_transform.inspect if TraceEvents
         model.selection.each do |c|
-          if c.typename=='ComponentInstance' && c.XPSavedTransformation
+          if c.is_a?(Sketchup::ComponentInstance) && c.XPSavedTransformation
             model.start_operation('Explode', true, false, true)
             puts "#{c} #{c.name}", "current:", c.transformation.inspect, "saved:", c.XPSavedTransformation.inspect if TraceEvents
             shift=model.edit_transform.inverse * c.transformation * c.XPSavedTransformation.inverse
@@ -253,7 +253,7 @@ module Marginal
       # This fails to fire when the new copy is inside a Component or Group. What a crock.
       def onElementAdded(entities, e)
         puts "onElementAdded #{entities} #{e}" if TraceEvents
-        if e.typename=='ComponentInstance'
+        if e.is_a?(Sketchup::ComponentInstance)
           # XPSavedTransformation holds the *new* location since we've already been selected before we're notified here!
           puts "#{e} #{e.name}", e.transformation.inspect if TraceEvents
           @model.start_operation('Shift', true, false, true)

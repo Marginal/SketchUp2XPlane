@@ -52,15 +52,15 @@ module Marginal
 
       entities.each do |ent|
 
-        case ent.typename
+        case ent
 
-        when "ComponentInstance"
+        when Sketchup::ComponentInstance
           count+=XPlaneHighlightFaces(ent.definition.entities, untextured, reverse, selection)
 
-        when "Group"
+        when Sketchup::Group
           count+=XPlaneHighlightFaces(ent.entities, untextured, reverse, selection)
 
-        when "Face"
+        when Sketchup::Face
           if not (ent.material and ent.material.texture and ent.material.texture.filename) and not (ent.back_material and ent.back_material.texture and ent.back_material.texture.filename)
             ent.material=untextured
             ent.back_material=reverse

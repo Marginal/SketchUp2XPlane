@@ -74,16 +74,16 @@ module Marginal
 
         next if ent.hidden? || !ent.layer.visible?	# only interested in Materials in entities in active use
 
-        case ent.typename
+        case ent
 
-        when "ComponentInstance"
+        when Sketchup::ComponentInstance
           # Instances can have a material which child Entities inherit, but children don't get UVs so we don't count it
           XPlaneMaterialsAccumulate(ent.definition.entities, usedmaterials)
 
-        when "Group"
+        when Sketchup::Group
           XPlaneMaterialsAccumulate(ent.entities, usedmaterials)
 
-        when "Face"
+        when Sketchup::Face
           n = ent.mesh(0).count_polygons	# complex faces get more weight
           if !ent.material && !ent.back_material
             usedmaterials[nil] += 1		# just count the whole face once
@@ -136,7 +136,7 @@ module Marginal
     def self.XPlaneMaterialsWrite(model, tw, material, newfile)
 
       model.entities.each do |e|
-        if ['Face', 'Group', 'ComponentInstance'].include?(e.typename)	# TextureWriter only operates on a limited set of Entities
+        if [Sketchup::Face, Sketchup::Group, Sketchup::ComponentInstance].include?(e.class)	# TextureWriter only operates on a limited set of Entities
           if e.material == material
             raise "Can't write #{newfile}" if tw.load(e, true)==0 || tw.write(e, true, newfile)!=0
             return true

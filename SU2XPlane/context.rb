@@ -21,7 +21,7 @@ module Marginal
       setting = nil
       ss = Sketchup.active_model.selection
       ss.each do |ent|
-        if ent.typename=="Face"
+        if ent.is_a?(Sketchup::Face)
           if ent.get_attribute(ATTR_DICT, attr, 0)==0
             setting=true
             break
@@ -30,7 +30,7 @@ module Marginal
       end
       if setting
         Sketchup.active_model.selection.each do |ent|
-          if ent.typename=="Face"
+          if ent.is_a?(Sketchup::Face)
             if attr==ATTR_HARD_NAME
               ent.delete_attribute(ATTR_DICT, ATTR_DECK_NAME)	# mutually exclusive
             elsif attr==ATTR_DECK_NAME
@@ -41,7 +41,7 @@ module Marginal
         end
       else	# clearing
         Sketchup.active_model.selection.each do |ent|
-          ent.delete_attribute(ATTR_DICT, attr) if ent.typename=="Face"
+          ent.delete_attribute(ATTR_DICT, attr) if ent.is_a?(Sketchup::Face)
         end
       end
     end
@@ -51,7 +51,7 @@ module Marginal
       someactive=nil
       someinactive=nil
       Sketchup.active_model.selection.each do |ent|
-        if ent.typename=="Face"
+        if ent.is_a?(Sketchup::Face)
           if ent.get_attribute(ATTR_DICT, attr, 0)==0
             someinactive=true
           else
@@ -80,7 +80,7 @@ module Marginal
       ss = Sketchup.active_model.selection
       return MF_GRAYED if ss.empty?
       ss.each do |ent|
-        return MF_GRAYED if (ent.typename!="Face" && ent.typename!="Edge")
+        return MF_GRAYED if (!ent.is_a?(Sketchup::Face) && !ent.is_a?(Sketchup::Edge))
       end
       return MF_ENABLED
     end

@@ -188,7 +188,7 @@ module Marginal
       def initialize(component, model)
         @component=component
         @model=model
-        if @component.typename!='ComponentInstance' then fail end
+        if !@component.is_a?(Sketchup::ComponentInstance) then fail end
         if Object::RUBY_PLATFORM =~ /darwin/i
           @dlg = UI::WebDialog.new(L10N.t('X-Plane Animation'), true, nil, 396, 402)
           @dlg.min_width = 396
@@ -234,9 +234,9 @@ module Marginal
         # Is this component in entities, or in sub-entities
         return true if entities.include?(@component)
         entities.each do |e|
-          if e.typename=='Group'
+          if e.is_a?(Sketchup::Group)
             return true if included?(e.entities)
-          elsif e.typename=='ComponentInstance'
+          elsif e.is_a?(Sketchup::ComponentInstance)
             return true if included?(e.definition.entities)
           end
         end
@@ -529,13 +529,13 @@ module Marginal
       ss = model.selection
       if ss.empty?
         return
-      elsif ss.count==1 and ss.first.typename=='ComponentInstance'
+      elsif ss.count==1 and ss.first.is_a?(Sketchup::ComponentInstance)
         component=ss.first
       else
         # Make a new component as the basis for animation
         model.start_operation(L10N.t('Animate'), true)
         modified=true
-        if ss.count==1 and ss.first.typename=='Group'
+        if ss.count==1 and ss.first.is_a?(Sketchup::Group)
           # Convert selected group
           name=ss.first.name
           component=ss.first.to_component

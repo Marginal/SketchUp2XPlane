@@ -167,14 +167,14 @@ module Marginal
         primcache[anim.cachekey]=[] if !primcache.include?(anim.cachekey)
       end
 
-      # Process Faces before Groups and ComponentInstances so that we can search Vertices added at this level (but not below) to detect dupes
+      # Process Faces before ComponentInstances so that we can search Vertices added at this level (but not below) to detect dupes
       (entities.sort { |a,b| b.typename<=>a.typename }).each do |ent|
 
         next if ent.hidden? or not ent.layer.visible?
 
-        case ent.typename
+        case ent
 
-        when "ComponentInstance"
+        when Sketchup::ComponentInstance
           begin
             newanim=XPAnim.new(ent, anim, trans)
             if primcache.include?(newanim.cachekey)
@@ -192,10 +192,10 @@ module Marginal
             XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials) unless ['Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
           end
 
-        when "Group"
+        when Sketchup::Group
           XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials)
 
-        when "Text"
+        when Sketchup::Text
           light=ent.text[/\S*/]
           if ent.point && (SU2XPlane::LIGHTNAMED.include?(light) || SU2XPlane::LIGHTCUSTOM.include?(light))
             lightprim=XPPrim.new(XPPrim::LIGHT, anim)
@@ -204,7 +204,7 @@ module Marginal
             primcache[anim.cachekey].push(lightprim) if anim
           end
 
-        when "Face"
+        when Sketchup::Face
           # if neither side has material then output both sides,
           # otherwise outout the side(s) with materials
           nomats = (not ent.material and not ent.back_material)
