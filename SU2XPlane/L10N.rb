@@ -6,13 +6,10 @@ module Marginal
     class L10N
 
       def self.resource_file(file_name)
-        f = Sketchup.find_support_file(file_name, "Plugins/SU2XPlane/Resources/#{Sketchup.get_locale.downcase.split('-')[0]}")
-        if f
-          return f
-        end
-        # Default to english
-        f = Sketchup.find_support_file(file_name, "Plugins/SU2XPlane/Resources/en")
-        return f || nil
+        f = File.join(File.dirname(__FILE__), 'Resources', Sketchup.get_locale.downcase.split('-')[0], file_name)
+        return f if File.file?(f)
+        f = File.join(File.dirname(__FILE__), 'Resources', 'en', file_name)	# Default to english
+        return File.file?(f) ? f : nil
       end
 
       def self.t(string)
