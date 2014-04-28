@@ -54,22 +54,23 @@ module Marginal
 
         begin
           file=File.new(file_path, 'r')
-          line=file.readline.split(/\/\/|#/)[0].strip()
+          enc = String.new.respond_to?(:force_encoding)
+          line = (enc ? file.readline.force_encoding(Encoding::ASCII_8BIT) : file.readline).split(/\/\/|#/)[0].strip()
           if line.include? ?\r
             # Old Mac \r line endings
             linesep="\r"
             file.rewind
-            line=file.readline(linesep).split(/\/\/|#/)[0].strip()
+            line = (enc ? file.readline(linesep).force_encoding(Encoding::ASCII_8BIT) : file.readline(linesep)).split(/\/\/|#/)[0].strip()
           else
             linesep="\n"
           end
           raise XPlaneImporterError, L10N.t('This is not a valid X-Plane file') if not ['A','I'].include?(line)
-          line=file.readline(linesep).split(/\/\/|#/)[0].strip()
+          line = (enc ? file.readline(linesep).force_encoding(Encoding::ASCII_8BIT) : file.readline(linesep)).split(/\/\/|#/)[0].strip()
           if line.split()[0]=='2'
             raise XPlaneImporterError, L10N.t("Can't read X-Plane version %s files") % '6'
           elsif line!='800'
             raise XPlaneImporterError, L10N.t("Can't read X-Plane version %s files") % (line.to_i/100)
-          elsif not file.readline(linesep).split(/\/\/|#/)[0].strip()=='OBJ'
+          elsif not (enc ? file.readline(linesep).force_encoding(Encoding::ASCII_8BIT) : file.readline(linesep)).split(/\/\/|#/)[0].strip()=='OBJ'
             raise XPlaneImporterError, L10N.t('This is not a valid X-Plane file')
           end
 
@@ -117,7 +118,16 @@ module Marginal
             while true
               line=file.gets(linesep)
               break if not line
-              line=line.split(/\/\/|#/)[0].strip()
+              if line[0..10]=='####_alpha'
+                add_collected_faces(entities)
+                @alpha = true
+                next
+              elsif line[0,13]=='####_no_alpha'
+                add_collected_faces(entities)
+                @alpha = false
+                next
+              end
+              line = enc ? line.force_encoding(Encoding::ASCII_8BIT).split(/\/\/|#/)[0].strip() : line.split(/\/\/|#/)[0].strip()
               next if line.empty?
               c=line.split()
               cmd=c.shift
@@ -285,12 +295,6 @@ module Marginal
               when 'ATTR_no_draped'
                 add_collected_faces(entities)
                 @poly = false
-              when '####_alpha'
-                add_collected_faces(entities)
-                @alpha = true
-              when '####_no_alpha'
-                add_collected_faces(entities)
-                @alpha = false
               when 'ATTR_shiny_rat'
                 add_collected_faces(entities)
                 @shiny = c[0].to_f > 0.0
@@ -348,6 +352,7 @@ module Marginal
                       elsif frame==keys.length-1
                         val_start, val_stop = rkeys[-2..-1]	# extrapolate after
                       else
+                        val_stop = rkeys[-1]
                         rkeys.each { |val_stop| break if val_stop > v }
                         val_start  = rkeys[rkeys.index(val_stop)-1]
                       end
