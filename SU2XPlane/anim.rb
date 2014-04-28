@@ -190,10 +190,10 @@ module Marginal
         @model=model
         if !@component.is_a?(Sketchup::ComponentInstance) then fail end
         if Object::RUBY_PLATFORM =~ /darwin/i
-          @dlg = UI::WebDialog.new(L10N.t('X-Plane Animation'), true, nil, 396, 402)
+          @dlg = UI::WebDialog.new(L10N.t('X-Plane Animation'), true, 'SU2XPlane', 396, 402)
           @dlg.min_width = 396
         else
-          @dlg = UI::WebDialog.new(L10N.t('X-Plane Animation'), true, nil, 450, 532)
+          @dlg = UI::WebDialog.new(L10N.t('X-Plane Animation'), true, 'SU2XPlane', 450, 538)
           @dlg.min_width = 450
           @dlg.allow_actions_from_host("getfirebug.com")	# for debugging on Windows
         end
