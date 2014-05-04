@@ -85,7 +85,7 @@ module Marginal
         # if translation constant across keyframes reduce to one entry
         @t=[@t[0]] if (@t.inject({}) { |h,v| h.store(v,true) && h }).length == 1
 
-        if !(0...component.XPCountFrames).inject(nil){|memo,frame| memo||(trans * component.XPTransformation(frame)).XPEuler}
+        if component.XPCountFrames>0 && !(0...component.XPCountFrames).inject(nil){|memo,frame| memo||(trans * component.XPTransformation(frame)).XPEuler}
           # rotation just about y axis - adjust to avoid gimbal lock
           trans = Geom::Transformation.rotation(Geom::Point3d.new(0,0,0), Geom::Vector3d.new(0,1,0), Math::PI/2) * trans
           @ry = [-90]
@@ -93,13 +93,22 @@ module Marginal
 
         rot=component.XPRotations(trans)
         if (rot.inject({}) { |h,v| h.store(v,true) && h }).length <= 1
-          # rotation constant across all keyframes - just use current rotation
-          if @t.length <= 1
+          # no keyframes, or rotation constant across all keyframes - just use current rotation
+          rot = [(trans*component.transformation).XPEuler(true).map{ |a| a.radians.round(Marginal::SU2XPlane::P_A) }]
+          if @t.length <= 1 && rot == [[0,0,0]]
             # no animation of any kind
             raise ArgumentError if @hideshow==[]	# no Hide/Show either - this is just a vanilla component
             @transformation = trans*component.transformation	# apply this component's transformation to sub-geometry
-            @t0=[]
+            @t=[]
+            return
           end
+          if @t.length <= 1
+            # no keyframes, or translation constant across all keyframes - just use current translation
+            @t=[(trans*component.transformation).origin.to_a.map { |v| v.round(Marginal::SU2XPlane::P_V) }]
+          end
+          @rz = [rot[0][2]]
+          @ry = [rot[0][1]]
+          @rx = [rot[0][0]]
         else
           # we have rotation keyframes
           if (rot.inject({}) { |h,v| h.store(v[2],true) && h }).length > 1
