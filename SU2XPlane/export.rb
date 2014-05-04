@@ -49,11 +49,12 @@ module Marginal
         c = ((self.attrs&(NDRAPED|NPOLY|ALPHA)) <=> (other.attrs&(NDRAPED|NPOLY|ALPHA)))
         return c if c!=0
         if self.anim && other.anim
-          c = ((self.anim) <=> (other.anim))
+          c = (self.anim <=> other.anim)
           return c if c!=0
-        elsif self.anim || other.anim
-          return -1 if !self.anim	# no animation precedes animation
-          return 1 if !other.anim	# no animation precedes animation
+        elsif self.anim
+          return 1	# no animation precedes animation
+        elsif other.anim
+          return -1	# no animation precedes animation
         end
         c = ((self.attrs&(SHINY|DECK|HARD)) <=> (other.attrs&(SHINY|DECK|HARD)))
         return c if c!=0
@@ -67,7 +68,9 @@ module Marginal
 
       include Comparable
 
-      attr_reader(:parent, :cachekey, :transformation, :dataref, :v, :loop, :t, :rx, :ry, :rz, :hideshow, :label)
+      attr_reader(:parent, :cachekey, :transformation, :dataref, :v, :loop, :idx, :t, :rx, :ry, :rz, :hideshow, :label)
+
+      @@last_idx = 0
 
       def initialize(component, parent, trans)
         @parent=parent	# parent XPAnim, or nil if parent is top-level - i.e. not animated
@@ -77,6 +80,7 @@ module Marginal
         @dataref=component.XPDataRef	# DataRef, w/ index if any
         @v=component.XPValues		# 0 or n keyframe dataref values. Note: stored as String
         @loop=component.XPLoop		# loop dataref value. Note: stored as String
+        @idx = (@@last_idx += 1)	# Sort index
         @t=component.XPTranslations(trans)	# 0, 1 or n set of translation coordinates (0=just hide/show, 1=rotation w/ no translation)
         @rx=@ry=@rz=[]			# 0, 1 or n rotation angles in degrees
         @hideshow=component.XPHideShow	# show/hide values [show/hide, dataref, from, to]
@@ -129,20 +133,18 @@ module Marginal
         end
       end
 
+      # For sorting animations. We create animations by depth-first traversal through the hierarchy, which
+      # happens to also be fine for writing to the OBJ file.
       def <=>(other)
-        # For sorting animations. We don't examine the animation contents - just ensure that parents come before their children.
-        p=other.parent
-        while p
-          return -1 if p.object_id==self.object_id	# other is a child of self
-          p=p.parent
-        end
-        p=self.parent
-        while p
-          return 1 if p.object_id==other.object_id	# self is a child of other
-          p=p.parent
-        end
-        # no parent/child relationship ('though could be siblings, cousins, etc)
-        return self.object_id<=>other.object_id	# use object_id to give a stable sort
+        return self.idx <=> other.idx
+      end
+
+      def self.last_idx
+        @@last_idx
+      end
+
+      def self.last_idx=(x)
+        @@last_idx = x
       end
 
       def self.ins(anim)
@@ -362,6 +364,7 @@ module Marginal
       vt=[]		# array of [vx, vy, vz, nx, ny, nz, u, v]
       prims=[]	# arrays of XPPrim
       usedmaterials = Hash.new(0)
+      XPAnim.last_idx = 0
       XPlaneAccumPolys(model.entities, nil, Geom::Transformation.scaling(1.to_m, 1.to_m, 1.to_m), tw, vt, prims, {}, usedmaterials)	# coords always returned in inches!
       if prims.empty?
         UI.messagebox L10N.t('Nothing to export!'), MB_OK,"X-Plane export"
