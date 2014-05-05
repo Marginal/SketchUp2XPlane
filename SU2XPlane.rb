@@ -24,6 +24,7 @@ module Marginal
     # Debug
     TraceEvents=false
     #Sketchup.send_action "showRubyPanel:"
+    Benchmark=false
 
     # X-Plane attributes
     ATTR_DICT="X-Plane"

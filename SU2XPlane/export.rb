@@ -163,7 +163,8 @@ module Marginal
     # Accumulate vertices and indices into vt and idx
     def self.XPlaneAccumPolys(entities, anim, trans, tw, vt, prims, primcache, usedmaterials)
 
-      base=vt.length
+      start = Time.now
+      vtlookup = {}	# indices of vertices added at this level
       prim=nil	# keep adding to the same XPPrim until attributes change
 
       # Create transformation w/out translation for normals
@@ -295,18 +296,12 @@ module Marginal
               for i in (1..mesh.count_polygons)
                 thistri=[]	# indices in this face
                 mesh.polygon_at(i).each do |index|
-                  if index>0
-                    v=thisvt[index-1]
-                  else
-                    v=thisvt[-index-1]
-                  end
+                  v = thisvt[(index>0 ? index : -index) - 1]
                   # Look for duplicate in Vertices already added at this level
-                  thisidx=vt.last(vt.length-base).rindex(v)
-                  if thisidx
-                    thisidx+=base
-                  else
+                  thisidx = vtlookup[v]
+                  if !thisidx
                     # Didn't find a duplicate vertex
-                    thisidx=vt.length
+                    vtlookup[v] = thisidx = vt.length
                     vt << v
                   end
                   if reverseidx
@@ -326,6 +321,7 @@ module Marginal
 
       end		# entities.each do |ent|
 
+      p "#{Time.now - start}s in XPlaneAccumPolys" if Benchmark
     end
 
     #-----------------------------------------------------------------------------
@@ -358,6 +354,8 @@ module Marginal
 
     def self.XPlaneDoExport()
 
+      start = Time.now
+      time = Time.now
       model=Sketchup.active_model
       outpath=model.path[0...-3]+'obj'
       tw = Sketchup.create_texture_writer
@@ -370,6 +368,8 @@ module Marginal
         UI.messagebox L10N.t('Nothing to export!'), MB_OK,"X-Plane export"
         return
       end
+      p "#{Time.now - time}s to accumulate" if Benchmark
+      time = Time.now
 
       # Determine most used material
       sep = File::ALT_SEPARATOR || File::SEPARATOR
@@ -410,9 +410,13 @@ module Marginal
 
         n_textures = usedmaterials.length
       end
+      p "#{Time.now - time}s to write materials" if Benchmark
+      time = Time.now
 
       # Sort to minimise state changes
       prims.sort!
+      p "#{Time.now - time}s to sort primitives" if Benchmark
+      time = Time.now
 
       # Build global index list
       allidx=prims.inject([]) do |index, prim|
@@ -423,6 +427,8 @@ module Marginal
           index
         end
       end
+      p "#{Time.now - time}s to build index list" if Benchmark
+      time = Time.now
 
       tex = mymaterial && mymaterial.texture
       texfile = tex && tex.filename.split(/[\/\\:]+/)[-1]	# basename
@@ -455,6 +461,8 @@ module Marginal
         outfile.write("IDX\t#{allidx[i]}\n")
       end
       outfile.write("\n")
+      p "#{Time.now - time}s to write indices" if Benchmark
+      time = Time.now
 
       # Write commands. Batch up primitives that share state into a single TRIS statement
       current_attrs=XPPrim::NPOLY|XPPrim::NDRAPED	# X-Plane's default state
@@ -599,6 +607,8 @@ module Marginal
 
       outfile.write("\n# Built with SketchUp #{Sketchup.version}. Exported with SketchUp2XPlane #{SU2XPlane::Version}.\n")
       outfile.close
+      p "#{Time.now - time}s to write commands" if Benchmark
+      p "#{Time.now - start}s total" if Benchmark
 
       msg=L10N.t("Wrote %s triangles to") % (allidx.length/3) + "\n" + outpath + "\n"
       msg+="\n" + L10N.t('Warning: You used multiple texture files; using file:') + "\n" + (File.file? tex.filename and tex.filename + "\n" + L10N.t('from material') + ' "' + mymaterial.display_name + '".' or File.dirname(model.path) + sep + texfile) + "\n" if  n_textures>1
