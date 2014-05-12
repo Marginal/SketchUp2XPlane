@@ -179,147 +179,146 @@ module Marginal
         primcache[anim.cachekey]=[] if !primcache.include?(anim.cachekey)
       end
 
-      # Process Faces before ComponentInstances so that we can search Vertices added at this level (but not below) to detect dupes
-      (entities.sort { |a,b| b.typename<=>a.typename }).each do |ent|
+      # filter out invisible
+      entities = entities.reject { |ent| ent.hidden? || !ent.layer.visible? }
 
-        next if ent.hidden? or not ent.layer.visible?
+      # Process in roughly same order as output so indices are output in order - so ComponentInstances last
 
-        case ent
+      entities.grep(Sketchup::Text).each do |ent|
+        light=ent.text[/\S*/]
+        if ent.point && (SU2XPlane::LIGHTNAMED.include?(light) || SU2XPlane::LIGHTCUSTOM.include?(light))
+          lightprim=XPPrim.new(XPPrim::LIGHT, anim)
+          lightprim.i = [ent.text] + (trans*ent.point).to_a.map { |v| v.round(SU2XPlane::P_V) }
+          prims << lightprim
+          primcache[anim.cachekey].push(lightprim) if anim
+        end
+      end
 
-        when Sketchup::ComponentInstance
-          begin
-            newanim=XPAnim.new(ent, anim, trans)
-            if primcache.include?(newanim.cachekey)
-              # re-use existing definition's vertices, indices and attributes (but not its animation context).
-              primcache[newanim.cachekey].each do |p|
-                prim=p.clone()
-                prim.anim=newanim
-                prims << prim
-              end
-            else
-              XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, primcache, usedmaterials)
-            end
-          rescue ArgumentError
-            # This component is not an animation
-            XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials) unless ['Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
-          end
+      entities.grep(Sketchup::Face).each do |ent|
+        # if neither side has material then output both sides,
+        # otherwise outout the side(s) with materials
+        nomats = (not ent.material and not ent.back_material)
 
-        when Sketchup::Group
-          XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials)
+        uvHelp = ent.get_UVHelper(true, true, tw)
+        attrs=0
+        if anim
+          # can't have poly_os or hard in animation
+          attrs |= XPPrim::NPOLY|XPPrim::NDRAPED
+        else
+          attrs |= XPPrim::NPOLY   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)!=0
+          attrs |= XPPrim::HARD    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
+          attrs |= XPPrim::DECK    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_DECK_NAME, 0)!=0
+          attrs |= XPPrim::NDRAPED unless attrs&(XPPrim::NPOLY|XPPrim::DECK|XPPrim::HARD)==0	# Can't be draped if hard
+        end
+        if attrs & (XPPrim::NPOLY|XPPrim::NDRAPED) == (XPPrim::NPOLY|XPPrim::NDRAPED)
+          # poly_os and/or draped implies ground level so no point in alpha
+          attrs |= XPPrim::ALPHA if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0
+          attrs |= XPPrim::SHINY if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_SHINY_NAME, 0)!=0
+        end
+        if !prim or prim.attrs!=attrs
+          prim=XPPrim.new(XPPrim::TRIS, anim, attrs)
+          prims << prim
+          primcache[anim.cachekey].push(prim) if anim
+        end
 
-        when Sketchup::Text
-          light=ent.text[/\S*/]
-          if ent.point && (SU2XPlane::LIGHTNAMED.include?(light) || SU2XPlane::LIGHTCUSTOM.include?(light))
-            lightprim=XPPrim.new(XPPrim::LIGHT, anim)
-            lightprim.i = [ent.text] + (trans*ent.point).to_a.map { |v| v.round(SU2XPlane::P_V) }
-            prims << lightprim
-            primcache[anim.cachekey].push(lightprim) if anim
-          end
+        mesh=ent.mesh(7)	# vertex, uvs & normal
+        n_polys = mesh.count_polygons
+        usedmaterials[nil] += n_polys if nomats	# count one side only
 
-        when Sketchup::Face
-          # if neither side has material then output both sides,
-          # otherwise outout the side(s) with materials
-          nomats = (not ent.material and not ent.back_material)
-
-          uvHelp = ent.get_UVHelper(true, true, tw)
-          attrs=0
-          if anim
-            # can't have poly_os or hard in animation
-            attrs |= XPPrim::NPOLY|XPPrim::NDRAPED
+        [true,false].each do |front|
+          if front
+            material=ent.material
           else
-            attrs |= XPPrim::NPOLY   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)!=0
-            attrs |= XPPrim::HARD    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
-            attrs |= XPPrim::DECK    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_DECK_NAME, 0)!=0
-            attrs |= XPPrim::NDRAPED unless attrs&(XPPrim::NPOLY|XPPrim::DECK|XPPrim::HARD)==0	# Can't be draped if hard
+            material=ent.back_material
           end
-          if attrs & (XPPrim::NPOLY|XPPrim::NDRAPED) == (XPPrim::NPOLY|XPPrim::NDRAPED)
-            # poly_os and/or draped implies ground level so no point in alpha
-            attrs |= XPPrim::ALPHA if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0
-            attrs |= XPPrim::SHINY if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_SHINY_NAME, 0)!=0
-          end
-          if !prim or prim.attrs!=attrs
-            prim=XPPrim.new(XPPrim::TRIS, anim, attrs)
-            prims << prim
-            primcache[anim.cachekey].push(prim) if anim
-          end
+          reverseidx=!(front^(det<0))
 
-          mesh=ent.mesh(7)	# vertex, uvs & normal
-          n_polys = mesh.count_polygons
-          usedmaterials[nil] += n_polys if nomats	# count one side only
-
-          [true,false].each do |front|
-            if front
-              material=ent.material
-            else
-              material=ent.back_material
-            end
-            reverseidx=!(front^(det<0))
-
-            if nomats or (material and material.alpha>0.0)
-              if material and material.texture
-                usedmaterials[material] += n_polys
-                tex=material.texture
-                # Get minimum uv co-oords
-                us=[]
-                vs=[]
-                ent.outer_loop.vertices.each do |vertex|
-                  if front
-                    u=uvHelp.get_front_UVQ(vertex.position).to_a
-                  else
-                    u=uvHelp.get_back_UVQ(vertex.position).to_a
-                  end
-                  us << (u.x/u.z).floor
-                  vs << (u.y/u.z).floor
-                end
-                minu=us.min
-                minv=vs.min
-              else
-                usedmaterials[nil] += n_polys if not nomats
-                tex=nil
-                minu=minv=0
-              end
-
-              thisvt=[]	# Vertices in this face
-              for i in (1..mesh.count_points)
-                v=trans * mesh.point_at(i)
-                if tex
-                  u=mesh.uv_at(i, front)
+          if nomats or (material and material.alpha>0.0)
+            if material and material.texture
+              usedmaterials[material] += n_polys
+              tex=material.texture
+              # Get minimum uv co-oords
+              us=[]
+              vs=[]
+              ent.outer_loop.vertices.each do |vertex|
+                if front
+                  u=uvHelp.get_front_UVQ(vertex.position).to_a
                 else
-                  u=[0,0,1]
+                  u=uvHelp.get_back_UVQ(vertex.position).to_a
                 end
-                n=(ntrans * mesh.normal_at(i)).normalize
-                n.reverse! if not front
-                # round to export precision to increase chance of detecting dupes
-                thisvt << v.to_a.map { |j| j.round(SU2XPlane::P_V) } + n.to_a.map { |j| j.round(SU2XPlane::P_N) } + [(u.x/u.z-minu).round(SU2XPlane::P_UV), (u.y/u.z-minv).round(SU2XPlane::P_UV)]
+                us << (u.x/u.z).floor
+                vs << (u.y/u.z).floor
               end
-
-              for i in (1..mesh.count_polygons)
-                thistri=[]	# indices in this face
-                mesh.polygon_at(i).each do |index|
-                  v = thisvt[(index>0 ? index : -index) - 1]
-                  # Look for duplicate in Vertices already added at this level
-                  thisidx = vtlookup[v]
-                  if !thisidx
-                    # Didn't find a duplicate vertex
-                    vtlookup[v] = thisidx = vt.length
-                    vt << v
-                  end
-                  if reverseidx
-                    thistri.push(thisidx)
-                  else
-                    thistri.unshift(thisidx)
-                  end
-                end
-                prim.i.concat(thistri)
-              end
-
+              minu=us.min
+              minv=vs.min
+            else
+              usedmaterials[nil] += n_polys if not nomats
+              tex=nil
+              minu=minv=0
             end
 
-          end	# [true,false].each do |front|
+            thisvt=[]	# Vertices in this face
+            for i in (1..mesh.count_points)
+              v=trans * mesh.point_at(i)
+              if tex
+                u=mesh.uv_at(i, front)
+              else
+                u=[0,0,1]
+              end
+              n=(ntrans * mesh.normal_at(i)).normalize
+              n.reverse! if not front
+              # round to export precision to increase chance of detecting dupes
+              thisvt << v.to_a.map { |j| j.round(SU2XPlane::P_V) } + n.to_a.map { |j| j.round(SU2XPlane::P_N) } + [(u.x/u.z-minu).round(SU2XPlane::P_UV), (u.y/u.z-minv).round(SU2XPlane::P_UV)]
+            end
 
-        end		# case ent.typename
+            for i in (1..mesh.count_polygons)
+              thistri=[]	# indices in this face
+              mesh.polygon_at(i).each do |index|
+                v = thisvt[(index>0 ? index : -index) - 1]
+                # Look for duplicate in Vertices already added at this level
+                thisidx = vtlookup[v]
+                if !thisidx
+                  # Didn't find a duplicate vertex
+                  vtlookup[v] = thisidx = vt.length
+                  vt << v
+                end
+                if reverseidx
+                  thistri.push(thisidx)
+                else
+                  thistri.unshift(thisidx)
+                end
+              end
+              prim.i.concat(thistri)
+            end
 
-      end		# entities.each do |ent|
+          end
+
+        end	# [true,false].each do |front|
+      end	# entities.grep(Sketchup::Face).each do |ent|
+
+      entities.grep(Sketchup::Group).each do |ent|
+        XPlaneAccumPolys(ent.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials)
+      end
+
+      # output Components in same order as listed in Outliner window
+      entities.grep(Sketchup::ComponentInstance).sort{ |a,b| "#{a.name} <#{a.definition.name}>" <=> "#{b.name} <#{b.definition.name}>" }.each do |ent|
+        begin
+          newanim=XPAnim.new(ent, anim, trans)
+          if primcache.include?(newanim.cachekey)
+            # re-use existing definition's vertices, indices and attributes (but not its animation context).
+            primcache[newanim.cachekey].each do |p|
+              prim=p.clone()
+              prim.anim=newanim
+              prims << prim
+            end
+          else
+            XPlaneAccumPolys(ent.definition.entities, newanim, newanim.transformation, tw, vt, prims, primcache, usedmaterials)
+          end
+        rescue ArgumentError
+          # This component is not an animation
+          XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials) unless ['Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
+        end
+      end
 
       p "#{Time.now - start}s in XPlaneAccumPolys" if Benchmark
     end
