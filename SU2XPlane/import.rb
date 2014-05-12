@@ -203,22 +203,19 @@ module Marginal
                 else	# !usepolygonmesh
 
                   while i<start+count
-                    thisvt=[vt[idx[i+2]].offset(anim_off.last), vt[idx[i+1]].offset(anim_off.last), vt[idx[i]].offset(anim_off.last)]
-                    if thisvt[0].on_line?([thisvt[1], thisvt[2]]) || thisvt[1].on_line?([thisvt[2], thisvt[0]]) || thisvt[2].on_line?([thisvt[0], thisvt[1]])	# co-located / co-linear ?
-                      i+=3	# next tri
-                      next
-                    end
+                    thisvt = [vt[idx[i+2]].offset(anim_off.last), vt[idx[i+1]].offset(anim_off.last), vt[idx[i]].offset(anim_off.last)]
+                    thisnm = [nm[idx[i+2]],nm[idx[i+1]],nm[idx[i]]]
+                    thisuv = [uv[idx[i+2]],uv[idx[i+1]],uv[idx[i]]]
+                    i += 3
+                    next if thisvt[0].on_line?([thisvt[1], thisvt[2]]) || thisvt[1].on_line?([thisvt[2], thisvt[0]]) || thisvt[2].on_line?([thisvt[0], thisvt[1]])	# co-located / co-linear => degenerate
                     begin
                       face=entities.add_face thisvt
                     rescue ArgumentError => e
                       p "Error: #{e.inspect}", thisvt, e.backtrace[0]	# Report to console
                       msg[L10N.t("Ignoring some geometry that couldn't be imported")]=true
-                      i+=3	# next tri
-                      next
+                      next	# next tri
                     end
 
-                    thisnm = [nm[idx[i+2]],nm[idx[i+1]],nm[idx[i]]]
-                    thisuv = [uv[idx[i+2]],uv[idx[i+1]],uv[idx[i]]]
                     if @material && (thisuv[0]!=nullUV || thisuv[1]!=nullUV || thisuv[2]!=nullUV)
                       pts = [thisvt[0],thisuv[0], thisvt[1],thisuv[1], thisvt[2],thisuv[2]]
                       begin
@@ -248,8 +245,6 @@ module Marginal
                     face.set_attribute(ATTR_DICT, ATTR_DECK_NAME, 1) if @deck
                     face.set_attribute(ATTR_DICT, ATTR_POLY_NAME, 1) if @poly
                     face.set_attribute(ATTR_DICT, ATTR_SHINY_NAME,1) if @shiny
-
-                    i+=3	# next tri
                   end
 
                 end		# usepolygonmesh
