@@ -19,7 +19,7 @@ require 'extensions.rb'
 module Marginal
   module SU2XPlane
 
-    Version="1.60"
+    Version="1.70"
 
     # Debug
     TraceEvents=false
