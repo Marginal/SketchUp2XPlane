@@ -376,27 +376,29 @@ module Marginal
       if usedmaterials.empty?
         mymaterial = nil
         n_textures = 0
+        texfile = nil
       else
         byuse = usedmaterials.invert
         n_faces += byuse.keys.inject { |sum,n| sum+n }
         mymaterial = byuse[byuse.keys.sort[-1]]	# most popular material
 
         # Write out the texture in the most popular material first if missing
-        basename = mymaterial.texture.filename.split(/[\/\\:]+/)[-1]
-        if !File.file? mymaterial.texture.filename
-          newfile = File.dirname(model.path) + sep + basename.split(/\.([^.]*)$/)[0] + ".png"
-          XPlaneMaterialsWrite(model, tw, mymaterial, newfile) if !File.file? newfile	# TextureWriter needs an Entity that uses the material, not the material itself
+        texfile = mymaterial.texture.filename
+        if !File.file? texfile
+          texfile = File.join(File.dirname(model.path), texfile[/[^\/\\]+$/].split(/\.([^.]*)$/)[0] + ".png")
+          XPlaneMaterialsWrite(model, tw, mymaterial, texfile) if !File.file? texfile	# TextureWriter needs an Entity that uses the material, not the material itself
         end
+        basename = texfile[/[^\/\\]+$/]
 
         # Write out missing textures in remaining materials
         usedmaterials.each_key do |material|
           if material!=mymaterial && material.texture && material.texture.filename
-            if basename.casecmp(material.texture.filename.split(/[\/\\:]+/)[-1])==0
+            if basename.casecmp(material.texture.filename[/[^\/\\]+$/])==0
               # it uses the same texture as our material
               usedmaterials[mymaterial] += usedmaterials.delete(material){|k|0}
             elsif !File.file? material.texture.filename
               # it uses a different texture than our material - write it anyway
-              newfile = File.dirname(model.path) + sep + material.texture.filename.split(/[\/\\:]+/)[-1].split(/\.([^.]*)$/)[0] + ".png"
+              newfile = File.dirname(model.path) + sep + material.texture.filename[/[^\/\\]+$/].split(/\.([^.]*)$/)[0] + ".png"
               XPlaneMaterialsWrite(model, tw, material, newfile) if !File.file? newfile	# TextureWriter needs an Entity that uses the material, not the material itself
             end
           end
@@ -430,17 +432,16 @@ module Marginal
       time = Time.now
 
       tex = mymaterial && mymaterial.texture
-      texfile = tex && tex.filename.split(/[\/\\:]+/)[-1]	# basename
       outfile=File.new(outpath, "w")
       outfile.write("I\n800\nOBJ\n\n")
       if tex
-        outfile.write("TEXTURE\t\t#{texfile}\n")
-        if File.exists? "#{tex.filename[0..-5]}_LIT#{texfile[-4..-1]}"
-          outfile.write("TEXTURE_LIT\t#{texfile[0..-5]}_LIT#{texfile[-4..-1]}\n")
+        outfile.write("TEXTURE\t\t#{basename}\n")
+        if File.exists? "#{texfile[0..-5]}_LIT#{texfile[-4..-1]}"
+          outfile.write("TEXTURE_LIT\t#{basename[0..-5]}_LIT#{texfile[-4..-1]}\n")
         end
         prims.each do |prim|
           if prim.attrs&XPPrim::NDRAPED==0
-            outfile.write("TEXTURE_DRAPED\t#{texfile}\n")
+            outfile.write("TEXTURE_DRAPED\t#{basename}\n")
             break
           end
         end
@@ -610,7 +611,7 @@ module Marginal
       p "#{Time.now - start}s total" if Benchmark
 
       msg=L10N.t("Wrote %s triangles to") % (allidx.length/3) + "\n" + outpath + "\n"
-      msg+="\n" + L10N.t('Warning: You used multiple texture files; using file:') + "\n" + (File.file? tex.filename and tex.filename + "\n" + L10N.t('from material') + ' "' + mymaterial.display_name + '".' or File.dirname(model.path) + sep + texfile) + "\n" if  n_textures>1
+      msg+="\n" + L10N.t('Warning: You used multiple texture files; using file:') + "\n" + (File.file? tex.filename and tex.filename + "\n" + L10N.t('from material') + ' "' + mymaterial.display_name + '".' or texfile) + "\n" if  n_textures>1
       msg+="\n" + L10N.t('Warning: Texture width is not a power of two') + ".\n" if tex and (tex.image_width & tex.image_width-1)!=0
       msg+="\n" + L10N.t('Warning: Texture height is not a power of two') + ".\n" if tex and (tex.image_height & tex.image_height-1)!=0
       msg+="\n" + (mymaterial and (L10N.t('Warning: %s faces are untextured') % n_untextured) or L10N.t('Warning: All faces are untextured')) + ".\n" if n_untextured>0
