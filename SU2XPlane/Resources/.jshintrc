@@ -1,0 +1,16 @@
+/* http://www.jshint.com/docs/options/ */
+{
+  "browser": true,
+  "devel": true,
+  "es3": true,
+  "forin": true,
+  "indent": true,
+  "latedef": "nofunc",
+  "noarg": true,
+  "noempty": true,
+  "nonbsp": true,
+  "trailing": true,
+  "undef": true,
+  "unused": true,
+  "-W097": true		// Allow but don't require global "use strict"
+}
