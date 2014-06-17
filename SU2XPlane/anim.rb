@@ -644,6 +644,24 @@ class Geom::Transformation
     end
   end
 
+  # defined in dcutils if Dynamic Components extension is enabled
+  if not Geom::Transformation.method_defined? :xscale
+    def xscale
+      t=self.to_a
+      Math.sqrt(t[0]*t[0] + t[1]*t[1] + t[2]*t[2])
+    end
+
+    def yscale
+      t=self.to_a
+      Math.sqrt(t[4]*t[4] + t[5]*t[5] + t[6]*t[6])
+    end
+
+    def zscale
+      t=self.to_a
+      Math.sqrt(t[8]*t[8] + t[9]*t[9] + t[10]*t[10])
+    end
+  end
+
   def inspect
     # pretty print, converting translation to m
     t=self.to_a
