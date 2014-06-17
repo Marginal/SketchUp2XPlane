@@ -828,7 +828,11 @@ class Sketchup::ComponentInstance
       next if !dataref || dataref==''
       index=get_attribute(Marginal::SU2XPlane::ATTR_DICT, prefix+Marginal::SU2XPlane::ANIM_HS_INDEX)
       dataref+=('['+index+']') if index and index!=''
-      retval << [hs, dataref, get_attribute(Marginal::SU2XPlane::ATTR_DICT, prefix+Marginal::SU2XPlane::ANIM_HS_FROM), get_attribute(Marginal::SU2XPlane::ATTR_DICT, prefix+Marginal::SU2XPlane::ANIM_HS_TO)]
+      from = get_attribute(Marginal::SU2XPlane::ATTR_DICT, prefix+Marginal::SU2XPlane::ANIM_HS_FROM)
+      from = '0' if !from || from==''
+      to = get_attribute(Marginal::SU2XPlane::ATTR_DICT, prefix+Marginal::SU2XPlane::ANIM_HS_TO)
+      to = '0' if !to || to==''
+      retval << [hs, dataref, from, to]
     end
     return retval
   end
