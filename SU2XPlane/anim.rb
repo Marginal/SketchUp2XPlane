@@ -636,6 +636,14 @@ class Geom::Transformation
     return [-rx, -ry, -rz]	# X-Plane is CCW
   end
 
+  def XPScale
+    # returns new matrix containing just the scaling parts
+    origin = Geom::Point3d.new
+    rot = self.XPEuler(true)
+    rotmatrix = Geom::Transformation.rotation(origin,[1,0,0],rot[0]) * Geom::Transformation.rotation(origin,[0,1,0],rot[1]) * Geom::Transformation.rotation(origin,[0,0,1],rot[2])
+    return (Geom::Transformation.translation(origin - self.origin) * self) * rotmatrix.inverse
+  end
+
   if not Geom::Transformation.method_defined? :determinant
     def determinant
       t=self.to_a

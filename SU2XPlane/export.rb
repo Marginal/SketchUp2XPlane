@@ -75,8 +75,7 @@ module Marginal
       def initialize(component, parent, trans)
         @parent=parent	# parent XPAnim, or nil if parent is top-level - i.e. not animated
         @cachekey=component.definition.object_id
-        @transformation = trans * component.transformation
-        @transformation = Geom::Transformation.scaling(@transformation.xscale, @transformation.yscale, @transformation.zscale)		# transformation to be applied to sub-geometry - just scale
+        @transformation = (trans * component.transformation).XPScale	# transformation to be applied to sub-geometry - just scale
         @dataref=component.XPDataRef	# DataRef, w/ index if any
         @v=component.XPValues		# 0 or n keyframe dataref values. Note: stored as String
         @loop=component.XPLoop		# loop dataref value. Note: stored as String
@@ -545,7 +544,7 @@ module Marginal
           if anim.t.length==1
             # not moving - save a potential accessor callback
             outfile.printf("#{ins}ANIM_trans\t%9.4f %9.4f %9.4f\t%9.4f %9.4f %9.4f\t0 0\tnone\n", anim.t[0][0], anim.t[0][2], -anim.t[0][1], anim.t[0][0], anim.t[0][2], -anim.t[0][1])
-          elsif anim.t.length!=0
+          elsif anim.t.length>1
             outfile.write("#{ins}ANIM_trans_begin\t#{anim.dataref}\n")
             0.upto(anim.t.length-1) do |i|
               outfile.printf("#{ins}\tANIM_trans_key\t\t#{anim.v[i]}\t%9.4f %9.4f %9.4f\n", anim.t[i][0], anim.t[i][2], -anim.t[i][1])
@@ -555,9 +554,9 @@ module Marginal
           end
 
           [[anim.rx,[1,0,0]], [anim.ry,[0,1,0]], [anim.rz,[0,0,1]]].each do |r,axis|
-            if r.length==1
+            if r.length==1 && r[0]!=0.0
               outfile.printf("#{ins}ANIM_rotate\t\t%d %d %d\t%7.2f %7.2f\t0 0\tnone\n", axis[0], axis[2], -axis[1], r[0], r[0])
-            elsif r.length!=0
+            elsif r.length>1
               outfile.printf("#{ins}ANIM_rotate_begin\t%d %d %d\t#{anim.dataref}\n", axis[0], axis[2], -axis[1])
               0.upto(r.length-1) do |i|
                 outfile.printf("#{ins}\tANIM_rotate_key\t\t#{anim.v[i]}\t%7.2f\n", r[i])
