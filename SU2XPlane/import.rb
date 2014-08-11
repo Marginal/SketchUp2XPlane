@@ -290,9 +290,15 @@ module Marginal
               when 'ATTR_no_draped'
                 add_collected_faces(entities)
                 @poly = false
-              when 'ATTR_shiny_rat'
+              when 'ATTR_shiny_rat', 'GLOBAL_specular'
                 add_collected_faces(entities)
                 @shiny = c[0].to_f > 0.0
+              when 'ATTR_blend', 'ATTR_shadow_blend', 'GLOBAL_shadow_blend'
+                add_collected_faces(entities)
+                @alpha = true
+              when 'ATTR_no_blend'
+                add_collected_faces(entities)
+                @alpha = false
 
               when 'ANIM_begin'
                 add_collected_faces(entities)	# commit any outstanding triangles before we change to new context
@@ -408,7 +414,7 @@ module Marginal
               when 'ANIM_hide', 'ANIM_show'
                 anim_context.last.XPAddHideShow(cmd[5..-1], c[2], c[0].to_f, c[1].to_f)
 
-              when 'TEXTURE_LIT', 'TEXTURE_NORMAL', 'TEXTURE_NORMAL_LIT', 'ATTR_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ATTR_light_level_reset', 'ANIM_trans_end', 'ANIM_rotate_end'
+              when 'TEXTURE_LIT', 'TEXTURE_NORMAL', 'TEXTURE_NORMAL_LIT', 'GLOBAL_no_blend', 'ATTR_shade_flat', 'ATTR_shade_smooth', 'ATTR_light_level_reset', 'ANIM_trans_end', 'ANIM_rotate_end', 'IF', 'ENDIF'
                 # suppress error message
               when 'POINT_COUNTS'
                 tricount = c[3].to_i / 3

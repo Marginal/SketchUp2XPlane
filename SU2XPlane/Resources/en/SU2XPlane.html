@@ -65,6 +65,13 @@ Scenery</a> &rarr; <a href="http://marginal.org.uk/x-planescenery/tools.html">To
 <h3>Attributes</h3>
 <p>This plugin adds an <samp>X-Plane</samp> entry to the context menu. These options can be used when you have face(s) selected:</p>
 <dl>
+  <dt><samp>Animation</samp></dt>
+  <dd>See below.</dd>
+  <dt>&nbsp;</dt>
+  <dt><samp>Ground</samp></dt>
+  <dd>Controls whether the face is rendered with &ldquo;polygon offsetting&rdquo; in X-Plane and, in X-Plane v10, is draped over the terrain.<br>
+Use this on faces that lie flat on the ground to prevent Z-buffer thrashing in X-Plane. Don't use this option for other faces.</dd>
+  <dt>&nbsp;</dt>
   <dt><samp>Hard</samp></dt>
   <dd>Controls whether aircraft can land on and/or collide with this face in X-Plane.<br>
 Making faces &ldquo;hard&rdquo; is expensive so use this sparingly. Vertical &ldquo;hard&rdquo; faces don't work as you might expect; if you want to make a building collidable just use this option on the roof, not on the sides.</dd>
@@ -72,19 +79,12 @@ Making faces &ldquo;hard&rdquo; is expensive so use this sparingly. Vertical &ld
   <dt><samp>Hard Deck</samp></dt>
   <dd>As above, but aircraft can also fly underneath this face in X-Plane.</dd>
   <dt>&nbsp;</dt>
-  <dt><samp>Ground</samp></dt>
-  <dd>Controls whether the face is rendered with &ldquo;polygon offsetting&rdquo; in X-Plane and, in X-Plane v10, is draped over the terrain.<br>
-Use this on faces that lie flat on the ground to prevent Z-buffer thrashing in X-Plane. Don't use this option for other faces.</dd>
-  <dt>&nbsp;</dt>
-  <dt><samp>Alpha</samp></dt>
-  <dd>This is a hint to X-Plane that the face is textured with a partially or wholly transparent or translucent texture.<br>
-Use this on any transparent or translucent faces through which you want to see other faces from the same model. Don't press this button for opaque (normal) faces.</dd>
-  <dt>&nbsp;</dt>
   <dt><samp>Shiny</samp></dt>
   <dd>Controls whether the face is rendered as shiny in X-Plane.</dd>
   <dt>&nbsp;</dt>
-  <dt><samp>Animation</samp></dt>
-  <dd>See below.</dd>
+  <dt><samp>Translucent</samp></dt>
+  <dd>This is a hint to X-Plane that the face is textured with a translucent texture.<br>
+Use this on any translucent faces through which you want to see other faces from the same model. Don't press this button for opaque (normal) faces.</dd>
 </dl>
 
 <h3>Lights</h3>

@@ -447,6 +447,8 @@ module Marginal
       else
         outfile.write("TEXTURE\t\n")	# X-Plane requires a TEXTURE statement
       end
+      have_alpha = (prims.inject(0){|memo,prim| (memo|prim.attrs)} & XPPrim::ALPHA) != 0
+      outfile.write("GLOBAL_no_blend\t0.5\n") if !have_alpha
       outfile.write("POINT_COUNTS\t#{vt.length} 0 0 #{allidx.length}\n\n")
 
       vt.each do |v|
@@ -464,7 +466,12 @@ module Marginal
       time = Time.now
 
       # Write commands. Batch up primitives that share state into a single TRIS statement
-      current_attrs=XPPrim::NPOLY|XPPrim::NDRAPED	# X-Plane's default state
+      if have_alpha	# have some alpha
+        current_attrs = XPPrim::NPOLY|XPPrim::NDRAPED|XPPrim::ALPHA	# X-Plane's default state
+      else
+        current_attrs = XPPrim::NPOLY|XPPrim::NDRAPED
+        outfile.write("IF NOT VERSION10\n\tATTR_no_blend\nENDIF\n\n")
+      end
       current_anim=nil
       current_base=0
       current_count=0
@@ -511,9 +518,9 @@ module Marginal
           outfile.write("#{ins}ATTR_draped\n")
         end
         if current_attrs&XPPrim::ALPHA==0 && prim.attrs&XPPrim::ALPHA!=0
-          outfile.write("#{ins}####_alpha\n")
+          outfile.write("#{ins}ATTR_blend\nATTR_shadow_blend\t0.75\n")
         elsif current_attrs&XPPrim::ALPHA!=0 && prim.attrs&XPPrim::ALPHA==0
-          outfile.write("#{ins}####_no_alpha\n")
+          outfile.write("#{ins}ATTR_no_blend\n")
         end
         if current_attrs&XPPrim::SHINY==0 && prim.attrs&XPPrim::SHINY!=0
           outfile.write("#{ins}ATTR_shiny_rat\t1\n")
