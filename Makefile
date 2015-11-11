@@ -5,7 +5,12 @@ VPATH=examples:examples_DE
 
 TARGETS=SketchUp2XPlane_$(VER).zip SketchUp2XPlane_$(VER).rbz SUanimation.zip SUlight.zip SUanimation_DE.zip
 
-INSTALLDIR=/Library/Application\ Support/Google\ SketchUp\ 8/SketchUp/plugins
+INSTALLDIRS = \
+	/Library/Application\ Support/Google\ SketchUp\ 8 \
+	~/Library/Application\ Support/SketchUp\ 2013 \
+	~/Library/Application\ Support/SketchUp\ 2014 \
+	~/Library/Application\ Support/SketchUp\ 2015 \
+	~/Library/Application\ Support/SketchUp\ 2016
 
 all:	$(TARGETS)
 
@@ -13,8 +18,12 @@ clean:
 	rm -f $(TARGETS)
 
 install:	$(TARGETS)
-	rm -rf $(INSTALLDIR)/$(PROJECT)
-	unzip -o -d $(INSTALLDIR) SketchUp2XPlane_$(VER).zip
+	for INSTALLDIR in $(INSTALLDIRS); do \
+		if [ -d "$${INSTALLDIR}/SketchUp/Plugins" ]; then \
+			rm -rf "$${INSTALLDIR}/SketchUp/Plugins/$(PROJECT)" ; \
+			unzip -o -d "$${INSTALLDIR}/SketchUp/Plugins" SketchUp2XPlane_$(VER).zip ; \
+		fi; \
+	done
 
 SketchUp2XPlane_$(VER).zip:	$(PROJECT).rb $(PROJECT)/*.rb $(PROJECT)/Resources/*.html $(PROJECT)/Resources/*.js $(PROJECT)/Resources/*.css $(PROJECT)/Resources/??/*.html $(PROJECT)/Resources/??/*.strings
 	rm -f $@
