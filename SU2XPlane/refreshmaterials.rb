@@ -135,6 +135,11 @@ module Marginal
     # Find an entity in the model that uses this material, and write it out
     def self.XPlaneMaterialsWrite(model, tw, material, newfile)
 
+      if material.texture.respond_to?(:write)	# New in SketchUp 2016
+        raise "Can't write #{newfile}" unless material.texture.write(newfile)
+        return true
+      end
+
       model.entities.grep(Sketchup::Face).each do |e|
         if e.material == material
           raise "Can't write #{newfile}" if tw.load(e, true)==0 || tw.write(e, true, newfile)!=0
