@@ -315,7 +315,7 @@ module Marginal
           end
         rescue ArgumentError
           # This component is not an animation
-          XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials) unless ['Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
+          XPlaneAccumPolys(ent.definition.entities, anim, trans*ent.transformation, tw, vt, prims, primcache, usedmaterials) unless ['Lisanne','Steve','Sophie','Susan','Derrick','Sang','Nancy'].include? ent.definition.name	# Silently skip figures
         end
       end
 
