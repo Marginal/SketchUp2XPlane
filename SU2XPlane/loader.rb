@@ -16,16 +16,16 @@ module Marginal
         if !Sketchup.active_model.selection.empty?
           menu.add_separator
           submenu = menu.add_submenu "X-Plane"
-          anim = submenu.add_item("\xE2\x80\x87\xE2\x80\x82"+L10N.t('Animation...')) { XPlaneMakeAnimation() }	# U+2007 figure space & U+2002 en space
-          poly = submenu.add_item(XPlaneTestAttr(ATTR_POLY_NAME, 'Ground')) { XPlaneToggleAttr(ATTR_POLY_NAME) }
+          anim = submenu.add_item("\xE2\x80\x83 "+L10N.t('Animation...')) { XPlaneMakeAnimation() }	# U+2003 em space
+          poly = submenu.add_item(XPlaneTestAttr(ATTR_POLY_NAME, 'Ground')) { XPlaneToggleAttr(ATTR_POLY_NAME, 'Ground') }
           submenu.set_validation_proc(poly) { XPlaneValidateAttr(ATTR_POLY_NAME) }
-          hard = submenu.add_item(XPlaneTestAttr(ATTR_HARD_NAME, 'Hard')) { XPlaneToggleAttr(ATTR_HARD_NAME) }
+          hard = submenu.add_item(XPlaneTestAttr(ATTR_HARD_NAME, 'Hard')) { XPlaneToggleAttr(ATTR_HARD_NAME, 'Hard') }
           submenu.set_validation_proc(hard) { XPlaneValidateAttr(ATTR_HARD_NAME) }
-          deck = submenu.add_item(XPlaneTestAttr(ATTR_DECK_NAME, 'Hard Deck')) { XPlaneToggleAttr(ATTR_DECK_NAME) }
+          deck = submenu.add_item(XPlaneTestAttr(ATTR_DECK_NAME, 'Hard Deck')) { XPlaneToggleAttr(ATTR_DECK_NAME, 'HardDeck') }
           submenu.set_validation_proc(deck) { XPlaneValidateAttr(ATTR_DECK_NAME) }
-          shiny = submenu.add_item(XPlaneTestAttr(ATTR_SHINY_NAME, 'Shiny')) { XPlaneToggleAttr(ATTR_SHINY_NAME) }
+          shiny = submenu.add_item(XPlaneTestAttr(ATTR_SHINY_NAME, 'Shiny')) { XPlaneToggleAttr(ATTR_SHINY_NAME, 'Shiny') }
           submenu.set_validation_proc(shiny) { XPlaneValidateAttr(ATTR_SHINY_NAME) }
-          alpha = submenu.add_item(XPlaneTestAttr(ATTR_ALPHA_NAME, 'Translucent')) { XPlaneToggleAttr(ATTR_ALPHA_NAME) }
+          alpha = submenu.add_item(XPlaneTestAttr(ATTR_ALPHA_NAME, 'Translucent')) { XPlaneToggleAttr(ATTR_ALPHA_NAME, 'Translucent') }
           submenu.set_validation_proc(alpha) { XPlaneValidateAttr(ATTR_ALPHA_NAME) }
         end
       end
