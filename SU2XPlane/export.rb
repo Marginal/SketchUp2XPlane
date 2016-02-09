@@ -22,13 +22,14 @@ module Marginal
       include Comparable
 
       # Flags for export in order of priority low->high. Attributes represented by lower bits are flipped more frequently on output.
-      HARD=1
-      DECK=2
-      SHINY=4
+      VISIBLE = 1
+      NHARD = 2
+      NDECK = 4
+      SHINY = 8
       # animation should come here
-      ALPHA=8		# must be last for correctness
-      NDRAPED=16	# negated so ground polygons come first (don't care about alpha for ground polygons)
-      NPOLY=32		# ditto
+      ALPHA = 16	# must be last for correctness
+      NDRAPED = 32	# negated so ground polygons come first (don't care about alpha for ground polygons)
+      NPOLY = 64	# ditto
 
       # Types
       TRIS='Tris'
@@ -56,7 +57,7 @@ module Marginal
         elsif other.anim
           return -1	# no animation precedes animation
         end
-        c = ((self.attrs&(SHINY|DECK|HARD)) <=> (other.attrs&(SHINY|DECK|HARD)))
+        c = ((self.attrs&(SHINY|NDECK|NHARD|VISIBLE)) <=> (other.attrs&(SHINY|NDECK|NHARD|VISIBLE)))
         return c if c!=0
         c = (self.typename <=> other.typename)
         return c
@@ -178,7 +179,7 @@ module Marginal
         primcache[anim.cachekey]=[] if !primcache.include?(anim.cachekey)
       end
 
-      # filter out invisible
+      # filter out hidden
       entities = entities.reject { |ent| ent.hidden? || !ent.layer.visible? }
 
       # Process in roughly same order as output so indices are output in order - so ComponentInstances last
@@ -194,23 +195,26 @@ module Marginal
       end
 
       entities.grep(Sketchup::Face).each do |ent|
-        # if neither side has material then output both sides,
-        # otherwise outout the side(s) with materials
-        nomats = (not ent.material and not ent.back_material)
 
         uvHelp = ent.get_UVHelper(true, true, tw)
+        invisible = ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_INVISIBLE_NAME, 0) != 0
         attrs=0
         if anim
-          # can't have poly_os or hard in animation
-          attrs |= XPPrim::NPOLY|XPPrim::NDRAPED
+          # can't have poly_os, hard or invisible in animation
+          next if invisible
+          attrs |= XPPrim::VISIBLE|XPPrim::NHARD|XPPrim::NDECK|XPPrim::NPOLY|XPPrim::NDRAPED
         else
+          attrs |= XPPrim::VISIBLE unless invisible
+          attrs |= XPPrim::NHARD   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
+          attrs |= XPPrim::NDECK   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_DECK_NAME, 0)!=0
           attrs |= XPPrim::NPOLY   unless ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_POLY_NAME, 0)!=0
-          attrs |= XPPrim::HARD    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_HARD_NAME, 0)!=0
-          attrs |= XPPrim::DECK    if     ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_DECK_NAME, 0)!=0
-          attrs |= XPPrim::NDRAPED unless attrs&(XPPrim::NPOLY|XPPrim::DECK|XPPrim::HARD)==0	# Can't be draped if hard
+          attrs |= XPPrim::NDRAPED unless attrs&(XPPrim::NPOLY|XPPrim::NDECK|XPPrim::NHARD) == (XPPrim::NDECK|XPPrim::NHARD)	# Can't be draped if hard
         end
-        if attrs & (XPPrim::NPOLY|XPPrim::NDRAPED) == (XPPrim::NPOLY|XPPrim::NDRAPED)
-          # poly_os and/or draped implies ground level so no point in alpha
+        if attrs & XPPrim::NPOLY == 0
+          # poly_os and/or draped implies ground level so no point in keeping invisible
+          next if invisible
+          # and can't do alpha/shiny
+        else
           attrs |= XPPrim::ALPHA if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_ALPHA_NAME, 0)!=0
           attrs |= XPPrim::SHINY if ent.get_attribute(SU2XPlane::ATTR_DICT, SU2XPlane::ATTR_SHINY_NAME, 0)!=0
         end
@@ -221,10 +225,17 @@ module Marginal
         end
 
         mesh=ent.mesh(7)	# vertex, uvs & normal
-        n_polys = mesh.count_polygons
-        usedmaterials[nil] += n_polys if nomats	# count one side only
 
-        [true,false].each do |front|
+        if invisible
+          sides = ent.back_material && !ent.material ? [false] : [true]
+        elsif (ent.material && ent.back_material) || (!ent.material && !ent.back_material)
+          # if both or neither side has material then output both sides
+          sides = [true, false]
+        else
+          sides = ent.material ? [true] : [false]
+        end
+
+        sides.each do |front|
           if front
             material=ent.material
           else
@@ -232,67 +243,64 @@ module Marginal
           end
           reverseidx=!(front^(det<0))
 
-          if nomats or (material and material.alpha>0.0)
-            if material and material.texture
-              usedmaterials[material] += n_polys
-              tex=material.texture
-              # Get minimum uv co-oords
-              us=[]
-              vs=[]
-              ent.outer_loop.vertices.each do |vertex|
-                if front
-                  u=uvHelp.get_front_UVQ(vertex.position).to_a
-                else
-                  u=uvHelp.get_back_UVQ(vertex.position).to_a
-                end
-                us << (u.x/u.z).floor
-                vs << (u.y/u.z).floor
-              end
-              minu=us.min
-              minv=vs.min
-            else
-              usedmaterials[nil] += n_polys if not nomats
-              tex=nil
-              minu=minv=0
-            end
-
-            thisvt=[]	# Vertices in this face
-            for i in (1..mesh.count_points)
-              v=trans * mesh.point_at(i)
-              if tex
-                u=mesh.uv_at(i, front)
+          if material and material.texture
+            usedmaterials[material] += mesh.count_polygons
+            tex=material.texture
+            # Get minimum uv co-oords
+            us=[]
+            vs=[]
+            ent.outer_loop.vertices.each do |vertex|
+              if front
+                u=uvHelp.get_front_UVQ(vertex.position).to_a
               else
-                u=[0,0,1]
+                u=uvHelp.get_back_UVQ(vertex.position).to_a
               end
-              n=(ntrans * mesh.normal_at(i)).normalize
-              n.reverse! if not front
-              # round to export precision to increase chance of detecting dupes
-              thisvt << v.to_a.map { |j| j.round(SU2XPlane::P_V) } + n.to_a.map { |j| j.round(SU2XPlane::P_N) } + [(u.x/u.z-minu).round(SU2XPlane::P_UV), (u.y/u.z-minv).round(SU2XPlane::P_UV)]
+              us << (u.x/u.z).floor
+              vs << (u.y/u.z).floor
             end
-
-            for i in (1..mesh.count_polygons)
-              thistri=[]	# indices in this face
-              mesh.polygon_at(i).each do |index|
-                v = thisvt[(index>0 ? index : -index) - 1]
-                # Look for duplicate in Vertices already added at this level
-                thisidx = vtlookup[v]
-                if !thisidx
-                  # Didn't find a duplicate vertex
-                  vtlookup[v] = thisidx = vt.length
-                  vt << v
-                end
-                if reverseidx
-                  thistri.push(thisidx)
-                else
-                  thistri.unshift(thisidx)
-                end
-              end
-              prim.i.concat(thistri)
-            end
-
+            minu=us.min
+            minv=vs.min
+          else
+            usedmaterials[nil] += mesh.count_polygons if !invisible && front
+            tex=nil
+            minu=minv=0
           end
 
-        end	# [true,false].each do |front|
+          thisvt=[]	# Vertices in this face
+          for i in (1..mesh.count_points)
+            v=trans * mesh.point_at(i)
+            if tex
+              u=mesh.uv_at(i, front)
+            else
+              u=[0,0,1]
+            end
+            n=(ntrans * mesh.normal_at(i)).normalize
+            n.reverse! if not front
+            # round to export precision to increase chance of detecting dupes
+            thisvt << v.to_a.map { |j| j.round(SU2XPlane::P_V) } + n.to_a.map { |j| j.round(SU2XPlane::P_N) } + [(u.x/u.z-minu).round(SU2XPlane::P_UV), (u.y/u.z-minv).round(SU2XPlane::P_UV)]
+          end
+
+          for i in (1..mesh.count_polygons)
+            thistri=[]	# indices in this face
+            mesh.polygon_at(i).each do |index|
+              v = thisvt[(index>0 ? index : -index) - 1]
+              # Look for duplicate in Vertices already added at this level
+              thisidx = vtlookup[v]
+              if !thisidx
+                # Didn't find a duplicate vertex
+                vtlookup[v] = thisidx = vt.length
+                vt << v
+              end
+              if reverseidx
+                thistri.push(thisidx)
+              else
+                thistri.unshift(thisidx)
+              end
+            end
+            prim.i.concat(thistri)
+          end
+
+        end	# sides.each do |front|
       end	# entities.grep(Sketchup::Face).each do |ent|
 
       entities.grep(Sketchup::Group).each do |ent|
@@ -469,10 +477,10 @@ module Marginal
       time = Time.now
 
       # Write commands. Batch up primitives that share state into a single TRIS statement
+      current_attrs = XPPrim::NPOLY|XPPrim::NDRAPED|XPPrim::NDECK|XPPrim::NHARD|XPPrim::VISIBLE	# X-Plane's default state
       if have_alpha	# have some alpha
-        current_attrs = XPPrim::NPOLY|XPPrim::NDRAPED|XPPrim::ALPHA	# X-Plane's default state
+        current_attrs |= XPPrim::ALPHA	# X-Plane's default state
       else
-        current_attrs = XPPrim::NPOLY|XPPrim::NDRAPED
         outfile.write("IF NOT VERSION10\n\tATTR_no_blend\nENDIF\n\n")
       end
       current_anim=nil
@@ -509,36 +517,41 @@ module Marginal
           end
         end
 
-        # In priority order
-        if current_attrs&XPPrim::NPOLY==0 && prim.attrs&XPPrim::NPOLY!=0
-          outfile.write("#{ins}ATTR_layer_group\tobjects 0\n#{ins}ATTR_poly_os\t0\n")
-        elsif current_attrs&XPPrim::NPOLY!=0 && prim.attrs&XPPrim::NPOLY==0
+        # In roughly priority order
+        if current_attrs&XPPrim::ALPHA!=0 && prim.attrs&XPPrim::ALPHA==0
+          outfile.write("#{ins}ATTR_no_blend\n\n")
+        end
+        if current_attrs&XPPrim::NDRAPED!=0 && prim.attrs&XPPrim::NDRAPED==0
+          outfile.write("#{ins}ATTR_draped\n")
+        end
+        if current_attrs&XPPrim::NPOLY!=0 && prim.attrs&XPPrim::NPOLY==0
           outfile.write("#{ins}ATTR_layer_group\tobjects -5\n#{ins}ATTR_poly_os\t2\n")
+        elsif current_attrs&XPPrim::NPOLY==0 && prim.attrs&XPPrim::NPOLY!=0
+          outfile.write("#{ins}ATTR_layer_group\tobjects 0\n#{ins}ATTR_poly_os\t0\n")
         end
         if current_attrs&XPPrim::NDRAPED==0 && prim.attrs&XPPrim::NDRAPED!=0
-          outfile.write("#{ins}ATTR_no_draped\n")
-        elsif current_attrs&XPPrim::NDRAPED!=0 && prim.attrs&XPPrim::NDRAPED==0
-          outfile.write("#{ins}ATTR_draped\n")
+          outfile.write("#{ins}ATTR_no_draped\n\n")
         end
         if current_attrs&XPPrim::ALPHA==0 && prim.attrs&XPPrim::ALPHA!=0
           outfile.write("#{ins}ATTR_blend\nATTR_shadow_blend\t0.75\n")
-        elsif current_attrs&XPPrim::ALPHA!=0 && prim.attrs&XPPrim::ALPHA==0
-          outfile.write("#{ins}ATTR_no_blend\n")
         end
+
         if current_attrs&XPPrim::SHINY==0 && prim.attrs&XPPrim::SHINY!=0
           outfile.write("#{ins}ATTR_shiny_rat\t1\n")
         elsif current_attrs&XPPrim::SHINY!=0 && prim.attrs&XPPrim::SHINY==0
           outfile.write("#{ins}ATTR_shiny_rat\t0\n")
         end
-        if current_attrs&XPPrim::HARD==0 && prim.attrs&XPPrim::HARD!=0
+        if current_attrs&XPPrim::NHARD!=0 && prim.attrs&XPPrim::NHARD==0
           outfile.write("#{ins}ATTR_hard\n")
-        elsif current_attrs&XPPrim::HARD!=0 && prim.attrs&XPPrim::HARD==0
+        elsif current_attrs&XPPrim::NDECK!=0 && prim.attrs&XPPrim::NDECK==0
+          outfile.write("#{ins}ATTR_hard_deck\n")
+        elsif current_attrs&(XPPrim::NHARD|XPPrim::NDECK)!=(XPPrim::NHARD|XPPrim::NDECK) && prim.attrs&(XPPrim::NHARD|XPPrim::NDECK)==(XPPrim::NHARD|XPPrim::NDECK)
           outfile.write("#{ins}ATTR_no_hard\n")
         end
-        if current_attrs&XPPrim::DECK==0 && prim.attrs&XPPrim::DECK!=0
-          outfile.write("#{ins}ATTR_hard_deck\n")
-        elsif current_attrs&XPPrim::DECK!=0 && prim.attrs&XPPrim::DECK==0
-          outfile.write("#{ins}ATTR_no_hard\n")
+        if current_attrs&XPPrim::VISIBLE!=0 && prim.attrs&XPPrim::VISIBLE==0
+          outfile.write("#{ins}ATTR_draw_disable\n")
+        elsif current_attrs&XPPrim::VISIBLE==0 && prim.attrs&XPPrim::VISIBLE!=0
+          outfile.write("#{ins}ATTR_draw_enable\n")
         end
 
         # Animation

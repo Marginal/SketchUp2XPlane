@@ -27,6 +27,8 @@ module Marginal
           submenu.set_validation_proc(shiny) { XPlaneValidateAttr(ATTR_SHINY_NAME) }
           alpha = submenu.add_item(XPlaneTestAttr(ATTR_ALPHA_NAME, 'Translucent')) { XPlaneToggleAttr(ATTR_ALPHA_NAME, 'Translucent') }
           submenu.set_validation_proc(alpha) { XPlaneValidateAttr(ATTR_ALPHA_NAME) }
+          invis = submenu.add_item(XPlaneTestAttr(ATTR_INVISIBLE_NAME, 'Invisible')) { XPlaneToggleAttr(ATTR_INVISIBLE_NAME, 'Invisible') }
+          submenu.set_validation_proc(invis) { XPlaneValidateAttr(ATTR_INVISIBLE_NAME) }
         end
       end
 

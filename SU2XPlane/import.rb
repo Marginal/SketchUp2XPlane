@@ -98,6 +98,7 @@ module Marginal
             @reverse.alpha = 0
             @reverse.texture = nil
             @cull = true
+            @invisible = false
             @hard = false
             @deck = false
             @poly = false
@@ -241,6 +242,7 @@ module Marginal
                       end
                     end
                     face.set_attribute(ATTR_DICT, ATTR_ALPHA_NAME,1) if @alpha
+                    face.set_attribute(ATTR_DICT, ATTR_INVISIBLE_NAME, 1) if @invisible
                     face.set_attribute(ATTR_DICT, ATTR_HARD_NAME, 1) if @hard
                     face.set_attribute(ATTR_DICT, ATTR_DECK_NAME, 1) if @deck
                     face.set_attribute(ATTR_DICT, ATTR_POLY_NAME, 1) if @poly
@@ -258,6 +260,7 @@ module Marginal
               when 'ATTR_reset'
                 add_collected_faces(entities)	# commit any outstanding triangles before we change state
                 @cull = true
+                @invisible = false
                 @hard = false
                 @deck = false
                 @poly = false
@@ -269,6 +272,12 @@ module Marginal
               when 'ATTR_nocull', 'ATTR_no_cull'
                 add_collected_faces(entities)
                 @cull = false
+              when 'ATTR_draw_disable'
+                add_collected_faces(entities)
+                @invisible = true
+              when 'ATTR_draw_enable'
+                add_collected_faces(entities)
+                @invisible = false
               when 'ATTR_hard'
                 add_collected_faces(entities)
                 @hard = true

@@ -33,6 +33,7 @@ module Marginal
     ATTR_POLY_NAME="hard"	# ditto
     ATTR_ALPHA_NAME="alpha"
     ATTR_SHINY_NAME="shiny"
+    ATTR_INVISIBLE_NAME="invisible"
 
     # Animation attributes. Must be consistent with anim.js
     ANIM_DATAREF='dataref'
