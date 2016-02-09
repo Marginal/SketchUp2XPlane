@@ -38,7 +38,7 @@ module Marginal
       attr_reader(:typename, :attrs)
       attr_accessor(:anim, :i)
 
-      def initialize(typename, anim, attrs=NPOLY|NDRAPED)
+      def initialize(typename, anim, attrs=VISIBLE|NHARD|NDECK|NPOLY|NDRAPED)
         @typename=typename	# One of TRIS, LIGHT
         @anim=anim		# XPAnim context, or nil if top-level - i.e. not animated
         @attrs=attrs	# bitmask
