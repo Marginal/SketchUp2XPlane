@@ -438,6 +438,9 @@ module Marginal
         if File.exists? "#{texfile[0..-5]}_LIT#{texfile[-4..-1]}"
           outfile.write("TEXTURE_LIT\t#{basename[0..-5]}_LIT#{texfile[-4..-1]}\n")
         end
+        if File.exists? "#{texfile[0..-5]}_NML#{texfile[-4..-1]}"
+          outfile.write("TEXTURE_NORMAL\t#{basename[0..-5]}_NML#{texfile[-4..-1]}\n")
+        end
         prims.each do |prim|
           if prim.attrs&XPPrim::NDRAPED==0
             outfile.write("TEXTURE_DRAPED\t#{basename}\n")
