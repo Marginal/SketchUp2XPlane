@@ -68,7 +68,7 @@
       uncomment the relevant classes below (easy to spot as they all have the 
       classname ".fd-slider-vertical" somewhere within the declaration).
        
-   8. As a reminder, the following HTML is being targetted by the CSS:
+   8. As a reminder, the following HTML is being targeted by the CSS:
  
 <span class="fd-slider[-vertical]" 
       id="fd-slider-[the associated form element id]" 

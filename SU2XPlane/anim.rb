@@ -765,7 +765,7 @@ class Sketchup::ComponentInstance
       retval << lastval
     end
     # p retval.map { |r| r.map { |a| a.round(Marginal::SU2XPlane::P_A) } }
-    return retval.map { |r| r.map { |a| a.round(Marginal::SU2XPlane::P_A) } }	# round at end to prevent comparision differences
+    return retval.map { |r| r.map { |a| a.round(Marginal::SU2XPlane::P_A) } }	# round at end to prevent comparison differences
   end
 
   def XPRotateFrame(frame, v, a)
