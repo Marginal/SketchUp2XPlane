@@ -340,7 +340,7 @@ module Marginal
         return
       end
       if model.path.split(/[\/\\:]+/)[-1].unpack('C*').inject(false) { |memo,c| memo || c<32 || c>=128 }
-        UI.messagebox L10N.t("Object name must only use ASCII characters.\n\nPlease re-save this SketchUp model with a new file name that does not contain accented letters, or non-Western characters."), MB_OK, "X-Plane export"
+        UI.messagebox L10N.t("Object name must only use ASCII characters.\n\nPlease re-save this SketchUp model with a new file name that does not contain accented letters or non-Western characters."), MB_OK, "X-Plane export"
         return
       end
       if model.active_path!=nil
@@ -412,7 +412,7 @@ module Marginal
         end
 
         if basename.unpack('C*').inject(false) { |memo,c| memo || c<=32 || c>=128 }
-          UI.messagebox L10N.t("Texture file name must only use ASCII characters.\n\nPlease re-name the file \"#{basename}\" with a file name that does not contain spaces, accented letters, or non-Western characters."), MB_OK, "X-Plane export"
+          UI.messagebox L10N.t("Texture file name must only use ASCII characters.\n\nPlease re-name the file\n\"#{basename}\"\nwith a file name that does not contain spaces, accented letters or non-Western characters. Then update Materials to use the renamed texture."), MB_OK, "X-Plane export"
           return
         end
 

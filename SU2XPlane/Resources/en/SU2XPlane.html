@@ -210,17 +210,49 @@ SketchUp shows the current location and orientation of the Component's axes.</li
   <li>Choose <samp>File&nbsp;&rarr; Export&nbsp;X-Plane&nbsp;Object</samp></li>
 </ul>
 <p>The object is created in the same folder and with the same name as the current SketchUp file, but with a <code>.obj</code> extension. If your model containes embedded textures (for example if it was downloaded from Google 3D Warehouse) then copies of these textures are created in the same folder.</p>
-<p>You may see the following warnings:</p>
-<dl>
-  <dt>Warning: You used multiple texture files. Using file <i>name</i>.</dt>
-  <dd>You used more than one texture file to texture the faces in your model.<br>
-X-Plane requires that you use only one texture file for all of your faces.</dd>
-  <dt>&nbsp;</dt>
-  <dt>Warning: <i>n</i> faces are untextured.</dt>
-  <dd>You have not applied a texture to all of the faces in your SketchUp model.<br>
-X-Plane will colour the untextured faces with the bottom left pixel from your texture file (or grey if you have not applied a texture to any of the faces).</dd>
-</dl>
-<p>If you see either warning then X-Plane probably won't display your model as you intended.</p>
+<p>If you see any warnings then X-Plane probably won't display your model as you intended.</p>
+
+<h3>Troubleshooting</h3>
+
+<h4>&ldquo;Can't read DDS files. Convert <i>texture</i>.dds to PNG format&rdquo;</h4>
+<p>X-Plane supports texture files in PNG and DDS format, but SketchUp doesn't understand DDS files.</p>
+<ul>
+  <li>In Explorer or Finder locate the DDS file that SketchUp is complaining about and open it in an image editor that understands DDS files.</li>
+  <li>Save/export the texture in PNG format to the same folder as the DDS file and with the name <i>texture</i>.png.</li>
+</ul>
+
+<h4>&ldquo;Can't read texture file <i>texture</i>.png&rdquo;</h4>
+<p>X-Plane <code>.obj</code> files contain the name and path of their associated texture file. The path to the texture file is relative to the location of the <code>.obj</code> file. So if you move the <code>.obj</code> file you need to move the associated texture file with it and/or edit the <code>.obj</code> file in a text editor and adjust the path.</p>
+
+<h4>&ldquo;Warning: Texture height is not a power of two&rdquo; or &ldquo;Warning: Texture width is not a power of two&rdquo;</h4>
+<p>The height and width of the texture file must be a power of two - i.e. 128, 256, 512, 1024, 2048 (but it doesn't have to be square).</p>
+<ul>
+  <li>Resize/rescale your texture file in an image editing app so that the height and width are a power of two and re-save/re-export it.</li>
+  <li>In SketchUp choose <samp>Tools &rarr; Reload&nbsp;Textures</samp>.</li>
+</ul>
+
+<h4>&ldquo;Warning: You used multiple texture files. Using file <i>texture</i>.png from material <i>material</i>&rdquo;</h4>
+<p>X-Plane requires that you use only one texture file, but you used more than one texture file to texture the faces in your model.</p>
+<ul>
+  <li>Ensure that any unwanted layers are hidden in the <samp>Layers</samp> window, including the &ldquo;Location Snapshot&rdquo; and &ldquo;Location Terrain&rdquo; layers that you will have if you geo-located this model.</li>
+  <li>Delete or hide any unwanted geometry in the model.</li>
+  <li>Open the <samp>Materials</samp> window. On Mac select the &ldquo;Texture Palettes&rdquo; tab which has an icon that looks like a brick.</li>
+  <li>Press the &ldquo;In Model&rdquo; button that looks like a house and review the various materials used in your model and their texture files:</li>
+  <ul>
+    <li>Open the <samp>Model&nbsp;Info</samp> window and choose <samp>Statistics &rarr; Purge&nbsp;Unused</samp> to drop any unused materials/textures from this list. (Note that this will also drop any Components that you haven't used in the model from the <samp>Components</samp> window).</li>
+    <li>Right-click and delete any material that uses a texture other than the single texture that you intend to use for this model. (If you have a &ldquo;Location&nbsp;Snapshot&rdquo; texture it's fine to retain it provided that you've hidden the layers that use it). You will likely need to re-texture some parts of your model.</li>
+    <li>If the file <i>texture</i>.png mentioned in the warning message is in an unexpected location then find the material named <i>material</i> in this list, edit it, and replace its texture file with the correct file.</li>
+    <li>If you have multiple materials in this list that use the same texture as each other choose <samp>Tools &rarr; Reload&nbsp;Textures</samp> to ensure that the materials are all using a current copy of the same texture file.</li>
+  </ul>
+</ul>
+
+<h4>&ldquo;Warning: <i>n</i> faces are untextured&rdquo;</h4>
+<p>You have not applied a texture to all of the faces in your model. Any faces to which you haven't assigned a texture in SketchUp will look bad in X-Plane.</p>
+<ul>
+  <li>Choose <samp>Tools &rarr; Highlight&nbsp;Untextured</samp> to colour the untextured faces bright red. (Note this doesn't affect how they appear in X-Plane).</li>
+  <li>Review your model and either delete or texture the bright red untextured faces as appropriate. Don't forget to examine your model from unusual angles including upside-down.</li>
+</ul>
+<p>It probably doesn't matter if you have a few untextured faces left in your model after review; if you can't find the untextured faces in SketchUp it's unlikely that they'll be visible in X-Plane.<p>
 
 <h3>Limitations</h3>
 <p>Construct your SketchUp model out of Rectangles, Circles, Arcs, Components and Groups only - any other SketchUp types are not exported.</p>
@@ -228,7 +260,7 @@ X-Plane will colour the untextured faces with the bottom left pixel from your te
 <ul>
   <li>Attributes: <i>eg</i> cockpit, materials etc</li>
   <li>Level Of Detail</li>
-  <li>Lines</li>
+  <li>Manipulators</li>
 </ul>
 
 <h3>License</h3>
