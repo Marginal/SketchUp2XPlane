@@ -102,7 +102,7 @@ module Marginal
             @hard = false
             @deck = false
             @poly = false
-            @alpha = false
+            @alpha = true
             @shiny = false
             vt=[]
             nm=[]
@@ -264,7 +264,7 @@ module Marginal
                 @hard = false
                 @deck = false
                 @poly = false
-                @alpha = false
+                @alpha = true
                 @shiny = false
               when 'ATTR_cull'
                 add_collected_faces(entities)
