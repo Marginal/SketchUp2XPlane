@@ -14,7 +14,7 @@
 
 "use strict";			// Note: Can't debug in Safari 5 or 6 with this enabled
 
-var reText =/^\s*[\w/]+\s*$/;	// can't be empty
+var reText =/^\s*[\w\./]+\s*$/;	// can't be empty
 var reInt  =/^\s*\d*\s*$/;
 var reFloat=new RegExp('^\\s*\\-?\\d*\\' + (1.5).toLocaleString().substring(1,2) + '?\\d*\\s*$');
 
